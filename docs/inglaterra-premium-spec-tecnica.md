@@ -43,22 +43,23 @@ O conceito da marca é **sofisticação, atemporalidade e exclusividade** — s�
 |---|---|---|---|
 | Primária / texto principal / header | 532 C | `#101a26` | Fundo de header/footer, texto principal, elementos de destaque institucional |
 | Accent / CTA | 7610 C | `#51210d` | Botões primários, links ativos, detalhes de destaque (usar com moderação — é uma cor "terracota" forte) |
+| Accent claro (terra-light) | — | `#d98a4e` | Uso restrito a texto sobre fundo escuro — o terracota puro (`#51210d`) falha em contraste nesse caso |
 | Secundária / apoio | 2471 C | `#998376` | Fundos suaves, bordas, tags, elementos secundários |
 | Neutra escura | 426 C | `#1e1e1e` | Texto de corpo sobre fundo claro, alternativa ao preto puro |
-| Base clara (não definida no manual) | — | `#FFFFFF` / `#F7F5F3` | Fundo principal das páginas — usar branco ou off-white para manter a leveza pedida no manual |
+| Base clara (offwhite) | — | `#F5F3F0` | Fundo padrão das páginas — **nunca branco puro** |
 
 ```css
 :root {
-  --color-primary: #101a26;   /* Pantone 532 C */
-  --color-accent: #51210d;    /* Pantone 7610 C */
-  --color-secondary: #998376; /* Pantone 2471 C */
-  --color-ink: #1e1e1e;       /* Pantone 426 C */
-  --color-bg: #ffffff;
-  --color-bg-soft: #f7f5f3;
+  --color-primary: #101a26;     /* Pantone 532 C */
+  --color-accent: #51210d;      /* Pantone 7610 C */
+  --color-accent-light: #d98a4e;
+  --color-secondary: #998376;   /* Pantone 2471 C */
+  --color-ink: #1e1e1e;         /* Pantone 426 C */
+  --color-bg: #F5F3F0;
 }
 ```
 
-**Regra de uso**: o manual não define uma cor de fundo clara — recomendo branco/off-white como base (mantém a leveza e sofisticação descritas) e reservar o `#101a26` para blocos de destaque (hero, footer, cards de "prova social"), como já aparece nas peças do manual (fundo escuro + logo branco).
+**Regra de uso**: o fundo padrão de todas as páginas é o offwhite `#F5F3F0` — nunca branco puro (`#FFFFFF`), que quebra a leveza e sofisticação pedidas pelo manual. Reserve o `#101a26` para blocos de destaque (hero, footer, cards de "prova social"), como já aparece nas peças do manual (fundo escuro + logo branco). Use `#d98a4e` apenas para texto/detalhes sobre fundo escuro, já que o terracota puro (`#51210d`) não tem contraste suficiente nesse contexto.
 
 ### 3.2 Tipografia
 
