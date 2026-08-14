@@ -153,7 +153,7 @@ export function HeaderClient({ lancamentos }: { lancamentos: NavDropdownItem[] }
 
   return (
     <>
-      <nav className="fixed left-0 right-0 top-0 z-50 flex items-center justify-between border-b border-navy/10 bg-white/95 px-5 py-3.5 backdrop-blur-2xl md:px-16">
+      <nav className="fixed left-0 right-0 top-0 z-50 flex items-center justify-between border-b border-navy/10 bg-offwhite/95 px-5 py-3.5 backdrop-blur-2xl md:px-16">
         <Link
           aria-label="Inglaterra Premium"
           className="nav-focus block origin-left scale-[0.85] md:scale-100"
