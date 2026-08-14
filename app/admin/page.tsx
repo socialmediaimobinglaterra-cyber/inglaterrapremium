@@ -15,7 +15,7 @@ export default async function AdminPage() {
   if (!user) redirect("/admin/login");
 
   return (
-    <main className="min-h-screen bg-offwhite px-5 py-24 text-navy md:px-16">
+    <main className="site-container min-h-screen bg-offwhite py-24 text-navy">
       <section className="mx-auto max-w-3xl border border-navy/10 bg-white p-6 md:p-8">
         <div className="mb-8 flex flex-col justify-between gap-4 border-b border-navy/10 pb-6 md:flex-row md:items-start">
           <div>

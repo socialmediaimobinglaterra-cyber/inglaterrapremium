@@ -10,7 +10,7 @@ const footerColumns = [
 
 export function Footer() {
   return (
-    <footer className="bg-navy px-5 pb-6 pt-12 text-white md:px-16 md:pb-7 md:pt-16">
+    <footer className="site-container bg-navy pb-6 pt-12 text-white md:pb-7 md:pt-16">
       <div className="mb-9 grid grid-cols-1 gap-9 md:mb-13 md:grid-cols-[2fr_1fr_1fr_1fr_1fr] md:gap-12">
         <div>
           <div className="mb-6">

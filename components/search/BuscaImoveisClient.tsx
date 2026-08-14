@@ -271,7 +271,7 @@ export function BuscaImoveisClient({ initialImoveis, bairros, tipos }: Props) {
   return (
     <main className="bg-offwhite text-navy">
       <section className="pt-24 md:pt-32">
-        <div className="mb-7 px-5 md:mb-10 md:px-16">
+        <div className="site-container mb-7 md:mb-10">
           <p className="mb-4 text-[11px] text-sand">Início / Imóveis / Comprar</p>
           <h1 className="mb-3.5 max-w-[720px] text-[clamp(26px,8vw,34px)] font-light leading-[1.1] tracking-[0.02em] text-navy md:text-[clamp(34px,4vw,52px)]">
             Imóveis de Alto Padrão à Venda em Londrina
@@ -283,7 +283,7 @@ export function BuscaImoveisClient({ initialImoveis, bairros, tipos }: Props) {
       </section>
 
       <div className="border-y border-navy/10">
-        <div className="flex items-center gap-3 overflow-x-auto px-5 py-4 md:flex-wrap md:gap-3.5 md:overflow-visible md:px-16 md:py-3.5">
+        <div className="site-container flex items-center gap-3 overflow-x-auto py-4 md:flex-wrap md:gap-3.5 md:overflow-visible md:py-3.5">
           <div className="flex shrink-0 items-center gap-2 pr-1.5">
             <IconFiltros />
             <div>
@@ -321,7 +321,7 @@ export function BuscaImoveisClient({ initialImoveis, bairros, tipos }: Props) {
         </div>
       </div>
 
-      <section className="border-b border-navy/10 px-5 py-5 md:px-16">
+      <section className="site-container border-b border-navy/10 py-5">
         <div className="flex flex-col gap-3 md:flex-row md:items-end md:gap-0">
           <div className="md:flex-1">
             <div className="mb-2 flex items-center gap-2">
@@ -370,7 +370,7 @@ export function BuscaImoveisClient({ initialImoveis, bairros, tipos }: Props) {
         </div>
       </section>
 
-      <section className="px-5 py-7 md:px-16 md:py-10">
+      <section className="site-container py-7 md:py-10">
         <div className="mb-7 flex flex-col items-start justify-between gap-2.5 border-b border-navy/10 pb-5 md:mb-10 md:flex-row md:items-baseline md:gap-0">
           <p className="text-lg font-medium text-navy md:text-xl">
             Resultados da busca{" "}

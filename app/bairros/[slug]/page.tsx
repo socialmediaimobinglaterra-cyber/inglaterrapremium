@@ -120,7 +120,7 @@ export default async function BairroPage({ params }: PageProps) {
           src={bairro.heroImage}
         />
         <div className="absolute inset-0 bg-gradient-to-b from-navy/5 to-navy/80" />
-        <div className="relative z-10 w-full px-5 pb-8 md:px-16 md:pb-14">
+        <div className="site-container relative z-10 w-full pb-8 md:pb-14">
           <p className="mb-3 text-[9px] font-semibold uppercase tracking-[0.3em] text-terra-light">
             Conheça o bairro
           </p>
@@ -132,7 +132,7 @@ export default async function BairroPage({ params }: PageProps) {
         </div>
       </section>
 
-      <section className="grid grid-cols-1 gap-8 border-b border-navy/10 px-5 py-10 md:grid-cols-[1.7fr_1fr] md:gap-20 md:px-16 md:py-[72px]">
+      <section className="site-container grid grid-cols-1 gap-8 border-b border-navy/10 py-10 md:grid-cols-[1.7fr_1fr] md:gap-20 md:py-[72px]">
         <div>
           {bairro.descricao ? (
             <p className="mb-6 max-w-[720px] whitespace-pre-line text-sm leading-[1.85] text-[#4a4a48]">
@@ -163,7 +163,7 @@ export default async function BairroPage({ params }: PageProps) {
         </div>
       </section>
 
-      <section className="bg-white px-5 py-10 md:px-16 md:py-16">
+      <section className="site-container bg-white py-10 md:py-16">
         <div className="mb-7 flex flex-col items-start justify-between gap-2.5 md:mb-9 md:flex-row md:items-end">
           <div>
             <p className="mb-2 text-[9px] font-semibold uppercase tracking-[0.25em] text-terra">
@@ -181,7 +181,7 @@ export default async function BairroPage({ params }: PageProps) {
         </div>
       </section>
 
-      <section className="px-5 py-10 md:px-16 md:py-16">
+      <section className="site-container py-10 md:py-16">
         <p className="mb-2 text-[9px] font-semibold uppercase tracking-[0.25em] text-terra">
           Explore mais
         </p>

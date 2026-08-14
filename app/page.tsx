@@ -232,18 +232,20 @@ async function getHomeData() {
 
 function Rule({ label, right }: { label?: string; right?: string }) {
   return (
-    <div className="flex items-center gap-5 border-y border-navy/10 px-5 py-4 md:px-16">
-      {label ? (
-        <span className="max-w-[62vw] overflow-hidden text-ellipsis whitespace-nowrap text-[8px] uppercase tracking-[0.2em] text-sand md:tracking-[0.4em]">
-          {label}
-        </span>
-      ) : null}
-      <div className="h-px flex-1 bg-navy/10" />
-      {right ? (
-        <span className="whitespace-nowrap text-[8px] uppercase tracking-[0.4em] text-sand">
-          {right}
-        </span>
-      ) : null}
+    <div className="border-y border-navy/10">
+      <div className="site-container flex items-center gap-5 py-4">
+        {label ? (
+          <span className="max-w-[62vw] overflow-hidden text-ellipsis whitespace-nowrap text-[8px] uppercase tracking-[0.2em] text-sand md:tracking-[0.4em]">
+            {label}
+          </span>
+        ) : null}
+        <div className="h-px flex-1 bg-navy/10" />
+        {right ? (
+          <span className="whitespace-nowrap text-[8px] uppercase tracking-[0.4em] text-sand">
+            {right}
+          </span>
+        ) : null}
+      </div>
     </div>
   );
 }
@@ -521,7 +523,7 @@ function Field({
 
 function NewsletterBlock() {
   return (
-    <section className="grid grid-cols-1 items-center gap-8 bg-terra px-5 py-12 md:grid-cols-2 md:gap-16 md:px-16 md:py-16">
+    <section className="site-container grid grid-cols-1 items-center gap-8 bg-terra py-12 md:grid-cols-2 md:gap-16 md:py-16">
       <div>
         <p className="mb-3.5 text-[8px] uppercase tracking-[0.45em] text-white/55">
           Newsletter
@@ -593,13 +595,13 @@ export default async function Home() {
           src="/images/capa-hero.jpg"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-navy/30 via-navy/20 to-navy/75" />
-        <div className="absolute left-5 right-5 top-[74px] flex items-center gap-3.5 md:left-16 md:right-16 md:top-[100px]">
+        <div className="site-container absolute inset-x-0 top-[74px] flex items-center gap-3.5 md:top-[100px]">
           <div className="h-px w-6 shrink-0 bg-terra-light" />
           <span className="text-[8px] uppercase tracking-[0.3em] text-white/60 md:text-[9px]">
             Imóvel em destaque — Londrina, Paraná
           </span>
         </div>
-        <div className="absolute inset-x-5 bottom-6 md:inset-x-16 md:bottom-[130px]">
+        <div className="site-container absolute inset-x-0 bottom-6 md:bottom-[130px]">
           <h1 className="mb-2.5 max-w-full break-words text-[clamp(26px,9vw,34px)] font-light leading-[1.05] tracking-[0.02em] text-white md:mb-4 md:text-[clamp(34px,5.4vw,68px)]">
             Imóveis de alto padrão
             <br />
@@ -616,7 +618,7 @@ export default async function Home() {
         </div>
       </section>
 
-      <div className="overflow-hidden border-y border-navy/10 bg-offwhite py-[11px]">
+      <div className="hidden">
         <div className="animate-marquee flex whitespace-nowrap">
           {[...TICKER, ...TICKER, ...TICKER, ...TICKER].map((item, index) => (
             <span
@@ -630,7 +632,7 @@ export default async function Home() {
       </div>
 
       <Rule label="Imóveis em Destaque" right={`${featured.length} selecionados`} />
-      <section className="px-5 py-12 md:px-16">
+      <section className="site-container py-12">
         <h2 className="sr-only">Imóveis de Alto Padrão à Venda em Londrina</h2>
         <div className="flex flex-col gap-[5px] md:hidden">
           {featured.map((property) => (
@@ -650,7 +652,7 @@ export default async function Home() {
       </section>
 
       <Rule label="Explorar por Localização" />
-      <section className="px-5 py-14 md:px-16">
+      <section className="site-container py-14">
         <div className="mb-8 flex flex-col items-start justify-between gap-3.5 md:flex-row md:items-end md:gap-0">
           <h2 className="text-[clamp(24px,6vw,40px)] font-light leading-tight tracking-[0.04em]">
             Bairros de alto padrão
@@ -666,7 +668,7 @@ export default async function Home() {
         </div>
       </section>
 
-      <section className="bg-navy px-5 py-12 md:px-16 md:py-20">
+      <section className="site-container bg-navy py-12 md:py-20">
         <div className="mb-10 flex flex-col items-start justify-between gap-5 border-b border-white/10 pb-8 md:flex-row md:items-end md:gap-0">
           <div>
             <div className="mb-4 flex items-center gap-3.5">
@@ -695,7 +697,7 @@ export default async function Home() {
 
       <section className="relative border-y border-navy/10 bg-offwhite">
         <h2 className="sr-only">A Inglaterra Premium em Números, em Londrina</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4">
+        <div className="site-container grid grid-cols-2 md:grid-cols-4">
           {stats.map((stat, index) => (
             <div
               className="border-b border-r border-navy/10 px-[18px] py-7 text-center even:border-r-0 md:border-b-0 md:px-10 md:py-[52px] md:last:border-r-0"
@@ -712,7 +714,7 @@ export default async function Home() {
       </section>
 
       <Rule label="Diretoria" />
-      <section className="px-5 py-16 md:px-16">
+      <section className="site-container py-16">
         <div className="mb-10 flex flex-col items-start justify-between gap-3.5 md:flex-row md:items-end md:gap-0">
           <h2 className="text-[clamp(24px,6vw,40px)] font-light leading-tight tracking-[0.04em]">
             As pessoas por trás
@@ -732,7 +734,7 @@ export default async function Home() {
       </section>
 
       <Rule label="Notícias & Mercado" />
-      <section className="bg-offwhite px-5 py-16 md:px-16">
+      <section className="site-container bg-offwhite py-16">
         <div className="mb-8 flex flex-col items-start justify-between gap-3.5 md:flex-row md:items-end md:gap-0">
           <h2 className="text-[clamp(22px,5.5vw,38px)] font-light leading-tight tracking-[0.04em]">
             O mercado de alto padrão
@@ -754,7 +756,7 @@ export default async function Home() {
           className="absolute inset-0 h-full w-full object-cover opacity-30"
           src="https://picsum.photos/seed/inglaterra27/1600/800"
         />
-        <div className="relative z-10 grid min-h-[520px] grid-cols-1 items-center gap-10 px-5 py-14 md:grid-cols-2 md:gap-20 md:px-16 md:py-20">
+        <div className="site-container relative z-10 grid min-h-[520px] grid-cols-1 items-center gap-10 py-14 md:grid-cols-2 md:gap-20 md:py-20">
           <div>
             <div className="mb-5 flex items-center gap-3.5">
               <div className="h-px w-6 bg-terra-light" />
@@ -793,7 +795,7 @@ export default async function Home() {
       </section>
 
       <Rule label="Para Proprietários" />
-      <section className="grid grid-cols-1 items-start gap-11 px-5 py-[72px] md:grid-cols-2 md:gap-20 md:px-16">
+      <section className="site-container grid grid-cols-1 items-start gap-11 py-[72px] md:grid-cols-2 md:gap-20">
         <div>
           <div className="mb-5 flex items-center gap-3.5">
             <div className="h-px w-6 bg-terra" />
@@ -826,7 +828,7 @@ export default async function Home() {
         <CaptureForm />
       </section>
 
-      <section className="border-t border-navy/10 bg-offwhite px-5 py-14 md:px-16">
+      <section className="site-container border-t border-navy/10 bg-offwhite py-14">
         <div className="mb-6 flex flex-col items-start justify-between gap-3 md:flex-row md:items-end md:gap-0">
           <div>
             <p className="mb-1.5 text-[8px] uppercase tracking-[0.4em] text-sand">

@@ -155,7 +155,7 @@ export default async function LancamentoPage({ params }: PageProps) {
     <main className="bg-offwhite text-navy">
       <JsonLd lancamento={lancamento} />
 
-      <div className="px-5 pt-[88px] md:px-16 md:pt-[108px]">
+      <div className="site-container pt-[88px] md:pt-[108px]">
         <p className="mb-4 text-[11px] text-sand">
           Início / Lançamentos / {lancamento.nome}
         </p>
@@ -176,7 +176,7 @@ export default async function LancamentoPage({ params }: PageProps) {
         ) : null}
       </div>
 
-      <div className="px-5 pt-5 md:px-16 md:pt-7">
+      <div className="site-container pt-5 md:pt-7">
         <div className="aspect-[4/3] overflow-hidden md:aspect-[21/9]">
           {lancamento.image ? (
             <img
@@ -191,7 +191,7 @@ export default async function LancamentoPage({ params }: PageProps) {
       </div>
 
       {facts.length > 0 ? (
-        <div className="px-5 pt-6 md:px-16">
+        <div className="site-container pt-6">
           <div className="grid grid-cols-1 gap-2 md:grid-cols-3 md:gap-4">
             {facts.map((fact) => (
               <div className="bg-white px-2 py-3.5 text-center md:px-4 md:py-5" key={fact.label}>
@@ -208,7 +208,7 @@ export default async function LancamentoPage({ params }: PageProps) {
       ) : null}
 
       {(lancamento.descricao || lancamento.descricao2 || lancamento.diferenciais.length > 0) ? (
-        <section className="grid grid-cols-1 gap-7 px-5 py-10 md:grid-cols-[1.6fr_1fr] md:gap-16 md:px-16 md:py-16">
+        <section className="site-container grid grid-cols-1 gap-7 py-10 md:grid-cols-[1.6fr_1fr] md:gap-16 md:py-16">
           {(lancamento.descricao || lancamento.descricao2) ? (
             <div>
               <h2 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.16em]">
@@ -248,14 +248,14 @@ export default async function LancamentoPage({ params }: PageProps) {
         </section>
       ) : null}
 
-      <section className="px-5 pb-10 md:px-16 md:pb-16">
+      <section className="site-container pb-10 md:pb-16">
         <h2 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.16em]">
           Galeria de fotos
         </h2>
         <LancamentoGallery images={lancamento.galeria} nome={lancamento.nome} />
       </section>
 
-      <section className="grid grid-cols-1 gap-7 bg-white px-5 py-10 md:grid-cols-[1.6fr_1fr] md:gap-16 md:px-16 md:py-16">
+      <section className="site-container grid grid-cols-1 gap-7 bg-white py-10 md:grid-cols-[1.6fr_1fr] md:gap-16 md:py-16">
         <div>
           <h2 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.16em]">
             Localização
@@ -289,7 +289,7 @@ export default async function LancamentoPage({ params }: PageProps) {
       </section>
 
       {relacionados.length > 0 ? (
-        <section className="px-5 py-12 md:px-16 md:py-[72px]">
+        <section className="site-container py-12 md:py-[72px]">
           <p className="mb-2 text-[9px] font-semibold uppercase tracking-[0.25em] text-terra">
             Continue explorando
           </p>

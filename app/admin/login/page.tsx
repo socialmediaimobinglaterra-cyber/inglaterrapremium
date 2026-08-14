@@ -49,7 +49,7 @@ export default async function AdminLoginPage({ searchParams }: PageProps) {
   const codeStep = params.sent === "1" && email;
 
   return (
-    <main className="min-h-screen bg-offwhite px-5 py-24 text-navy md:px-16">
+    <main className="site-container min-h-screen bg-offwhite py-24 text-navy">
       <section className="mx-auto max-w-md border border-navy/10 bg-white p-6 shadow-[0_18px_60px_rgba(16,26,38,0.08)] md:p-8">
         <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.25em] text-terra">
           Admin Inglaterra Premium

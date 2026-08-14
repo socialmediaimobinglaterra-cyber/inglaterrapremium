@@ -48,3 +48,27 @@ select {
 .nav-focus:focus-visible {
   outline-color: #d98a4e;
 }
+
+.site-container {
+  max-width: 1440px;
+  margin-inline: auto;
+  padding-inline: clamp(24px, 5vw, 96px);
+}
+
+.site-container.bg-navy,
+.site-container.bg-terra,
+.site-container.bg-white {
+  clip-path: inset(0 -100vmax);
+}
+
+.site-container.bg-navy {
+  box-shadow: 0 0 0 100vmax #101a26;
+}
+
+.site-container.bg-terra {
+  box-shadow: 0 0 0 100vmax #51210d;
+}
+
+.site-container.bg-white {
+  box-shadow: 0 0 0 100vmax #fff;
+}

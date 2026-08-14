@@ -153,21 +153,22 @@ export function HeaderClient({ lancamentos }: { lancamentos: NavDropdownItem[] }
 
   return (
     <>
-      <nav className="fixed left-0 right-0 top-0 z-50 flex items-center justify-between border-b border-navy/10 bg-offwhite/95 px-5 py-3.5 backdrop-blur-2xl md:px-16">
-        <Link
-          aria-label="Inglaterra Premium"
-          className="nav-focus block origin-left scale-[0.85] md:scale-100"
-          href="/"
-        >
-          <Image
-            alt="Inglaterra Premium"
-            height={34}
-            priority
-            src="/images/logo-navy.png"
-            width={169}
-            className="h-[34px] w-auto"
-          />
-        </Link>
+      <nav className="fixed left-0 right-0 top-0 z-50 border-b border-navy/10 bg-offwhite/95 py-3.5 backdrop-blur-2xl">
+        <div className="site-container flex items-center justify-between">
+          <Link
+            aria-label="Inglaterra Premium"
+            className="nav-focus block origin-left scale-[0.85] md:scale-100"
+            href="/"
+          >
+            <Image
+              alt="Inglaterra Premium"
+              height={34}
+              priority
+              src="/images/logo-navy.png"
+              width={169}
+              className="h-[34px] w-auto"
+            />
+          </Link>
 
         <div className="hidden items-center gap-7 md:flex">
           {navItems.map((item) => {
@@ -197,29 +198,30 @@ export function HeaderClient({ lancamentos }: { lancamentos: NavDropdownItem[] }
 
         <ContactButton className="hidden md:inline-flex" />
 
-        <button
-          aria-expanded={navOpen}
-          aria-label={navOpen ? "Fechar menu" : "Abrir menu"}
-          className="nav-focus flex h-[26px] w-[26px] flex-col justify-center gap-[5px] md:hidden"
-          onClick={() => setNavOpen((value) => !value)}
-          type="button"
-        >
-          <span
-            className={`block h-px w-full bg-navy transition duration-200 ${
-              navOpen ? "translate-y-[6px] rotate-45" : ""
-            }`}
-          />
-          <span
-            className={`block h-px w-full bg-navy transition duration-200 ${
-              navOpen ? "opacity-0" : "opacity-100"
-            }`}
-          />
-          <span
-            className={`block h-px w-full bg-navy transition duration-200 ${
-              navOpen ? "-translate-y-[6px] -rotate-45" : ""
-            }`}
-          />
-        </button>
+          <button
+            aria-expanded={navOpen}
+            aria-label={navOpen ? "Fechar menu" : "Abrir menu"}
+            className="nav-focus flex h-[26px] w-[26px] flex-col justify-center gap-[5px] md:hidden"
+            onClick={() => setNavOpen((value) => !value)}
+            type="button"
+          >
+            <span
+              className={`block h-px w-full bg-navy transition duration-200 ${
+                navOpen ? "translate-y-[6px] rotate-45" : ""
+              }`}
+            />
+            <span
+              className={`block h-px w-full bg-navy transition duration-200 ${
+                navOpen ? "opacity-0" : "opacity-100"
+              }`}
+            />
+            <span
+              className={`block h-px w-full bg-navy transition duration-200 ${
+                navOpen ? "-translate-y-[6px] -rotate-45" : ""
+              }`}
+            />
+          </button>
+        </div>
       </nav>
 
       <div

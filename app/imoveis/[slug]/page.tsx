@@ -214,13 +214,13 @@ export default async function ImovelPage({ params }: PageProps) {
         type="application/ld+json"
       />
 
-      <div className="px-5 pt-[88px] md:px-16 md:pt-[108px]">
+      <div className="site-container pt-[88px] md:pt-[108px]">
         <p className="text-[11px] text-sand">
           Início / Imóveis / {imovel.bairro} / {imovel.titulo}
         </p>
       </div>
 
-      <section className="px-5 pt-5 md:px-16">
+      <section className="site-container pt-5">
         <div className="md:grid md:h-[560px] md:grid-cols-[1.7fr_1fr] md:gap-2">
           <div className="aspect-[4/3] overflow-hidden md:aspect-auto">
             <img
@@ -248,7 +248,7 @@ export default async function ImovelPage({ params }: PageProps) {
         </div>
       </section>
 
-      <div className="grid grid-cols-1 gap-10 px-5 py-8 md:grid-cols-[1.6fr_1fr] md:gap-[72px] md:px-16 md:py-14">
+      <div className="site-container grid grid-cols-1 gap-10 py-8 md:grid-cols-[1.6fr_1fr] md:gap-[72px] md:py-14">
         <div>
           <div className="mb-6 border-b border-navy/10 pb-6 md:mb-8 md:pb-8">
             <p className="mb-3 text-[9px] font-semibold uppercase tracking-[0.3em] text-terra">
@@ -362,7 +362,7 @@ export default async function ImovelPage({ params }: PageProps) {
         </aside>
       </div>
 
-      <section className="bg-white px-5 py-12 md:px-16 md:py-[72px]">
+      <section className="site-container bg-white py-12 md:py-[72px]">
         <div className="mb-7 flex flex-col items-start justify-between gap-2.5 md:mb-9 md:flex-row md:items-end">
           <div>
             <p className="mb-2 text-[9px] font-semibold uppercase tracking-[0.25em] text-terra">
