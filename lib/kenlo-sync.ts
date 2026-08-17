@@ -278,7 +278,7 @@ async function upsertImovel(
   await client.query(
     `
       insert into imoveis (
-        kenlo_codigo, codigo_auxiliar, slug, titulo, tipo, subtipo, finalidade,
+        origem, kenlo_id, kenlo_codigo, codigo_auxiliar, slug, titulo, tipo, subtipo, finalidade,
         categoria, cidade, estado, bairro_id, bairro_nome, bairro_oficial,
         endereco, numero, cep, latitude, longitude, nome_condominio,
         nome_edificio, status_comercial, tipo_oferta, preco_venda,
@@ -287,7 +287,7 @@ async function upsertImovel(
         corretor, fotos, raw, is_premium, premium_reason, ativo, last_seen_at,
         kenlo_updated_at, updated_at
       ) values (
-        $1, $2, $3, $4, $5, $6, $7,
+        'kenlo', $1, $1, $2, $3, $4, $5, $6, $7,
         $8, $9, $10, $11, $12, $13,
         $14, $15, $16, $17, $18, $19,
         $20, $21, $22, $23,
@@ -297,6 +297,8 @@ async function upsertImovel(
         $41, now()
       )
       on conflict (kenlo_codigo) do update set
+        origem = 'kenlo',
+        kenlo_id = excluded.kenlo_id,
         codigo_auxiliar = excluded.codigo_auxiliar,
         slug = excluded.slug,
         titulo = excluded.titulo,
@@ -340,6 +342,7 @@ async function upsertImovel(
         last_seen_at = excluded.last_seen_at,
         kenlo_updated_at = excluded.kenlo_updated_at,
         updated_at = now()
+      where imoveis.origem = 'kenlo'
     `,
     [
       imovel.kenloCodigo,
@@ -469,7 +472,7 @@ export async function syncKenlo(pool: Pool, xmlUrl = DEFAULT_KENLO_XML_URL) {
     }
 
     const before = await client.query(
-      "select kenlo_codigo from imoveis where ativo = true and is_premium = true"
+      "select kenlo_codigo from imoveis where origem = 'kenlo' and ativo = true and is_premium = true"
     );
     const previousCodes = new Set<string>(before.rows.map((row) => row.kenlo_codigo));
     const currentCodes = new Set(filtered.map((imovel) => imovel.kenloCodigo));
@@ -501,7 +504,8 @@ export async function syncKenlo(pool: Pool, xmlUrl = DEFAULT_KENLO_XML_URL) {
       `
         update imoveis
         set ativo = false, is_premium = false, updated_at = now()
-        where ativo = true
+        where origem = 'kenlo'
+          and ativo = true
           and is_premium = true
           and not (kenlo_codigo = any($1::text[]))
       `,
@@ -551,7 +555,7 @@ export async function syncKenlo(pool: Pool, xmlUrl = DEFAULT_KENLO_XML_URL) {
           preco_venda,
           preco_locacao
         from imoveis
-        where ativo = true and is_premium = true
+        where origem = 'kenlo' and ativo = true and is_premium = true
         order by bairro_nome, preco_venda desc nulls last
         limit 5
       `

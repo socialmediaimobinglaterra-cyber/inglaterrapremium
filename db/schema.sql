@@ -39,7 +39,9 @@ create table if not exists configuracoes_premium (
 
 create table if not exists imoveis (
   id uuid primary key default gen_random_uuid(),
-  kenlo_codigo text not null unique,
+  origem text not null default 'kenlo' check (origem in ('kenlo', 'manual')),
+  kenlo_id text,
+  kenlo_codigo text unique,
   codigo_auxiliar text,
   slug text not null unique,
   titulo text not null,
@@ -86,6 +88,19 @@ create table if not exists imoveis (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+alter table imoveis add column if not exists origem text not null default 'kenlo';
+alter table imoveis add column if not exists kenlo_id text;
+alter table imoveis alter column kenlo_codigo drop not null;
+alter table imoveis drop constraint if exists imoveis_origem_check;
+alter table imoveis add constraint imoveis_origem_check
+  check (origem in ('kenlo', 'manual'));
+update imoveis set origem = 'kenlo' where origem is null;
+update imoveis
+set kenlo_id = kenlo_codigo
+where origem = 'kenlo'
+  and kenlo_id is null
+  and kenlo_codigo is not null;
 
 create table if not exists condominios (
   id uuid primary key default gen_random_uuid(),
