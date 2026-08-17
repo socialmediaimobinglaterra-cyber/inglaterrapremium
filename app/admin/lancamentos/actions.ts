@@ -60,10 +60,22 @@ function parseGalleryLines(value: string | null, nome: string): GalleryItem[] {
     .filter((item) => item.url.startsWith("http"));
 }
 
+function blobErrorMessage(error: unknown) {
+  if (!(error instanceof Error) || !error.message) {
+    return "";
+  }
+
+  return ` Detalhe do Blob: ${error.message.replace(
+    /vercel_blob_rw_[A-Za-z0-9_-]+/g,
+    "[token oculto]"
+  )}`;
+}
+
 async function uploadImages(files: FormDataEntryValue[], nome: string) {
   const images = files.filter((file): file is File => file instanceof File && file.size > 0);
+  const token = process.env.BLOB_READ_WRITE_TOKEN;
 
-  if (images.length > 0 && !process.env.BLOB_READ_WRITE_TOKEN) {
+  if (images.length > 0 && !token) {
     throw new Error(
       "BLOB_READ_WRITE_TOKEN não está disponível no ambiente de produção usado por este deploy."
     );
@@ -84,10 +96,12 @@ async function uploadImages(files: FormDataEntryValue[], nome: string) {
     }
 
     const safeName = slugify(image.name.replace(/\.[^.]+$/, "")) || `imagem-${index + 1}`;
+    const extension = image.name.match(/\.[a-z0-9]+$/i)?.[0]?.toLowerCase() ?? "";
     try {
-      const blob = await put(`lancamentos/${slugify(nome)}/${safeName}`, image, {
+      const blob = await put(`lancamentos/${slugify(nome)}/${safeName}${extension}`, image, {
         access: "public",
         addRandomSuffix: true,
+        token,
       });
 
       uploaded.push({
@@ -98,7 +112,7 @@ async function uploadImages(files: FormDataEntryValue[], nome: string) {
     } catch (error) {
       console.error("Falha no upload para Vercel Blob", error);
       throw new Error(
-        "Não foi possível enviar as imagens para o Vercel Blob. Confira o BLOB_READ_WRITE_TOKEN no projeto de produção correto."
+        `Não foi possível enviar as imagens para o Vercel Blob. Confira o BLOB_READ_WRITE_TOKEN no projeto de produção correto.${blobErrorMessage(error)}`
       );
     }
   }
