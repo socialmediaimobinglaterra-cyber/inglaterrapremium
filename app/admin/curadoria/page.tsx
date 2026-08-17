@@ -56,11 +56,32 @@ function statusLabel(row: CuradoriaRow) {
 }
 
 function statusClass(row: CuradoriaRow) {
-  if (row.inclusao_manual === true) return "border-terra/20 bg-terra/10 text-terra";
-  if (row.inclusao_manual === false) return "border-navy/15 bg-navy/5 text-sand";
+  if (row.inclusao_manual === true) return "border-terra/15 bg-terra/5 text-terra";
+  if (row.inclusao_manual === false) return "border-navy/10 bg-offwhite text-sand";
   return row.elegivel_filtro_automatico
-    ? "border-[#d98a4e]/25 bg-[#d98a4e]/10 text-terra"
+    ? "border-[#d98a4e]/20 bg-[#d98a4e]/5 text-terra"
     : "border-navy/10 bg-offwhite text-sand";
+}
+
+function visibilityClass(row: CuradoriaRow) {
+  return row.ativo_no_site
+    ? "border-emerald-700/10 bg-emerald-50 text-emerald-900"
+    : "border-navy/10 bg-[#f1f1ef] text-sand";
+}
+
+function visibilityLabel(row: CuradoriaRow) {
+  return row.ativo_no_site ? "● No site" : "○ Fora do site";
+}
+
+function overrideButtonClass(row: CuradoriaRow, value: "auto" | "include" | "exclude") {
+  const active =
+    (value === "auto" && row.inclusao_manual === null) ||
+    (value === "include" && row.inclusao_manual === true) ||
+    (value === "exclude" && row.inclusao_manual === false);
+
+  return active
+    ? "border-navy bg-navy text-white"
+    : "border-navy/15 bg-transparent text-navy hover:border-terra hover:text-terra";
 }
 
 function normalizeMoney(value?: string) {
@@ -242,11 +263,15 @@ export default async function AdminCuradoriaPage({ searchParams }: PageProps) {
                   <span className="text-[10px] uppercase tracking-[0.18em] text-sand">
                     {imovel.kenlo_codigo}
                   </span>
+                  <span
+                    className={`border px-2 py-1 text-[10px] font-medium ${visibilityClass(
+                      imovel
+                    )}`}
+                  >
+                    {visibilityLabel(imovel)}
+                  </span>
                   <span className={`border px-2 py-1 text-[10px] ${statusClass(imovel)}`}>
                     {statusLabel(imovel)}
-                  </span>
-                  <span className="border border-navy/10 px-2 py-1 text-[10px] text-sand">
-                    {imovel.ativo_no_site && imovel.ativo ? "Aparece no site" : "Oculto no site"}
                   </span>
                 </div>
                 <h2 className="mb-2 text-sm font-medium leading-snug">{imovel.titulo}</h2>
@@ -258,7 +283,10 @@ export default async function AdminCuradoriaPage({ searchParams }: PageProps) {
               <form action={updateCuradoriaAction} className="grid grid-cols-3 gap-2 self-start">
                 <input name="id" type="hidden" value={imovel.id} />
                 <button
-                  className="border border-navy/15 px-3 py-2 text-[10px] uppercase tracking-[0.12em] text-navy hover:border-terra hover:text-terra"
+                  className={`border px-3 py-2 text-[10px] uppercase tracking-[0.12em] transition ${overrideButtonClass(
+                    imovel,
+                    "auto"
+                  )}`}
                   name="override"
                   type="submit"
                   value="auto"
@@ -266,7 +294,10 @@ export default async function AdminCuradoriaPage({ searchParams }: PageProps) {
                   Auto
                 </button>
                 <button
-                  className="border border-terra bg-terra px-3 py-2 text-[10px] uppercase tracking-[0.12em] text-white"
+                  className={`border px-3 py-2 text-[10px] uppercase tracking-[0.12em] transition ${overrideButtonClass(
+                    imovel,
+                    "include"
+                  )}`}
                   name="override"
                   type="submit"
                   value="include"
@@ -274,7 +305,10 @@ export default async function AdminCuradoriaPage({ searchParams }: PageProps) {
                   Incluir
                 </button>
                 <button
-                  className="border border-navy bg-navy px-3 py-2 text-[10px] uppercase tracking-[0.12em] text-white"
+                  className={`border px-3 py-2 text-[10px] uppercase tracking-[0.12em] transition ${overrideButtonClass(
+                    imovel,
+                    "exclude"
+                  )}`}
                   name="override"
                   type="submit"
                   value="exclude"
