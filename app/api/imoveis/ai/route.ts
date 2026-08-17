@@ -1,4 +1,5 @@
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
+import { recordAnalyticsEvent, sanitizeAnalyticsText } from "@/lib/analytics";
 
 export const dynamic = "force-dynamic";
 
@@ -90,6 +91,21 @@ export async function POST(request: Request) {
     const data = await response.json();
     const content = data.choices?.[0]?.message?.content;
     const filters = content ? JSON.parse(content) : null;
+
+    if (filters) {
+      after(() =>
+        recordAnalyticsEvent({
+          tipoEvento: "busca_ia_usada",
+          payload: {
+            bairro: filters.bairro,
+            tipo: filters.tipo,
+            valor_min: filters.valorMinimo,
+            valor_max: filters.valorMaximo,
+            termo_livre: sanitizeAnalyticsText(query),
+          },
+        })
+      );
+    }
 
     return NextResponse.json({ ok: Boolean(filters), filters }, { status: 200 });
   } catch (error) {

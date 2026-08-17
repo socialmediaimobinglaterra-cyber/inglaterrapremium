@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { DM_Sans } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import { Footer } from "@/components/layout/Footer";
 import { Header } from "@/components/layout/Header";
 import "./globals.css";
@@ -30,6 +31,7 @@ export default async function RootLayout({
         {isAdmin ? null : <Header />}
         {children}
         {isAdmin ? null : <Footer />}
+        <Analytics />
       </body>
     </html>
   );

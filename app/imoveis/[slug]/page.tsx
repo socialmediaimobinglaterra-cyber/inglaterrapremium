@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { after } from "next/server";
 import { notFound } from "next/navigation";
+import { PropertyContactButton } from "@/components/analytics/PropertyContactButton";
+import { recordAnalyticsEvent } from "@/lib/analytics";
 import {
   getImovelBySlug,
   getSimilarImoveis,
@@ -57,6 +60,18 @@ function plainDescription(imovel: ImovelDetail) {
       .replace(/\n{3,}/g, "\n\n")
       .trim() ?? ""
   );
+}
+
+function whatsappHref(imovel: ImovelDetail) {
+  const phone = (imovel.corretor.celular ?? imovel.corretor.telefone ?? "").replace(/\D/g, "");
+  if (!phone) return null;
+
+  const number = phone.startsWith("55") ? phone : `55${phone}`;
+  const message = encodeURIComponent(
+    `Tenho interesse no imóvel "${imovel.titulo}". Gostaria de agendar uma visita.`
+  );
+
+  return `https://wa.me/${number}?text=${message}`;
 }
 
 function extractDifferentials(description: string | null) {
@@ -199,6 +214,17 @@ export default async function ImovelPage({ params }: PageProps) {
   const imovel = await getImovelBySlug(slug);
   if (!imovel) notFound();
 
+  after(() =>
+    recordAnalyticsEvent({
+      tipoEvento: "visualizacao_imovel",
+      imovelId: imovel.id,
+      payload: {
+        bairro: imovel.bairro,
+        tipo: imovel.tipo,
+      },
+    })
+  );
+
   const [similares, gallery] = await Promise.all([
     getSimilarImoveis(imovel),
     Promise.resolve(getGallery(imovel)),
@@ -206,6 +232,7 @@ export default async function ImovelPage({ params }: PageProps) {
   const description = plainDescription(imovel);
   const differentials = extractDifferentials(imovel.descricao);
   const corretor = imovel.corretor;
+  const contactWhatsappHref = whatsappHref(imovel);
 
   return (
     <main className="bg-offwhite text-navy">
@@ -351,12 +378,10 @@ export default async function ImovelPage({ params }: PageProps) {
                 defaultValue={`Tenho interesse no imóvel "${imovel.titulo}". Gostaria de agendar uma visita.`}
                 rows={3}
               />
-              <button
-                className="mt-1 bg-terra p-3.5 text-[10px] uppercase tracking-[0.2em] text-white"
-                type="button"
-              >
-                Falar com a corretora
-              </button>
+              <PropertyContactButton
+                imovelId={imovel.id}
+                whatsappHref={contactWhatsappHref}
+              />
             </form>
           </div>
         </aside>

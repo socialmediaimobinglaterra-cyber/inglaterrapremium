@@ -184,6 +184,23 @@ create table if not exists sincronizacoes_log (
   metadata jsonb not null default '{}'::jsonb
 );
 
+create table if not exists eventos_analytics (
+  id uuid primary key default gen_random_uuid(),
+  tipo_evento text not null check (
+    tipo_evento in (
+      'visualizacao_imovel',
+      'busca_realizada',
+      'busca_sem_resultado',
+      'clique_contato',
+      'clique_whatsapp',
+      'busca_ia_usada'
+    )
+  ),
+  imovel_id uuid references imoveis(id) on delete set null,
+  payload jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now()
+);
+
 create index if not exists imoveis_bairro_nome_idx on imoveis (bairro_nome);
 create index if not exists imoveis_ativo_premium_idx on imoveis (ativo, is_premium);
 create index if not exists imoveis_ativo_site_idx on imoveis (ativo, ativo_no_site);
@@ -191,6 +208,10 @@ create index if not exists imoveis_elegivel_filtro_automatico_idx on imoveis (el
 create index if not exists imoveis_preco_venda_idx on imoveis (preco_venda);
 create index if not exists imoveis_preco_locacao_idx on imoveis (preco_locacao);
 create index if not exists sincronizacoes_log_started_at_idx on sincronizacoes_log (started_at desc);
+create index if not exists eventos_analytics_tipo_created_at_idx
+  on eventos_analytics (tipo_evento, created_at desc);
+create index if not exists eventos_analytics_imovel_created_at_idx
+  on eventos_analytics (imovel_id, created_at desc);
 
 -- Fase 5.0: fundação do painel Admin (escopo novo fora do plano original).
 create table if not exists admin_users (
