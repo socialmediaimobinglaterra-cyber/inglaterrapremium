@@ -54,6 +54,15 @@ export default async function AdminPage() {
               próximas fases.
             </p>
           </div>
+          <Link
+            className="border border-navy/10 bg-offwhite p-5 transition hover:border-terra"
+            href="/admin/lancamentos"
+          >
+            <h2 className="mb-2 text-sm font-semibold">Lançamentos</h2>
+            <p className="text-sm leading-relaxed text-sand">
+              Cadastrar, editar e remover páginas individuais de lançamentos.
+            </p>
+          </Link>
           {user.role === "admin" ? (
             <Link
               className="border border-navy/10 bg-offwhite p-5 transition hover:border-terra"

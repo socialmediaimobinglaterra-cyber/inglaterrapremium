@@ -6,6 +6,9 @@ type FotoRaw = {
   FotoDescricao?: string;
   FotoTitulo?: string;
   Principal?: string | number;
+  url?: string;
+  alt?: string;
+  principal?: boolean;
 };
 
 type LancamentoRow = Record<string, any>;
@@ -102,11 +105,11 @@ function mapFotos(fotos: FotoRaw[] | null, nome: string) {
   const all = Array.isArray(fotos) ? fotos : [];
 
   return all
-    .filter((foto) => Boolean(foto.URLArquivo))
+    .filter((foto) => Boolean(foto.URLArquivo ?? foto.url))
     .map((foto, index) => ({
-      url: foto.URLArquivo as string,
-      alt: foto.FotoDescricao ?? foto.FotoTitulo ?? `${nome} - foto ${index + 1}`,
-      principal: String(foto.Principal) === "1",
+      url: (foto.URLArquivo ?? foto.url) as string,
+      alt: foto.FotoDescricao ?? foto.FotoTitulo ?? foto.alt ?? `${nome} - foto ${index + 1}`,
+      principal: foto.principal === true || String(foto.Principal) === "1" || index === 0,
     }));
 }
 
@@ -135,7 +138,14 @@ function mapLancamento(row: LancamentoRow): LancamentoDetail {
   const raw = row.raw ?? {};
   const nome = row.nome;
   const bairro = row.bairro_nome ?? row.imovel_bairro_nome ?? "Londrina";
-  const galeria = mapFotos(row.fotos, nome);
+  const imovelEndereco = [row.endereco, row.numero].filter(Boolean).join(", ") || null;
+  const rawGallery = raw && typeof raw === "object" ? (raw as Record<string, unknown>).galeria : null;
+  const galeria = mapFotos(
+    Array.isArray(rawGallery) && rawGallery.length > 0
+      ? (rawGallery as FotoRaw[])
+      : row.fotos,
+    nome
+  );
   const descricao =
     rawString(raw, ["descricao", "descrição", "Descricao", "Descrição", "sobre"]) ??
     row.imovel_descricao ??
@@ -168,9 +178,11 @@ function mapLancamento(row: LancamentoRow): LancamentoDetail {
     descricao,
     descricao2: rawString(raw, ["descricao2", "descrição2", "Descricao2", "Descrição2"]),
     diferenciais,
-    endereco: [row.endereco, row.numero].filter(Boolean).join(", ") || null,
-    latitude: numberOrNull(row.latitude),
-    longitude: numberOrNull(row.longitude),
+    endereco:
+      rawString(raw, ["endereco", "Endereço", "localizacao", "localização"]) ??
+      imovelEndereco,
+    latitude: numberOrNull(rawString(raw, ["latitude"]) ?? row.latitude),
+    longitude: numberOrNull(rawString(raw, ["longitude"]) ?? row.longitude),
     galeria,
     image: getMainImage(galeria),
   };
