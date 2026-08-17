@@ -4,6 +4,7 @@ import { after } from "next/server";
 import { notFound } from "next/navigation";
 import { PropertyContactButton } from "@/components/analytics/PropertyContactButton";
 import { recordAnalyticsEvent } from "@/lib/analytics";
+import { absoluteUrl } from "@/lib/site";
 import {
   getImovelBySlug,
   getSimilarImoveis,
@@ -72,6 +73,15 @@ function whatsappHref(imovel: ImovelDetail) {
   );
 
   return `https://wa.me/${number}?text=${message}`;
+}
+
+function slugify(value: string) {
+  return value
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
 }
 
 function extractDifferentials(description: string | null) {
@@ -209,6 +219,39 @@ function jsonLd(imovel: ImovelDetail) {
   };
 }
 
+function breadcrumbJsonLd(imovel: ImovelDetail) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "Início",
+        item: absoluteUrl("/"),
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: "Imóveis",
+        item: absoluteUrl("/imoveis"),
+      },
+      {
+        "@type": "ListItem",
+        position: 3,
+        name: imovel.bairro,
+        item: absoluteUrl(`/bairros/${slugify(imovel.bairro)}`),
+      },
+      {
+        "@type": "ListItem",
+        position: 4,
+        name: imovel.titulo,
+        item: absoluteUrl(`/imoveis/${imovel.slug}`),
+      },
+    ],
+  };
+}
+
 export default async function ImovelPage({ params }: PageProps) {
   const { slug } = await params;
   const imovel = await getImovelBySlug(slug);
@@ -238,6 +281,10 @@ export default async function ImovelPage({ params }: PageProps) {
     <main className="bg-offwhite text-navy">
       <script
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd(imovel)) }}
+        type="application/ld+json"
+      />
+      <script
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd(imovel)) }}
         type="application/ld+json"
       />
 

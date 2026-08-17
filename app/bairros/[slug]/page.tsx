@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getBairroPageData, type BairroDetail } from "@/lib/queries/bairros";
 import type { ImovelSearchResult } from "@/lib/queries/imoveis";
+import { absoluteUrl } from "@/lib/site";
 
 export const dynamic = "force-dynamic";
 
@@ -38,6 +39,33 @@ function faqJsonLd(bairro: BairroDetail) {
         text: item.answer,
       },
     })),
+  };
+}
+
+function breadcrumbJsonLd(bairro: BairroDetail) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "Início",
+        item: absoluteUrl("/"),
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: "Bairros",
+        item: absoluteUrl("/bairros"),
+      },
+      {
+        "@type": "ListItem",
+        position: 3,
+        name: bairro.nome,
+        item: absoluteUrl(`/bairros/${bairro.slug}`),
+      },
+    ],
   };
 }
 
@@ -112,6 +140,10 @@ export default async function BairroPage({ params }: PageProps) {
           type="application/ld+json"
         />
       ) : null}
+      <script
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd(bairro)) }}
+        type="application/ld+json"
+      />
 
       <section className="relative flex h-[52vh] min-h-[340px] items-end md:h-[66vh] md:min-h-[480px]">
         <img
