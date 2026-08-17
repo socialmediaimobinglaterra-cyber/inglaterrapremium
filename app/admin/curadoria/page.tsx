@@ -17,6 +17,7 @@ type PageProps = {
     q?: string;
     bairro?: string;
     tipo?: string;
+    visibilidade?: string;
     valor_min?: string;
     valor_max?: string;
     ok?: string;
@@ -127,6 +128,14 @@ async function getCuradoriaData(params: Awaited<PageProps["searchParams"]>) {
     where.push(`tipo = $${values.length}`);
   }
 
+  if (params.visibilidade === "no-site") {
+    where.push("ativo_no_site = true");
+  }
+
+  if (params.visibilidade === "fora-site") {
+    where.push("ativo_no_site = false");
+  }
+
   const min = normalizeMoney(params.valor_min);
   if (min !== null) {
     values.push(min);
@@ -201,7 +210,7 @@ export default async function AdminCuradoriaPage({ searchParams }: PageProps) {
           </p>
         ) : null}
 
-        <form className="mb-6 grid grid-cols-1 gap-3 border border-navy/10 bg-white p-4 md:grid-cols-2 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,0.7fr)_minmax(0,0.7fr)_104px]">
+        <form className="mb-6 grid grid-cols-1 gap-3 border border-navy/10 bg-white p-4 md:grid-cols-2 xl:grid-cols-[minmax(0,1.35fr)_minmax(0,0.95fr)_minmax(0,0.95fr)_minmax(0,0.9fr)_minmax(0,0.65fr)_minmax(0,0.65fr)_104px]">
           <input
             className="min-w-0 w-full border border-navy/15 bg-offwhite px-3 py-2 text-sm outline-none focus:border-terra"
             defaultValue={params.q ?? ""}
@@ -231,6 +240,15 @@ export default async function AdminCuradoriaPage({ searchParams }: PageProps) {
                 {tipo}
               </option>
             ))}
+          </select>
+          <select
+            className="min-w-0 w-full border border-navy/15 bg-offwhite px-3 py-2 text-sm outline-none focus:border-terra"
+            defaultValue={params.visibilidade ?? ""}
+            name="visibilidade"
+          >
+            <option value="">Todos os status</option>
+            <option value="no-site">No site</option>
+            <option value="fora-site">Fora do site</option>
           </select>
           <input
             className="min-w-0 w-full border border-navy/15 bg-offwhite px-3 py-2 text-sm outline-none focus:border-terra"
