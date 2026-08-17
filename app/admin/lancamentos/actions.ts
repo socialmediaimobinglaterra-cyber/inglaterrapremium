@@ -57,7 +57,7 @@ function parseGalleryLines(value: string | null, nome: string): GalleryItem[] {
         principal: index === 0,
       };
     })
-    .filter((item) => item.url.startsWith("http"));
+    .filter((item) => item.url.startsWith("http") || item.url.startsWith("/"));
 }
 
 function blobErrorMessage(error: unknown) {
@@ -69,6 +69,10 @@ function blobErrorMessage(error: unknown) {
     /vercel_blob_rw_[A-Za-z0-9_-]+/g,
     "[token oculto]"
   )}`;
+}
+
+function publicBlobImageUrl(blobUrl: string) {
+  return `/api/blob-image?url=${encodeURIComponent(blobUrl)}`;
 }
 
 async function uploadImages(files: FormDataEntryValue[], nome: string) {
@@ -99,13 +103,13 @@ async function uploadImages(files: FormDataEntryValue[], nome: string) {
     const extension = image.name.match(/\.[a-z0-9]+$/i)?.[0]?.toLowerCase() ?? "";
     try {
       const blob = await put(`lancamentos/${slugify(nome)}/${safeName}${extension}`, image, {
-        access: "public",
+        access: "private",
         addRandomSuffix: true,
         token,
       });
 
       uploaded.push({
-        url: blob.url,
+        url: publicBlobImageUrl(blob.url),
         alt: `${nome} - foto ${index + 1}`,
         principal: false,
       });
