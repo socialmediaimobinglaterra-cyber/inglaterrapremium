@@ -201,15 +201,15 @@ export default async function AdminCuradoriaPage({ searchParams }: PageProps) {
           </p>
         ) : null}
 
-        <form className="mb-6 grid grid-cols-1 gap-3 border border-navy/10 bg-white p-4 md:grid-cols-[1.4fr_1fr_1fr_0.7fr_0.7fr_auto]">
+        <form className="mb-6 grid grid-cols-1 gap-3 border border-navy/10 bg-white p-4 md:grid-cols-2 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,0.7fr)_minmax(0,0.7fr)_104px]">
           <input
-            className="border border-navy/15 bg-offwhite px-3 py-2 text-sm outline-none focus:border-terra"
+            className="min-w-0 w-full border border-navy/15 bg-offwhite px-3 py-2 text-sm outline-none focus:border-terra"
             defaultValue={params.q ?? ""}
             name="q"
             placeholder="Titulo, codigo ou bairro"
           />
           <select
-            className="border border-navy/15 bg-offwhite px-3 py-2 text-sm outline-none focus:border-terra"
+            className="min-w-0 w-full border border-navy/15 bg-offwhite px-3 py-2 text-sm outline-none focus:border-terra"
             defaultValue={params.bairro ?? ""}
             name="bairro"
           >
@@ -221,7 +221,7 @@ export default async function AdminCuradoriaPage({ searchParams }: PageProps) {
             ))}
           </select>
           <select
-            className="border border-navy/15 bg-offwhite px-3 py-2 text-sm outline-none focus:border-terra"
+            className="min-w-0 w-full border border-navy/15 bg-offwhite px-3 py-2 text-sm outline-none focus:border-terra"
             defaultValue={params.tipo ?? ""}
             name="tipo"
           >
@@ -233,19 +233,19 @@ export default async function AdminCuradoriaPage({ searchParams }: PageProps) {
             ))}
           </select>
           <input
-            className="border border-navy/15 bg-offwhite px-3 py-2 text-sm outline-none focus:border-terra"
+            className="min-w-0 w-full border border-navy/15 bg-offwhite px-3 py-2 text-sm outline-none focus:border-terra"
             defaultValue={params.valor_min ?? ""}
             name="valor_min"
             placeholder="Valor min."
           />
           <input
-            className="border border-navy/15 bg-offwhite px-3 py-2 text-sm outline-none focus:border-terra"
+            className="min-w-0 w-full border border-navy/15 bg-offwhite px-3 py-2 text-sm outline-none focus:border-terra"
             defaultValue={params.valor_max ?? ""}
             name="valor_max"
             placeholder="Valor max."
           />
           <button
-            className="bg-terra px-5 py-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-white"
+            className="min-w-0 w-full bg-terra px-4 py-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-white"
             type="submit"
           >
             Buscar
