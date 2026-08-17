@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useActionState, useEffect, useMemo, useRef, useState } from "react";
 import { saveLancamentoAction } from "@/app/admin/lancamentos/actions";
 
 type LancamentoFormData = {
@@ -25,6 +25,12 @@ type LancamentoFormData = {
   descricao2?: string | null;
   diferenciais?: string[];
   galeria?: Array<{ url: string; alt?: string }>;
+};
+
+type SelectedImage = {
+  id: string;
+  file: File;
+  previewUrl: string;
 };
 
 function slugify(value: string) {
@@ -89,23 +95,97 @@ function TextArea({
   );
 }
 
+function formatBytes(value: number) {
+  if (value < 1024 * 1024) return `${Math.round(value / 1024)} KB`;
+  return `${(value / (1024 * 1024)).toFixed(1).replace(".", ",")} MB`;
+}
+
 export function LancamentoForm({ lancamento }: { lancamento?: LancamentoFormData | null }) {
+  const [formState, formAction, pending] = useActionState(saveLancamentoAction, {});
   const [nome, setNome] = useState(lancamento?.nome ?? "");
   const [slug, setSlug] = useState(lancamento?.slug ?? "");
   const [slugTouched, setSlugTouched] = useState(Boolean(lancamento?.slug));
+  const [existingImages, setExistingImages] = useState(lancamento?.galeria ?? []);
+  const [selectedImages, setSelectedImages] = useState<SelectedImage[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const objectUrlsRef = useRef<string[]>([]);
 
   useEffect(() => {
     if (!slugTouched) setSlug(slugify(nome));
   }, [nome, slugTouched]);
 
-  const galeriaExistente =
-    lancamento?.galeria
-      ?.map((foto) => `${foto.url}${foto.alt ? ` | ${foto.alt}` : ""}`)
-      .join("\n") ?? "";
+  useEffect(() => {
+    setExistingImages(lancamento?.galeria ?? []);
+    setSelectedImages((current) => {
+      current.forEach((image) => URL.revokeObjectURL(image.previewUrl));
+      return [];
+    });
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }, [lancamento?.id, lancamento?.galeria]);
+
+  useEffect(() => {
+    return () => {
+      objectUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, []);
+
+  const galeriaExistente = useMemo(
+    () =>
+      existingImages
+        .map((foto) => `${foto.url}${foto.alt ? ` | ${foto.alt}` : ""}`)
+        .join("\n"),
+    [existingImages]
+  );
+
+  function syncFileInput(images: SelectedImage[]) {
+    if (!fileInputRef.current || typeof DataTransfer === "undefined") return;
+
+    const transfer = new DataTransfer();
+    images.forEach((image) => transfer.items.add(image.file));
+    fileInputRef.current.files = transfer.files;
+  }
+
+  function handleImageSelect(event: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(event.currentTarget.files ?? []);
+    if (!files.length) return;
+
+    const images = files.map((file) => {
+      const previewUrl = URL.createObjectURL(file);
+      objectUrlsRef.current.push(previewUrl);
+
+      return {
+        id: `${file.name}-${file.size}-${file.lastModified}-${crypto.randomUUID()}`,
+        file,
+        previewUrl,
+      };
+    });
+    const nextImages = [...selectedImages, ...images].slice(0, 8);
+
+    selectedImages
+      .concat(images)
+      .slice(8)
+      .forEach((image) => URL.revokeObjectURL(image.previewUrl));
+    setSelectedImages(nextImages);
+    syncFileInput(nextImages);
+  }
+
+  function removeSelectedImage(id: string) {
+    const removed = selectedImages.find((image) => image.id === id);
+    if (removed) URL.revokeObjectURL(removed.previewUrl);
+
+    const nextImages = selectedImages.filter((image) => image.id !== id);
+    setSelectedImages(nextImages);
+    syncFileInput(nextImages);
+  }
 
   return (
-    <form action={saveLancamentoAction} className="space-y-6" encType="multipart/form-data">
+    <form action={formAction} className="space-y-6" encType="multipart/form-data">
       {lancamento?.id ? <input name="id" type="hidden" value={lancamento.id} /> : null}
+      {formState.error ? (
+        <p className="border border-terra/20 bg-terra/5 px-4 py-3 text-sm leading-relaxed text-terra">
+          {formState.error}
+        </p>
+      ) : null}
 
       <div className="grid gap-4 md:grid-cols-2">
         <label className="block">
@@ -174,12 +254,40 @@ export function LancamentoForm({ lancamento }: { lancamento?: LancamentoFormData
         rows={5}
       />
 
-      <TextArea
-        defaultValue={galeriaExistente}
-        label="Galeria existente - uma URL por linha, opcionalmente URL | alt"
-        name="galeria_existente"
-        rows={Math.max(3, lancamento?.galeria?.length ?? 0)}
-      />
+      <textarea className="hidden" name="galeria_existente" readOnly value={galeriaExistente} />
+
+      {existingImages.length > 0 ? (
+        <div>
+          <span className="mb-2 block text-[10px] font-semibold uppercase tracking-[0.18em] text-sand">
+            Imagens salvas
+          </span>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            {existingImages.map((image, index) => (
+              <div className="border border-navy/10 bg-offwhite p-2" key={`${image.url}-${index}`}>
+                <div className="aspect-[4/3] overflow-hidden bg-white">
+                  <img
+                    alt={image.alt || `${lancamento?.nome ?? "Lançamento"} - foto ${index + 1}`}
+                    className="h-full w-full object-cover"
+                    src={image.url}
+                  />
+                </div>
+                <div className="mt-2 flex items-start justify-between gap-2">
+                  <p className="line-clamp-2 text-xs text-sand">{image.alt || image.url}</p>
+                  <button
+                    className="border border-navy/15 px-2 py-1 text-[9px] uppercase tracking-[0.12em] text-navy hover:border-terra hover:text-terra"
+                    onClick={() =>
+                      setExistingImages((current) => current.filter((_, itemIndex) => itemIndex !== index))
+                    }
+                    type="button"
+                  >
+                    Remover
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
 
       <label className="block">
         <span className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.18em] text-sand">
@@ -190,12 +298,48 @@ export function LancamentoForm({ lancamento }: { lancamento?: LancamentoFormData
           className="w-full border border-navy/15 bg-offwhite px-3 py-2.5 text-sm text-navy file:mr-4 file:border-0 file:bg-navy file:px-4 file:py-2 file:text-[10px] file:uppercase file:tracking-[0.16em] file:text-white"
           multiple
           name="galeria"
+          onChange={handleImageSelect}
+          ref={fileInputRef}
           type="file"
         />
         <span className="mt-1.5 block text-xs text-sand">
           Apenas imagens. Máximo de 8 arquivos por envio, 4 MB por imagem.
         </span>
       </label>
+
+      {selectedImages.length > 0 ? (
+        <div>
+          <span className="mb-2 block text-[10px] font-semibold uppercase tracking-[0.18em] text-sand">
+            Imagens selecionadas
+          </span>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            {selectedImages.map((image) => (
+              <div className="border border-navy/10 bg-offwhite p-2" key={image.id}>
+                <div className="aspect-[4/3] overflow-hidden bg-white">
+                  <img
+                    alt={image.file.name}
+                    className="h-full w-full object-cover"
+                    src={image.previewUrl}
+                  />
+                </div>
+                <div className="mt-2 flex items-start justify-between gap-2">
+                  <div>
+                    <p className="line-clamp-1 text-xs text-navy">{image.file.name}</p>
+                    <p className="mt-0.5 text-[11px] text-sand">{formatBytes(image.file.size)}</p>
+                  </div>
+                  <button
+                    className="border border-navy/15 px-2 py-1 text-[9px] uppercase tracking-[0.12em] text-navy hover:border-terra hover:text-terra"
+                    onClick={() => removeSelectedImage(image.id)}
+                    type="button"
+                  >
+                    Remover
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
 
       <div className="grid gap-4 md:grid-cols-3">
         <Field defaultValue={lancamento?.kenloCodigo} label="Código Kenlo" name="kenlo_codigo" />
@@ -208,9 +352,10 @@ export function LancamentoForm({ lancamento }: { lancamento?: LancamentoFormData
 
       <button
         className="bg-terra px-6 py-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-white"
+        disabled={pending}
         type="submit"
       >
-        Salvar lançamento
+        {pending ? "Salvando..." : "Salvar lançamento"}
       </button>
     </form>
   );

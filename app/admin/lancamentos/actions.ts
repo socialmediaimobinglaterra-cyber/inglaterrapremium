@@ -9,6 +9,10 @@ import { getPool } from "@/lib/db";
 const MAX_IMAGE_SIZE = 4 * 1024 * 1024;
 const MAX_IMAGES = 8;
 
+export type SaveLancamentoState = {
+  error?: string;
+};
+
 type GalleryItem = {
   url: string;
   alt: string;
@@ -59,6 +63,12 @@ function parseGalleryLines(value: string | null, nome: string): GalleryItem[] {
 async function uploadImages(files: FormDataEntryValue[], nome: string) {
   const images = files.filter((file): file is File => file instanceof File && file.size > 0);
 
+  if (images.length > 0 && !process.env.BLOB_READ_WRITE_TOKEN) {
+    throw new Error(
+      "BLOB_READ_WRITE_TOKEN não está disponível no ambiente de produção usado por este deploy."
+    );
+  }
+
   if (images.length > MAX_IMAGES) {
     throw new Error(`Envie no máximo ${MAX_IMAGES} imagens por vez.`);
   }
@@ -74,16 +84,23 @@ async function uploadImages(files: FormDataEntryValue[], nome: string) {
     }
 
     const safeName = slugify(image.name.replace(/\.[^.]+$/, "")) || `imagem-${index + 1}`;
-    const blob = await put(`lancamentos/${slugify(nome)}/${safeName}`, image, {
-      access: "public",
-      addRandomSuffix: true,
-    });
+    try {
+      const blob = await put(`lancamentos/${slugify(nome)}/${safeName}`, image, {
+        access: "public",
+        addRandomSuffix: true,
+      });
 
-    uploaded.push({
-      url: blob.url,
-      alt: `${nome} - foto ${index + 1}`,
-      principal: false,
-    });
+      uploaded.push({
+        url: blob.url,
+        alt: `${nome} - foto ${index + 1}`,
+        principal: false,
+      });
+    } catch (error) {
+      console.error("Falha no upload para Vercel Blob", error);
+      throw new Error(
+        "Não foi possível enviar as imagens para o Vercel Blob. Confira o BLOB_READ_WRITE_TOKEN no projeto de produção correto."
+      );
+    }
   }
 
   return uploaded;
@@ -112,15 +129,29 @@ function buildRaw(formData: FormData, galeria: GalleryItem[]) {
   };
 }
 
-export async function saveLancamentoAction(formData: FormData) {
+function errorState(error: unknown): SaveLancamentoState {
+  if (error instanceof Error && error.message) {
+    return { error: error.message };
+  }
+
+  return {
+    error:
+      "Não foi possível salvar o lançamento agora. Confira os campos e tente novamente.",
+  };
+}
+
+export async function saveLancamentoAction(
+  _previousState: SaveLancamentoState,
+  formData: FormData
+): Promise<SaveLancamentoState> {
   await requireEditor();
 
   const id = stringValue(formData, "id");
   const nome = stringValue(formData, "nome");
-  if (!nome) redirect("/admin/lancamentos?erro=nome");
+  if (!nome) return { error: "Informe o nome do lançamento." };
 
   const slug = slugify(stringValue(formData, "slug") ?? nome);
-  if (!slug) redirect("/admin/lancamentos?erro=slug");
+  if (!slug) return { error: "Informe um slug válido para o lançamento." };
 
   try {
     const existingGallery = parseGalleryLines(stringValue(formData, "galeria_existente"), nome);
@@ -179,7 +210,7 @@ export async function saveLancamentoAction(formData: FormData) {
     revalidatePath("/admin/lancamentos");
   } catch (error) {
     console.error("Erro ao salvar lançamento", error);
-    redirect("/admin/lancamentos?erro=salvar");
+    return errorState(error);
   }
 
   redirect("/admin/lancamentos?ok=1");
