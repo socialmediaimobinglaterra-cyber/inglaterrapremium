@@ -120,13 +120,13 @@ export async function getImoveisFilterOptions() {
     pool.query(`
       select distinct bairro_nome
       from imoveis
-      where ativo = true and is_premium = true and bairro_nome is not null
+      where ativo = true and ativo_no_site = true and bairro_nome is not null
       order by bairro_nome
     `),
     pool.query(`
       select distinct tipo
       from imoveis
-      where ativo = true and is_premium = true and tipo is not null
+      where ativo = true and ativo_no_site = true and tipo is not null
       order by tipo
     `),
   ]);
@@ -140,7 +140,7 @@ export async function getImoveisFilterOptions() {
 export async function searchImoveis(rawFilters: ImovelSearchFilters, limit = 24) {
   const filters = normalizeSearchFilters(rawFilters);
   const values: unknown[] = [];
-  const where = ["ativo = true", "is_premium = true"];
+  const where = ["ativo = true", "ativo_no_site = true"];
 
   if (filters.negocio === "Alugar") {
     where.push("preco_locacao is not null");
@@ -267,7 +267,7 @@ export async function getImovelBySlug(slug: string) {
         area_util, area_total, dormitorios, suites, banheiros, vagas,
         descricao, latitude, longitude, url_kenlo, video_url, corretor, fotos
       from imoveis
-      where slug = $1 and ativo = true and is_premium = true
+      where slug = $1 and ativo = true and ativo_no_site = true
       limit 1
     `,
     [slug]
@@ -284,7 +284,7 @@ export async function getSimilarImoveis(imovel: ImovelDetail, limit = 3) {
         preco_locacao, fotos, is_premium_override
       from imoveis
       where ativo = true
-        and is_premium = true
+        and ativo_no_site = true
         and slug <> $1
         and (bairro_nome = $2 or tipo = $3)
       order by

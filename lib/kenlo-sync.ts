@@ -273,7 +273,8 @@ async function upsertImovel(
   imovel: ParsedImovel,
   bairroId: string | null,
   seenAt: Date,
-  premiumReason: string
+  premiumReason: string,
+  elegivelFiltroAutomatico: boolean
 ) {
   await client.query(
     `
@@ -284,7 +285,8 @@ async function upsertImovel(
         nome_edificio, status_comercial, tipo_oferta, preco_venda,
         preco_locacao, preco_condominio, preco_iptu, area_util, area_total,
         dormitorios, suites, banheiros, vagas, descricao, url_kenlo, video_url,
-        corretor, fotos, raw, is_premium, premium_reason, ativo, last_seen_at,
+        corretor, fotos, raw, elegivel_filtro_automatico, is_premium,
+        premium_reason, ativo, last_seen_at,
         kenlo_updated_at, updated_at
       ) values (
         'kenlo', $1, $1, $2, $3, $4, $5, $6, $7,
@@ -293,8 +295,8 @@ async function upsertImovel(
         $20, $21, $22, $23,
         $24, $25, $26, $27, $28,
         $29, $30, $31, $32, $33, $34, $35,
-        $36::jsonb, $37::jsonb, $38::jsonb, true, $39, true, $40,
-        $41, now()
+        $36::jsonb, $37::jsonb, $38::jsonb, $39, $39, $40, true, $41,
+        $42, now()
       )
       on conflict (kenlo_codigo) do update set
         origem = 'kenlo',
@@ -336,7 +338,8 @@ async function upsertImovel(
         corretor = excluded.corretor,
         fotos = excluded.fotos,
         raw = excluded.raw,
-        is_premium = true,
+        elegivel_filtro_automatico = excluded.elegivel_filtro_automatico,
+        is_premium = excluded.is_premium,
         premium_reason = excluded.premium_reason,
         ativo = true,
         last_seen_at = excluded.last_seen_at,
@@ -383,6 +386,7 @@ async function upsertImovel(
       JSON.stringify(imovel.corretor),
       JSON.stringify(imovel.fotos),
       JSON.stringify(imovel.raw),
+      elegivelFiltroAutomatico,
       premiumReason,
       seenAt,
       imovel.kenloUpdatedAt,
@@ -461,6 +465,7 @@ export async function syncKenlo(pool: Pool, xmlUrl = DEFAULT_KENLO_XML_URL) {
       allowedNormalized.has(normalize(imovel.bairroNome ?? ""))
     );
     const filtered = byAllowedNeighborhood.filter((imovel) => shouldInclude(imovel, config));
+    const automaticCodes = new Set(filtered.map((imovel) => imovel.kenloCodigo));
 
     const bairrosContagem: Record<string, number> = {};
     for (const bairro of config.bairrosPermitidos) bairrosContagem[bairro] = 0;
@@ -472,10 +477,10 @@ export async function syncKenlo(pool: Pool, xmlUrl = DEFAULT_KENLO_XML_URL) {
     }
 
     const before = await client.query(
-      "select kenlo_codigo from imoveis where origem = 'kenlo' and ativo = true and is_premium = true"
+      "select kenlo_codigo from imoveis where origem = 'kenlo' and ativo = true and elegivel_filtro_automatico = true"
     );
     const previousCodes = new Set<string>(before.rows.map((row) => row.kenlo_codigo));
-    const currentCodes = new Set(filtered.map((imovel) => imovel.kenloCodigo));
+    const currentCodes = automaticCodes;
 
     const imoveisEntraram = [...currentCodes].filter(
       (codigo) => !previousCodes.has(codigo)
@@ -490,26 +495,39 @@ export async function syncKenlo(pool: Pool, xmlUrl = DEFAULT_KENLO_XML_URL) {
       bairroIds.set(normalize(bairro), id);
     }
 
-    for (const imovel of filtered) {
+    for (const imovel of parsed) {
       const bairroId = imovel.bairroNome
         ? bairroIds.get(normalize(imovel.bairroNome)) ?? null
         : null;
+      const elegivelFiltroAutomatico = automaticCodes.has(imovel.kenloCodigo);
       const premiumReason = config.valorMinimoPendente
         ? "Bairro permitido; valor mínimo pendente em configuracoes_premium."
         : "Bairro permitido e valor mínimo atendido.";
-      await upsertImovel(client, imovel, bairroId, seenAt, premiumReason);
+      const syncReason = elegivelFiltroAutomatico
+        ? premiumReason
+        : "Fora do filtro premium automatico; disponivel para curadoria manual.";
+      await upsertImovel(
+        client,
+        imovel,
+        bairroId,
+        seenAt,
+        syncReason,
+        elegivelFiltroAutomatico
+      );
     }
 
     await client.query(
       `
         update imoveis
-        set ativo = false, is_premium = false, updated_at = now()
+        set ativo = false,
+          elegivel_filtro_automatico = false,
+          is_premium = false,
+          updated_at = now()
         where origem = 'kenlo'
           and ativo = true
-          and is_premium = true
           and not (kenlo_codigo = any($1::text[]))
       `,
-      [[...currentCodes]]
+      [parsed.map((imovel) => imovel.kenloCodigo)]
     );
 
     await refreshCondominios(client, filtered, bairroIds, seenAt);
@@ -555,7 +573,7 @@ export async function syncKenlo(pool: Pool, xmlUrl = DEFAULT_KENLO_XML_URL) {
           preco_venda,
           preco_locacao
         from imoveis
-        where origem = 'kenlo' and ativo = true and is_premium = true
+        where origem = 'kenlo' and ativo = true and ativo_no_site = true
         order by bairro_nome, preco_venda desc nulls last
         limit 5
       `

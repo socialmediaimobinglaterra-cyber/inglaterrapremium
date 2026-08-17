@@ -108,7 +108,7 @@ export async function getBairroPageData(slug: string) {
           count(*)::int as imoveis_disponiveis
         from imoveis
         where ativo = true
-          and is_premium = true
+          and ativo_no_site = true
           and bairro_id = $1
       `,
       [bairroRow.id]
@@ -120,7 +120,7 @@ export async function getBairroPageData(slug: string) {
           preco_locacao, fotos, is_premium_override
         from imoveis
         where ativo = true
-          and is_premium = true
+          and ativo_no_site = true
           and bairro_id = $1
         order by coalesce(preco_venda, preco_locacao) desc nulls last
         limit 6
@@ -132,7 +132,7 @@ export async function getBairroPageData(slug: string) {
         select fotos
         from imoveis
         where ativo = true
-          and is_premium = true
+          and ativo_no_site = true
           and bairro_id = $1
           and jsonb_array_length(fotos) > 0
         order by coalesce(preco_venda, preco_locacao) desc nulls last
@@ -151,7 +151,7 @@ export async function getBairroPageData(slug: string) {
             select i2.fotos
             from imoveis i2
             where i2.ativo = true
-              and i2.is_premium = true
+              and i2.ativo_no_site = true
               and i2.bairro_id = b.id
               and jsonb_array_length(i2.fotos) > 0
             order by coalesce(i2.preco_venda, i2.preco_locacao) desc nulls last
@@ -159,7 +159,7 @@ export async function getBairroPageData(slug: string) {
           ) as fotos
         from bairros b
         left join imoveis i on i.ativo = true
-          and i.is_premium = true
+          and i.ativo_no_site = true
           and i.bairro_id = b.id
         where b.ativo = true and b.slug <> $1
         group by b.id, b.nome, b.slug, b.cidade

@@ -183,14 +183,14 @@ async function getHomeData() {
       select kenlo_codigo, titulo, bairro_nome, cidade, area_util, area_total,
         dormitorios, preco_venda, preco_locacao, tipo, fotos
       from imoveis
-      where ativo = true and is_premium = true
+      where ativo = true and ativo_no_site = true
       order by coalesce(preco_venda, preco_locacao) desc nulls last
       limit 4
     `),
     pool.query(`
       select b.nome, b.cidade, count(i.id)::int as imoveis
       from bairros b
-      left join imoveis i on i.bairro_id = b.id and i.ativo = true and i.is_premium = true
+      left join imoveis i on i.bairro_id = b.id and i.ativo = true and i.ativo_no_site = true
       where b.ativo = true
       group by b.id, b.nome, b.cidade
       order by imoveis desc, b.nome
@@ -201,7 +201,7 @@ async function getHomeData() {
         count(*)::int as total_imoveis,
         count(distinct bairro_id)::int as total_bairros
       from imoveis
-      where ativo = true and is_premium = true
+      where ativo = true and ativo_no_site = true
     `),
   ]);
 

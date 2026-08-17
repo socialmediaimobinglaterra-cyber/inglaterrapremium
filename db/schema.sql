@@ -79,6 +79,18 @@ create table if not exists imoveis (
   corretor jsonb not null default '{}'::jsonb,
   fotos jsonb not null default '[]'::jsonb,
   raw jsonb not null default '{}'::jsonb,
+  elegivel_filtro_automatico boolean not null default false,
+  inclusao_manual boolean,
+  ativo_no_site boolean generated always as (
+    coalesce(
+      (
+        elegivel_filtro_automatico = true
+        and inclusao_manual is not false
+      )
+      or inclusao_manual = true,
+      false
+    )
+  ) stored,
   is_premium boolean not null default false,
   is_premium_override boolean not null default false,
   premium_reason text,
@@ -91,11 +103,28 @@ create table if not exists imoveis (
 
 alter table imoveis add column if not exists origem text not null default 'kenlo';
 alter table imoveis add column if not exists kenlo_id text;
+alter table imoveis add column if not exists elegivel_filtro_automatico boolean not null default false;
+alter table imoveis add column if not exists inclusao_manual boolean;
+alter table imoveis drop column if exists ativo_no_site;
+alter table imoveis add column ativo_no_site boolean generated always as (
+  coalesce(
+    (
+      elegivel_filtro_automatico = true
+      and inclusao_manual is not false
+    )
+    or inclusao_manual = true,
+    false
+  )
+) stored;
 alter table imoveis alter column kenlo_codigo drop not null;
 alter table imoveis drop constraint if exists imoveis_origem_check;
 alter table imoveis add constraint imoveis_origem_check
   check (origem in ('kenlo', 'manual'));
 update imoveis set origem = 'kenlo' where origem is null;
+update imoveis
+set elegivel_filtro_automatico = is_premium
+where elegivel_filtro_automatico = false
+  and is_premium = true;
 update imoveis
 set kenlo_id = kenlo_codigo
 where origem = 'kenlo'
@@ -154,6 +183,8 @@ create table if not exists sincronizacoes_log (
 
 create index if not exists imoveis_bairro_nome_idx on imoveis (bairro_nome);
 create index if not exists imoveis_ativo_premium_idx on imoveis (ativo, is_premium);
+create index if not exists imoveis_ativo_site_idx on imoveis (ativo, ativo_no_site);
+create index if not exists imoveis_elegivel_filtro_automatico_idx on imoveis (elegivel_filtro_automatico);
 create index if not exists imoveis_preco_venda_idx on imoveis (preco_venda);
 create index if not exists imoveis_preco_locacao_idx on imoveis (preco_locacao);
 create index if not exists sincronizacoes_log_started_at_idx on sincronizacoes_log (started_at desc);
