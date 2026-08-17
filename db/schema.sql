@@ -1,5 +1,22 @@
 create extension if not exists pgcrypto;
 
+create or replace function ativo_no_site(
+  elegivel_filtro_automatico boolean,
+  inclusao_manual boolean
+) returns boolean
+language sql
+immutable
+as $$
+  select coalesce(
+    (
+      elegivel_filtro_automatico = true
+      and inclusao_manual is not false
+    )
+    or inclusao_manual = true,
+    false
+  );
+$$;
+
 create table if not exists bairros (
   id uuid primary key default gen_random_uuid(),
   nome text not null,
@@ -82,14 +99,7 @@ create table if not exists imoveis (
   elegivel_filtro_automatico boolean not null default false,
   inclusao_manual boolean,
   ativo_no_site boolean generated always as (
-    coalesce(
-      (
-        elegivel_filtro_automatico = true
-        and inclusao_manual is not false
-      )
-      or inclusao_manual = true,
-      false
-    )
+    ativo_no_site(elegivel_filtro_automatico, inclusao_manual)
   ) stored,
   is_premium boolean not null default false,
   is_premium_override boolean not null default false,
@@ -107,14 +117,7 @@ alter table imoveis add column if not exists elegivel_filtro_automatico boolean 
 alter table imoveis add column if not exists inclusao_manual boolean;
 alter table imoveis drop column if exists ativo_no_site;
 alter table imoveis add column ativo_no_site boolean generated always as (
-  coalesce(
-    (
-      elegivel_filtro_automatico = true
-      and inclusao_manual is not false
-    )
-    or inclusao_manual = true,
-    false
-  )
+  ativo_no_site(elegivel_filtro_automatico, inclusao_manual)
 ) stored;
 alter table imoveis alter column kenlo_codigo drop not null;
 alter table imoveis drop constraint if exists imoveis_origem_check;
