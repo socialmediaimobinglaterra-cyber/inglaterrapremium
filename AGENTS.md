@@ -37,6 +37,20 @@ Contém protótipos visuais em React + Vite (gerados no Figma Make) — **refer�
 - Se um dado necessário não existir no banco ou nos documentos (ex: campo usado no protótipo sem fonte clara), pergunte antes de inventar ou improvisar.
 - Ao terminar, resuma o que foi feito, o que ficou conectado a dados reais vs. o que continua fixo/placeholder, e qualquer decisão que você precisou tomar no caminho.
 
+## Deploy — regra crítica
+
+O deploy de produção acontece EXCLUSIVAMENTE via push no GitHub (branch main), que já está conectado por webhook ao projeto Vercel correto (time "Inglaterra Premium", domínio inglaterrapremium.vercel.app).
+
+NUNCA rode os seguintes comandos:
+- vercel --prod
+- vercel deploy
+- vercel link (que pode vincular a um projeto/org diferente do correto)
+- qualquer variação de `vercel env add` diretamente via CLI para produção
+
+Se precisar verificar variáveis de ambiente ou configuração, peça para o usuário confirmar diretamente no painel web da Vercel — não gere nem edite configuração de projeto Vercel via CLI.
+
+Se `.vercel/project.json` não existir no ambiente de trabalho, NÃO rode `vercel link` para criá-lo automaticamente — isso pode vincular a um org/projeto errado sem aviso. Se precisar desse arquivo para alguma tarefa legítima, pergunte ao usuário qual projectId/orgId usar antes de prosseguir.
+
 ## Stack de referência rápida
 
 - Next.js 15, App Router, TypeScript, Tailwind CSS
