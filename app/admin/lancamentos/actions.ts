@@ -190,6 +190,11 @@ async function requireEditor() {
 function buildRaw(formData: FormData, capa: GalleryItem | null, galeria: GalleryItem[]) {
   return {
     status: stringValue(formData, "status"),
+    construtoraNome: stringValue(formData, "construtora_nome"),
+    construtoraLogo: parseCover(
+      stringValue(formData, "construtora_logo_final"),
+      stringValue(formData, "construtora_nome") ?? "Construtora"
+    ),
     entrega: stringValue(formData, "entrega"),
     faixa: stringValue(formData, "faixa"),
     metragens: stringValue(formData, "metragens"),
@@ -237,6 +242,31 @@ export async function saveLancamentoAction(
       formData.getAll("capa_alinhamento")
     );
     const capa = uploadedCover[0] ?? existingCover ?? null;
+
+    const existingBuilderLogo = parseCover(
+      stringValue(formData, "construtora_logo_existente"),
+      nome
+    );
+    const uploadedBuilderLogo = await uploadImages(
+      formData.getAll("construtora_logo"),
+      nome,
+      []
+    );
+    const construtoraNome = stringValue(formData, "construtora_nome");
+    const construtoraLogo = uploadedBuilderLogo[0] ?? existingBuilderLogo ?? null;
+    formData.set(
+      "construtora_logo_final",
+      construtoraLogo
+        ? JSON.stringify([
+            {
+              ...construtoraLogo,
+              alt: construtoraNome
+                ? `Logo ${construtoraNome}`
+                : construtoraLogo.alt || "Logo da construtora",
+            },
+          ])
+        : ""
+    );
 
     const existingGallery = parseGalleryLines(stringValue(formData, "galeria_existente"), nome);
     const uploadedGallery = await uploadImages(

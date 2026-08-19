@@ -14,6 +14,8 @@ type LancamentoFormData = {
   imovelId?: string | null;
   ativo?: boolean;
   status?: string | null;
+  construtoraNome?: string | null;
+  construtoraLogo?: { url: string; alt?: string; position?: string } | null;
   entrega?: string | null;
   faixa?: string | null;
   metragens?: string | null;
@@ -182,11 +184,16 @@ export function LancamentoForm({ lancamento }: { lancamento?: LancamentoFormData
     lancamento?.capa ?? null
   );
   const [selectedCover, setSelectedCover] = useState<SelectedImage | null>(null);
+  const [existingBuilderLogo, setExistingBuilderLogo] = useState<EditableImage | null>(
+    lancamento?.construtoraLogo ?? null
+  );
+  const [selectedBuilderLogo, setSelectedBuilderLogo] = useState<SelectedImage | null>(null);
   const [existingImages, setExistingImages] = useState<EditableImage[]>(
     lancamento?.galeria ?? []
   );
   const [selectedImages, setSelectedImages] = useState<SelectedImage[]>([]);
   const coverInputRef = useRef<HTMLInputElement>(null);
+  const builderLogoInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const objectUrlsRef = useRef<string[]>([]);
 
@@ -196,16 +203,20 @@ export function LancamentoForm({ lancamento }: { lancamento?: LancamentoFormData
 
   useEffect(() => {
     if (selectedCover) URL.revokeObjectURL(selectedCover.previewUrl);
+    if (selectedBuilderLogo) URL.revokeObjectURL(selectedBuilderLogo.previewUrl);
     setExistingCover(lancamento?.capa ?? null);
     setSelectedCover(null);
+    setExistingBuilderLogo(lancamento?.construtoraLogo ?? null);
+    setSelectedBuilderLogo(null);
     setExistingImages(lancamento?.galeria ?? []);
     setSelectedImages((current) => {
       current.forEach((image) => URL.revokeObjectURL(image.previewUrl));
       return [];
     });
     if (coverInputRef.current) coverInputRef.current.value = "";
+    if (builderLogoInputRef.current) builderLogoInputRef.current.value = "";
     if (fileInputRef.current) fileInputRef.current.value = "";
-  }, [lancamento?.id, lancamento?.capa, lancamento?.galeria]);
+  }, [lancamento?.id, lancamento?.capa, lancamento?.construtoraLogo, lancamento?.galeria]);
 
   useEffect(() => {
     return () => {
@@ -216,6 +227,11 @@ export function LancamentoForm({ lancamento }: { lancamento?: LancamentoFormData
   const capaExistente = useMemo(
     () => (existingCover ? JSON.stringify([{ ...existingCover, position: normalizePosition(existingCover.position) }]) : ""),
     [existingCover]
+  );
+
+  const construtoraLogoExistente = useMemo(
+    () => (existingBuilderLogo ? JSON.stringify([{ ...existingBuilderLogo }]) : ""),
+    [existingBuilderLogo]
   );
 
   const galeriaExistente = useMemo(
@@ -278,10 +294,32 @@ export function LancamentoForm({ lancamento }: { lancamento?: LancamentoFormData
     });
   }
 
+  function handleBuilderLogoSelect(event: React.ChangeEvent<HTMLInputElement>) {
+    const [file] = Array.from(event.currentTarget.files ?? []);
+    if (!file) return;
+
+    if (selectedBuilderLogo) URL.revokeObjectURL(selectedBuilderLogo.previewUrl);
+
+    const previewUrl = URL.createObjectURL(file);
+    objectUrlsRef.current.push(previewUrl);
+    setSelectedBuilderLogo({
+      id: `${file.name}-${file.size}-${file.lastModified}-${crypto.randomUUID()}`,
+      file,
+      previewUrl,
+      position: "center center",
+    });
+  }
+
   function removeSelectedCover() {
     if (selectedCover) URL.revokeObjectURL(selectedCover.previewUrl);
     setSelectedCover(null);
     if (coverInputRef.current) coverInputRef.current.value = "";
+  }
+
+  function removeSelectedBuilderLogo() {
+    if (selectedBuilderLogo) URL.revokeObjectURL(selectedBuilderLogo.previewUrl);
+    setSelectedBuilderLogo(null);
+    if (builderLogoInputRef.current) builderLogoInputRef.current.value = "";
   }
 
   function updateSelectedImagePosition(id: string, position: ImagePosition) {
@@ -346,11 +384,95 @@ export function LancamentoForm({ lancamento }: { lancamento?: LancamentoFormData
 
       <div className="grid gap-4 md:grid-cols-3">
         <Field defaultValue={lancamento?.status} label="Status" name="status" />
+        <Field
+          defaultValue={lancamento?.construtoraNome}
+          label="Nome da construtora"
+          name="construtora_nome"
+        />
         <Field defaultValue={lancamento?.entrega} label="Entrega" name="entrega" />
-        <Field defaultValue={lancamento?.faixa} label="Faixa de valor" name="faixa" />
+      </div>
+
+      <textarea
+        className="hidden"
+        name="construtora_logo_existente"
+        readOnly
+        value={construtoraLogoExistente}
+      />
+
+      <div className="border border-navy/10 bg-offwhite p-4">
+        <span className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.18em] text-sand">
+          Logo da construtora
+        </span>
+        <p className="mb-3 text-xs leading-relaxed text-sand">
+          Campo opcional. Use arquivo de imagem em PNG, JPG ou WebP.
+        </p>
+
+        {existingBuilderLogo && !selectedBuilderLogo ? (
+          <div className="mb-4 flex items-center justify-between gap-3 border border-navy/10 bg-white p-3">
+            <div className="flex items-center gap-3">
+              <div className="flex h-16 w-28 items-center justify-center overflow-hidden border border-navy/10 bg-offwhite p-2">
+                <img
+                  alt={existingBuilderLogo.alt || "Logo da construtora"}
+                  className="max-h-full max-w-full object-contain"
+                  src={existingBuilderLogo.url}
+                />
+              </div>
+              <p className="line-clamp-2 text-xs text-sand">
+                {existingBuilderLogo.alt || existingBuilderLogo.url}
+              </p>
+            </div>
+            <button
+              className="border border-navy/15 px-2 py-1 text-[9px] uppercase tracking-[0.12em] text-navy hover:border-terra hover:text-terra"
+              onClick={() => setExistingBuilderLogo(null)}
+              type="button"
+            >
+              Remover
+            </button>
+          </div>
+        ) : null}
+
+        {selectedBuilderLogo ? (
+          <div className="mb-4 flex items-center justify-between gap-3 border border-navy/10 bg-white p-3">
+            <div className="flex items-center gap-3">
+              <div className="flex h-16 w-28 items-center justify-center overflow-hidden border border-navy/10 bg-offwhite p-2">
+                <img
+                  alt={selectedBuilderLogo.file.name}
+                  className="max-h-full max-w-full object-contain"
+                  src={selectedBuilderLogo.previewUrl}
+                />
+              </div>
+              <div>
+                <p className="line-clamp-1 text-xs text-navy">{selectedBuilderLogo.file.name}</p>
+                <p className="mt-0.5 text-[11px] text-sand">
+                  {formatBytes(selectedBuilderLogo.file.size)}
+                </p>
+              </div>
+            </div>
+            <button
+              className="border border-navy/15 px-2 py-1 text-[9px] uppercase tracking-[0.12em] text-navy hover:border-terra hover:text-terra"
+              onClick={removeSelectedBuilderLogo}
+              type="button"
+            >
+              Remover
+            </button>
+          </div>
+        ) : null}
+
+        <input
+          accept="image/*"
+          className="w-full border border-navy/15 bg-white px-3 py-2.5 text-sm text-navy file:mr-4 file:border-0 file:bg-navy file:px-4 file:py-2 file:text-[10px] file:uppercase file:tracking-[0.16em] file:text-white"
+          name="construtora_logo"
+          onChange={handleBuilderLogoSelect}
+          ref={builderLogoInputRef}
+          type="file"
+        />
+        <span className="mt-1.5 block text-xs text-sand">
+          Opcional. Máximo de 4 MB.
+        </span>
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
+        <Field defaultValue={lancamento?.faixa} label="Faixa de valor" name="faixa" />
         <Field defaultValue={lancamento?.metragens} label="Metragens" name="metragens" />
         <Field defaultValue={lancamento?.unidades} label="Unidades" name="unidades" />
         <Field defaultValue={lancamento?.endereco} label="Endereço" name="endereco" />

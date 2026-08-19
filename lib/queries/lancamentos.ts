@@ -27,6 +27,13 @@ export type LancamentoResumo = {
 };
 
 export type LancamentoDetail = LancamentoResumo & {
+  construtoraNome: string | null;
+  construtoraLogo: {
+    url: string;
+    alt: string;
+    principal: boolean;
+    position: string;
+  } | null;
   entrega: string | null;
   faixa: string | null;
   metragens: string | null;
@@ -171,6 +178,8 @@ function mapLancamento(row: LancamentoRow): LancamentoDetail {
   const imovelEndereco = [row.endereco, row.numero].filter(Boolean).join(", ") || null;
   const rawGallery = raw && typeof raw === "object" ? (raw as Record<string, unknown>).galeria : null;
   const rawCover = raw && typeof raw === "object" ? (raw as Record<string, unknown>).capa : null;
+  const rawBuilderLogo =
+    raw && typeof raw === "object" ? (raw as Record<string, unknown>).construtoraLogo : null;
   const galeria = mapFotos(
     Array.isArray(rawGallery) && rawGallery.length > 0
       ? (rawGallery as FotoRaw[])
@@ -182,6 +191,14 @@ function mapLancamento(row: LancamentoRow): LancamentoDetail {
       ? (rawCover as FotoRaw[])
       : rawCover && typeof rawCover === "object"
         ? [rawCover as FotoRaw]
+        : null,
+    nome
+  );
+  const [construtoraLogo] = mapFotos(
+    Array.isArray(rawBuilderLogo)
+      ? (rawBuilderLogo as FotoRaw[])
+      : rawBuilderLogo && typeof rawBuilderLogo === "object"
+        ? [rawBuilderLogo as FotoRaw]
         : null,
     nome
   );
@@ -210,6 +227,8 @@ function mapLancamento(row: LancamentoRow): LancamentoDetail {
     cidade: row.cidade ?? "Londrina",
     estado: row.estado ?? "PR",
     status: rawString(raw, ["status", "Status", "situacao", "situação"]),
+    construtoraNome: rawString(raw, ["construtoraNome", "construtora_nome", "Construtora"]),
+    construtoraLogo: construtoraLogo ?? null,
     entrega: rawString(raw, ["entrega", "Entrega", "previsao_entrega", "previsão_entrega"]),
     faixa,
     metragens,

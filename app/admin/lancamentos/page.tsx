@@ -32,6 +32,8 @@ type LancamentoAdmin = {
   imovelId: string | null;
   ativo: boolean;
   status: string | null;
+  construtoraNome: string | null;
+  construtoraLogo: { url: string; alt?: string; position?: string } | null;
   entrega: string | null;
   faixa: string | null;
   metragens: string | null;
@@ -97,6 +99,8 @@ function mapLancamento(row: Record<string, any>): LancamentoAdmin {
     imovelId: row.imovel_id,
     ativo: row.ativo,
     status: rawString(raw, "status"),
+    construtoraNome: rawString(raw, "construtoraNome"),
+    construtoraLogo: rawCover({ capa: raw.construtoraLogo }),
     entrega: rawString(raw, "entrega"),
     faixa: rawString(raw, "faixa"),
     metragens: rawString(raw, "metragens"),

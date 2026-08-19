@@ -175,6 +175,24 @@ export default async function LancamentoPage({ params }: PageProps) {
         {lancamento.entrega ? (
           <p className="text-[13px] text-sand">{lancamento.entrega}</p>
         ) : null}
+        {(lancamento.construtoraNome || lancamento.construtoraLogo) ? (
+          <div className="mt-5 flex flex-wrap items-center gap-3">
+            {lancamento.construtoraLogo ? (
+              <div className="flex h-12 max-w-[150px] items-center justify-center border border-navy/10 bg-white px-3 py-2">
+                <img
+                  alt={lancamento.construtoraLogo.alt || "Logo da construtora"}
+                  className="max-h-full max-w-full object-contain"
+                  src={lancamento.construtoraLogo.url}
+                />
+              </div>
+            ) : null}
+            {lancamento.construtoraNome ? (
+              <p className="text-[11px] uppercase tracking-[0.14em] text-sand">
+                Construtora · {lancamento.construtoraNome}
+              </p>
+            ) : null}
+          </div>
+        ) : null}
       </div>
 
       <div className="site-container pt-5 md:pt-7">
