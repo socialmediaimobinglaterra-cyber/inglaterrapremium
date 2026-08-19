@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
 
 type GalleryImage = {
   url: string;
@@ -21,18 +21,24 @@ export function GalleryLightbox({
   onClose: () => void;
   onSelect: (index: number) => void;
 }) {
-  const activeImage = images[activeIndex];
+  const safeIndex =
+    images.length > 0 ? Math.min(Math.max(activeIndex, 0), images.length - 1) : 0;
+  const activeImage = images[safeIndex];
   const hasMultiple = images.length > 1;
 
-  function previousImage() {
-    onSelect(activeIndex === 0 ? images.length - 1 : activeIndex - 1);
-  }
+  const previousImage = useCallback(() => {
+    if (!hasMultiple) return;
+    onSelect(safeIndex === 0 ? images.length - 1 : safeIndex - 1);
+  }, [hasMultiple, images.length, onSelect, safeIndex]);
 
-  function nextImage() {
-    onSelect(activeIndex === images.length - 1 ? 0 : activeIndex + 1);
-  }
+  const nextImage = useCallback(() => {
+    if (!hasMultiple) return;
+    onSelect(safeIndex === images.length - 1 ? 0 : safeIndex + 1);
+  }, [hasMultiple, images.length, onSelect, safeIndex]);
 
   useEffect(() => {
+    if (typeof document === "undefined" || !document.body) return;
+
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
 
@@ -48,7 +54,7 @@ export function GalleryLightbox({
       document.body.style.overflow = previousOverflow;
       window.removeEventListener("keydown", handleKeyDown);
     };
-  });
+  }, [hasMultiple, nextImage, onClose, previousImage]);
 
   if (!activeImage) return null;
 
@@ -61,7 +67,7 @@ export function GalleryLightbox({
     >
       <div className="flex items-center justify-between border-b border-white/10 px-4 py-3 md:px-6">
         <p className="text-[10px] uppercase tracking-[0.18em] text-white/60">
-          {activeIndex + 1} / {images.length}
+          {safeIndex + 1} / {images.length}
         </p>
         <button
           className="border border-white/20 px-4 py-2 text-[10px] uppercase tracking-[0.16em] text-white transition hover:border-terra-light hover:text-terra-light"
@@ -85,7 +91,7 @@ export function GalleryLightbox({
         ) : null}
 
         <img
-          alt={activeImage.alt || `${nome} - foto ${activeIndex + 1}`}
+          alt={activeImage.alt || `${nome} - foto ${safeIndex + 1}`}
           className="max-h-full max-w-full object-contain"
           src={activeImage.url}
         />
@@ -109,7 +115,7 @@ export function GalleryLightbox({
               <button
                 aria-label={`Abrir foto ${index + 1}`}
                 className={`h-14 w-20 shrink-0 overflow-hidden border-2 md:h-16 md:w-24 ${
-                  index === activeIndex ? "border-terra-light" : "border-transparent"
+                  index === safeIndex ? "border-terra-light" : "border-transparent"
                 }`}
                 key={`${image.url}-${index}`}
                 onClick={() => onSelect(index)}
