@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { GalleryLightbox } from "@/components/ui/GalleryLightbox";
 
 type GalleryImage = {
   url: string;
@@ -16,6 +17,7 @@ export function LancamentoGallery({
   nome: string;
 }) {
   const [activeIndex, setActiveIndex] = useState(0);
+  const [modalIndex, setModalIndex] = useState<number | null>(null);
 
   if (images.length === 0) {
     return (
@@ -28,14 +30,19 @@ export function LancamentoGallery({
   return (
     <>
       <div className="md:hidden">
-        <div className="aspect-[4/3] overflow-hidden">
+        <button
+          aria-label={`Abrir foto ${activeIndex + 1} em tela cheia`}
+          className="block aspect-[4/3] w-full cursor-zoom-in overflow-hidden border-0 bg-transparent p-0"
+          onClick={() => setModalIndex(activeIndex)}
+          type="button"
+        >
           <img
             alt={images[activeIndex]?.alt ?? `${nome} - foto ${activeIndex + 1}`}
             className="h-full w-full object-cover"
             src={images[activeIndex]?.url}
             style={{ objectPosition: images[activeIndex]?.position ?? "center center" }}
           />
-        </div>
+        </button>
         <div className="mt-2 flex gap-1.5 overflow-x-auto">
           {images.map((image, index) => (
             <button
@@ -43,7 +50,10 @@ export function LancamentoGallery({
                 index === activeIndex ? "border-terra" : "border-transparent"
               }`}
               key={`${image.url}-${index}`}
-              onClick={() => setActiveIndex(index)}
+              onClick={() => {
+                setActiveIndex(index);
+                setModalIndex(index);
+              }}
               type="button"
             >
               <img
@@ -58,17 +68,28 @@ export function LancamentoGallery({
       </div>
 
       <div className="hidden h-[520px] grid-cols-[1.7fr_1fr] gap-2 md:grid">
-        <div className="overflow-hidden">
+        <button
+          aria-label="Abrir foto principal em tela cheia"
+          className="h-full w-full cursor-zoom-in overflow-hidden border-0 bg-transparent p-0"
+          onClick={() => setModalIndex(0)}
+          type="button"
+        >
           <img
             alt={images[0]?.alt ?? `${nome} - perspectiva principal`}
             className="h-full w-full object-cover"
             src={images[0]?.url}
             style={{ objectPosition: images[0]?.position ?? "center center" }}
           />
-        </div>
+        </button>
         <div className="grid grid-cols-2 grid-rows-2 gap-2">
           {images.slice(1, 5).map((image, index) => (
-            <div className="relative overflow-hidden" key={`${image.url}-${index}`}>
+            <button
+              aria-label={`Abrir foto ${index + 2} em tela cheia`}
+              className="relative h-full w-full cursor-zoom-in overflow-hidden border-0 bg-transparent p-0"
+              key={`${image.url}-${index}`}
+              onClick={() => setModalIndex(index + 1)}
+              type="button"
+            >
               <img
                 alt={image.alt}
                 className="h-full w-full object-cover"
@@ -80,10 +101,20 @@ export function LancamentoGallery({
                   + {images.length - 5} fotos
                 </div>
               ) : null}
-            </div>
+            </button>
           ))}
         </div>
       </div>
+
+      {modalIndex !== null ? (
+        <GalleryLightbox
+          activeIndex={modalIndex}
+          images={images}
+          nome={nome}
+          onClose={() => setModalIndex(null)}
+          onSelect={setModalIndex}
+        />
+      ) : null}
     </>
   );
 }
