@@ -71,7 +71,7 @@ function DesktopDropdown({ item, active }: { item: NavItem; active: boolean }) {
       </button>
       {entries.length > 0 ? (
         <div className="invisible absolute left-1/2 top-full z-[60] w-64 -translate-x-1/2 pt-5 opacity-0 transition duration-200 group-hover:visible group-hover:opacity-100">
-          <div className="border border-navy/10 bg-offwhite shadow-nav-blur">
+          <div className="max-h-[calc(100dvh-92px)] overflow-y-auto overscroll-contain border border-navy/10 bg-offwhite shadow-nav-blur">
             {entries.map((entry) => (
               <Link
                 className="nav-focus block border-b border-navy/10 px-5 py-4 text-[11px] tracking-[0.08em] text-navy/55 transition duration-200 last:border-b-0 hover:bg-white/55 hover:text-terra"
@@ -123,8 +123,8 @@ function MobileDropdown({
       </button>
       {entries.length > 0 ? (
         <div
-          className={`overflow-hidden bg-white/25 transition-[max-height] duration-300 ${
-            open ? "max-h-56" : "max-h-0"
+          className={`overflow-y-auto overscroll-contain bg-white/25 transition-[max-height] duration-300 ${
+            open ? "max-h-[min(50dvh,360px)]" : "max-h-0 overflow-hidden"
           }`}
         >
           {entries.map((entry) => (
@@ -228,8 +228,8 @@ export function HeaderClient({
       </nav>
 
       <div
-        className={`fixed left-0 right-0 top-[54px] z-[49] overflow-hidden border-b border-navy/10 bg-offwhite transition-[max-height] duration-300 md:hidden ${
-          navOpen ? "max-h-[620px]" : "max-h-0"
+        className={`fixed left-0 right-0 top-[54px] z-[49] overflow-y-auto overscroll-contain border-b border-navy/10 bg-offwhite transition-[max-height] duration-300 md:hidden ${
+          navOpen ? "max-h-[calc(100dvh-54px)]" : "max-h-0 overflow-hidden"
         }`}
       >
         {navItems.map((item) => {
