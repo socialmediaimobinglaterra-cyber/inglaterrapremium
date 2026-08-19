@@ -17,13 +17,10 @@ type NavItem = {
   dropdown?: NavDropdownItem[];
 };
 
-const condominios = [
-  { label: "Royal Golf Residence", href: "/condominios/royal-golf-residence" },
-  { label: "Country Club", href: "/condominios/country-club" },
-  { label: "Terras de Canaã", href: "/condominios/terras-de-canaa" },
-];
-
-function getNavItems(lancamentos: NavDropdownItem[]): NavItem[] {
+function getNavItems(
+  lancamentos: NavDropdownItem[],
+  condominios: NavDropdownItem[]
+): NavItem[] {
   return [
     { label: "Comprar", href: "/imoveis" },
     { label: "Alugar", href: "/imoveis/alugar" },
@@ -146,10 +143,16 @@ function MobileDropdown({
   );
 }
 
-export function HeaderClient({ lancamentos }: { lancamentos: NavDropdownItem[] }) {
+export function HeaderClient({
+  condominios,
+  lancamentos,
+}: {
+  condominios: NavDropdownItem[];
+  lancamentos: NavDropdownItem[];
+}) {
   const pathname = usePathname();
   const [navOpen, setNavOpen] = useState(false);
-  const navItems = getNavItems(lancamentos);
+  const navItems = getNavItems(lancamentos, condominios);
 
   return (
     <>
