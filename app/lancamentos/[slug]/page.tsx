@@ -268,7 +268,7 @@ export default async function LancamentoPage({ params }: PageProps) {
         </section>
       ) : null}
 
-      <section className="site-container pb-10 md:pb-16">
+      <section className="site-container pb-10 pt-10 md:pb-16 md:pt-16">
         <h2 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.16em]">
           Galeria de fotos
         </h2>
