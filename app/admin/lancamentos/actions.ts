@@ -17,6 +17,7 @@ type GalleryItem = {
   url: string;
   alt: string;
   principal: boolean;
+  position: string;
 };
 
 function slugify(value: string) {
@@ -42,22 +43,71 @@ function textLines(value: string | null) {
     .filter(Boolean);
 }
 
+function normalizePosition(value: string | null) {
+  const allowed = new Set([
+    "left top",
+    "center top",
+    "right top",
+    "left center",
+    "center center",
+    "right center",
+    "left bottom",
+    "center bottom",
+    "right bottom",
+  ]);
+
+  return value && allowed.has(value) ? value : "center center";
+}
+
 function parseGalleryLines(value: string | null, nome: string): GalleryItem[] {
   if (!value) return [];
 
+  try {
+    const parsed = JSON.parse(value);
+    if (Array.isArray(parsed)) {
+      return parsed
+        .map((item, index) => {
+          if (!item || typeof item !== "object") return null;
+          const record = item as Record<string, unknown>;
+          const url = typeof record.url === "string" ? record.url : "";
+          const alt = typeof record.alt === "string" ? record.alt : "";
+          const position = typeof record.position === "string" ? record.position : null;
+
+          return {
+            url,
+            alt: alt || `${nome} - foto ${index + 1}`,
+            principal: record.principal === true || index === 0,
+            position: normalizePosition(position),
+          };
+        })
+        .filter(
+          (item): item is GalleryItem =>
+            Boolean(item?.url.startsWith("http") || item?.url.startsWith("/"))
+        );
+    }
+  } catch {
+    // Mantém compatibilidade com o formato antigo "url | alt".
+  }
+
   return value
     .split(/\r?\n/)
-    .map((line, index) => line.trim())
+    .map((line) => line.trim())
     .filter(Boolean)
     .map((line, index) => {
-      const [url, alt] = line.split("|").map((part) => part.trim());
+      const [url, alt, position] = line.split("|").map((part) => part.trim());
       return {
         url,
         alt: alt || `${nome} - foto ${index + 1}`,
         principal: index === 0,
+        position: normalizePosition(position),
       };
     })
     .filter((item) => item.url.startsWith("http") || item.url.startsWith("/"));
+}
+
+function parseCover(value: string | null, nome: string): GalleryItem | null {
+  const [cover] = parseGalleryLines(value, nome);
+  return cover ?? null;
 }
 
 function blobErrorMessage(error: unknown) {
@@ -75,7 +125,11 @@ function publicBlobImageUrl(blobUrl: string) {
   return `/api/blob-image?url=${encodeURIComponent(blobUrl)}`;
 }
 
-async function uploadImages(files: FormDataEntryValue[], nome: string) {
+async function uploadImages(
+  files: FormDataEntryValue[],
+  nome: string,
+  positions: FormDataEntryValue[]
+) {
   const images = files.filter((file): file is File => file instanceof File && file.size > 0);
   const token = process.env.BLOB_READ_WRITE_TOKEN;
 
@@ -112,6 +166,9 @@ async function uploadImages(files: FormDataEntryValue[], nome: string) {
         url: publicBlobImageUrl(blob.url),
         alt: `${nome} - foto ${index + 1}`,
         principal: false,
+        position: normalizePosition(
+          typeof positions[index] === "string" ? positions[index] : null
+        ),
       });
     } catch (error) {
       console.error("Falha no upload para Vercel Blob", error);
@@ -130,7 +187,7 @@ async function requireEditor() {
   return user;
 }
 
-function buildRaw(formData: FormData, galeria: GalleryItem[]) {
+function buildRaw(formData: FormData, capa: GalleryItem | null, galeria: GalleryItem[]) {
   return {
     status: stringValue(formData, "status"),
     entrega: stringValue(formData, "entrega"),
@@ -143,6 +200,7 @@ function buildRaw(formData: FormData, galeria: GalleryItem[]) {
     descricao: stringValue(formData, "descricao"),
     descricao2: stringValue(formData, "descricao2"),
     diferenciais: textLines(stringValue(formData, "diferenciais")),
+    capa,
     galeria,
   };
 }
@@ -172,13 +230,26 @@ export async function saveLancamentoAction(
   if (!slug) return { error: "Informe um slug válido para o lançamento." };
 
   try {
+    const existingCover = parseCover(stringValue(formData, "capa_existente"), nome);
+    const uploadedCover = await uploadImages(
+      formData.getAll("capa"),
+      nome,
+      formData.getAll("capa_alinhamento")
+    );
+    const capa = uploadedCover[0] ?? existingCover ?? null;
+
     const existingGallery = parseGalleryLines(stringValue(formData, "galeria_existente"), nome);
-    const uploadedGallery = await uploadImages(formData.getAll("galeria"), nome);
+    const uploadedGallery = await uploadImages(
+      formData.getAll("galeria"),
+      nome,
+      formData.getAll("galeria_alinhamento")
+    );
     const galeria = [...existingGallery, ...uploadedGallery].map((item, index) => ({
       ...item,
       principal: index === 0,
+      position: normalizePosition(item.position),
     }));
-    const raw = buildRaw(formData, galeria);
+    const raw = buildRaw(formData, capa, galeria);
 
     const values = [
       stringValue(formData, "kenlo_codigo"),

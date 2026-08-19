@@ -24,14 +24,45 @@ type LancamentoFormData = {
   descricao?: string | null;
   descricao2?: string | null;
   diferenciais?: string[];
-  galeria?: Array<{ url: string; alt?: string }>;
+  capa?: { url: string; alt?: string; position?: string } | null;
+  galeria?: Array<{ url: string; alt?: string; position?: string }>;
 };
 
 type SelectedImage = {
   id: string;
   file: File;
   previewUrl: string;
+  position: ImagePosition;
 };
+
+type ImagePosition =
+  | "left top"
+  | "center top"
+  | "right top"
+  | "left center"
+  | "center center"
+  | "right center"
+  | "left bottom"
+  | "center bottom"
+  | "right bottom";
+
+type EditableImage = {
+  url: string;
+  alt?: string;
+  position?: string;
+};
+
+const imagePositions: Array<{ value: ImagePosition; label: string }> = [
+  { value: "left top", label: "TL" },
+  { value: "center top", label: "TC" },
+  { value: "right top", label: "TR" },
+  { value: "left center", label: "CL" },
+  { value: "center center", label: "C" },
+  { value: "right center", label: "CR" },
+  { value: "left bottom", label: "BL" },
+  { value: "center bottom", label: "BC" },
+  { value: "right bottom", label: "BR" },
+];
 
 function slugify(value: string) {
   return value
@@ -100,13 +131,62 @@ function formatBytes(value: number) {
   return `${(value / (1024 * 1024)).toFixed(1).replace(".", ",")} MB`;
 }
 
+function normalizePosition(value?: string | null): ImagePosition {
+  return imagePositions.some((item) => item.value === value)
+    ? (value as ImagePosition)
+    : "center center";
+}
+
+function ImageAlignmentGrid({
+  name,
+  value,
+  onChange,
+}: {
+  name?: string;
+  value: ImagePosition;
+  onChange: (value: ImagePosition) => void;
+}) {
+  return (
+    <div>
+      {name ? <input name={name} type="hidden" value={value} /> : null}
+      <span className="mb-1.5 block text-[9px] font-semibold uppercase tracking-[0.16em] text-sand">
+        Alinhamento
+      </span>
+      <div className="grid w-[94px] grid-cols-3 gap-1">
+        {imagePositions.map((position) => (
+          <button
+            aria-label={`Alinhar imagem: ${position.value}`}
+            className={`h-7 border text-[11px] ${
+              value === position.value
+                ? "border-navy bg-navy text-white"
+                : "border-navy/15 bg-white text-sand hover:border-terra hover:text-terra"
+            }`}
+            key={position.value}
+            onClick={() => onChange(position.value)}
+            type="button"
+          >
+            {position.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function LancamentoForm({ lancamento }: { lancamento?: LancamentoFormData | null }) {
   const [formState, formAction, pending] = useActionState(saveLancamentoAction, {});
   const [nome, setNome] = useState(lancamento?.nome ?? "");
   const [slug, setSlug] = useState(lancamento?.slug ?? "");
   const [slugTouched, setSlugTouched] = useState(Boolean(lancamento?.slug));
-  const [existingImages, setExistingImages] = useState(lancamento?.galeria ?? []);
+  const [existingCover, setExistingCover] = useState<EditableImage | null>(
+    lancamento?.capa ?? null
+  );
+  const [selectedCover, setSelectedCover] = useState<SelectedImage | null>(null);
+  const [existingImages, setExistingImages] = useState<EditableImage[]>(
+    lancamento?.galeria ?? []
+  );
   const [selectedImages, setSelectedImages] = useState<SelectedImage[]>([]);
+  const coverInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const objectUrlsRef = useRef<string[]>([]);
 
@@ -115,13 +195,17 @@ export function LancamentoForm({ lancamento }: { lancamento?: LancamentoFormData
   }, [nome, slugTouched]);
 
   useEffect(() => {
+    if (selectedCover) URL.revokeObjectURL(selectedCover.previewUrl);
+    setExistingCover(lancamento?.capa ?? null);
+    setSelectedCover(null);
     setExistingImages(lancamento?.galeria ?? []);
     setSelectedImages((current) => {
       current.forEach((image) => URL.revokeObjectURL(image.previewUrl));
       return [];
     });
+    if (coverInputRef.current) coverInputRef.current.value = "";
     if (fileInputRef.current) fileInputRef.current.value = "";
-  }, [lancamento?.id, lancamento?.galeria]);
+  }, [lancamento?.id, lancamento?.capa, lancamento?.galeria]);
 
   useEffect(() => {
     return () => {
@@ -129,11 +213,19 @@ export function LancamentoForm({ lancamento }: { lancamento?: LancamentoFormData
     };
   }, []);
 
+  const capaExistente = useMemo(
+    () => (existingCover ? JSON.stringify([{ ...existingCover, position: normalizePosition(existingCover.position) }]) : ""),
+    [existingCover]
+  );
+
   const galeriaExistente = useMemo(
     () =>
-      existingImages
-        .map((foto) => `${foto.url}${foto.alt ? ` | ${foto.alt}` : ""}`)
-        .join("\n"),
+      JSON.stringify(
+        existingImages.map((foto) => ({
+          ...foto,
+          position: normalizePosition(foto.position),
+        }))
+      ),
     [existingImages]
   );
 
@@ -157,6 +249,7 @@ export function LancamentoForm({ lancamento }: { lancamento?: LancamentoFormData
         id: `${file.name}-${file.size}-${file.lastModified}-${crypto.randomUUID()}`,
         file,
         previewUrl,
+        position: "center center" as ImagePosition,
       };
     });
     const nextImages = [...selectedImages, ...images].slice(0, 8);
@@ -167,6 +260,34 @@ export function LancamentoForm({ lancamento }: { lancamento?: LancamentoFormData
       .forEach((image) => URL.revokeObjectURL(image.previewUrl));
     setSelectedImages(nextImages);
     syncFileInput(nextImages);
+  }
+
+  function handleCoverSelect(event: React.ChangeEvent<HTMLInputElement>) {
+    const [file] = Array.from(event.currentTarget.files ?? []);
+    if (!file) return;
+
+    if (selectedCover) URL.revokeObjectURL(selectedCover.previewUrl);
+
+    const previewUrl = URL.createObjectURL(file);
+    objectUrlsRef.current.push(previewUrl);
+    setSelectedCover({
+      id: `${file.name}-${file.size}-${file.lastModified}-${crypto.randomUUID()}`,
+      file,
+      previewUrl,
+      position: "center center",
+    });
+  }
+
+  function removeSelectedCover() {
+    if (selectedCover) URL.revokeObjectURL(selectedCover.previewUrl);
+    setSelectedCover(null);
+    if (coverInputRef.current) coverInputRef.current.value = "";
+  }
+
+  function updateSelectedImagePosition(id: string, position: ImagePosition) {
+    setSelectedImages((current) =>
+      current.map((image) => (image.id === id ? { ...image, position } : image))
+    );
   }
 
   function removeSelectedImage(id: string) {
@@ -254,12 +375,98 @@ export function LancamentoForm({ lancamento }: { lancamento?: LancamentoFormData
         rows={5}
       />
 
+      <textarea className="hidden" name="capa_existente" readOnly value={capaExistente} />
       <textarea className="hidden" name="galeria_existente" readOnly value={galeriaExistente} />
+
+      <div className="border border-navy/10 bg-offwhite p-4">
+        <span className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.18em] text-sand">
+          Imagem de capa
+        </span>
+        <p className="mb-3 text-xs leading-relaxed text-sand">
+          Use uma imagem própria para o topo da página. O alinhamento 3x3 define qual área da imagem fica em foco no corte panorâmico.
+        </p>
+
+        {existingCover && !selectedCover ? (
+          <div className="mb-4 border border-navy/10 bg-white p-2">
+            <div className="aspect-[21/9] overflow-hidden bg-offwhite">
+              <img
+                alt={existingCover.alt || `${lancamento?.nome ?? "Lançamento"} - capa`}
+                className="h-full w-full object-cover"
+                src={existingCover.url}
+                style={{ objectPosition: normalizePosition(existingCover.position) }}
+              />
+            </div>
+            <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <p className="line-clamp-2 text-xs text-sand">{existingCover.alt || existingCover.url}</p>
+              <div className="flex shrink-0 items-start gap-3">
+                <ImageAlignmentGrid
+                  value={normalizePosition(existingCover.position)}
+                  onChange={(position) =>
+                    setExistingCover((current) => (current ? { ...current, position } : current))
+                  }
+                />
+                <button
+                  className="border border-navy/15 px-2 py-1 text-[9px] uppercase tracking-[0.12em] text-navy hover:border-terra hover:text-terra"
+                  onClick={() => setExistingCover(null)}
+                  type="button"
+                >
+                  Remover
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null}
+
+        {selectedCover ? (
+          <div className="mb-4 border border-navy/10 bg-white p-2">
+            <div className="aspect-[21/9] overflow-hidden bg-offwhite">
+              <img
+                alt={selectedCover.file.name}
+                className="h-full w-full object-cover"
+                src={selectedCover.previewUrl}
+                style={{ objectPosition: selectedCover.position }}
+              />
+            </div>
+            <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <p className="line-clamp-1 text-xs text-navy">{selectedCover.file.name}</p>
+                <p className="mt-0.5 text-[11px] text-sand">{formatBytes(selectedCover.file.size)}</p>
+              </div>
+              <div className="flex shrink-0 items-start gap-3">
+                <ImageAlignmentGrid
+                  name="capa_alinhamento"
+                  value={selectedCover.position}
+                  onChange={(position) => setSelectedCover((current) => current ? { ...current, position } : current)}
+                />
+                <button
+                  className="border border-navy/15 px-2 py-1 text-[9px] uppercase tracking-[0.12em] text-navy hover:border-terra hover:text-terra"
+                  onClick={removeSelectedCover}
+                  type="button"
+                >
+                  Remover
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null}
+
+        <input
+          accept="image/*"
+          className="w-full border border-navy/15 bg-white px-3 py-2.5 text-sm text-navy file:mr-4 file:border-0 file:bg-navy file:px-4 file:py-2 file:text-[10px] file:uppercase file:tracking-[0.16em] file:text-white"
+          name="capa"
+          onChange={handleCoverSelect}
+          ref={coverInputRef}
+          type="file"
+        />
+        <span className="mt-1.5 block text-xs text-sand">
+          Apenas imagem. Máximo de 4 MB.
+        </span>
+      </div>
 
       {existingImages.length > 0 ? (
         <div>
           <span className="mb-2 block text-[10px] font-semibold uppercase tracking-[0.18em] text-sand">
-            Imagens salvas
+            Imagens salvas na galeria
           </span>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             {existingImages.map((image, index) => (
@@ -269,19 +476,32 @@ export function LancamentoForm({ lancamento }: { lancamento?: LancamentoFormData
                     alt={image.alt || `${lancamento?.nome ?? "Lançamento"} - foto ${index + 1}`}
                     className="h-full w-full object-cover"
                     src={image.url}
+                    style={{ objectPosition: normalizePosition(image.position) }}
                   />
                 </div>
-                <div className="mt-2 flex items-start justify-between gap-2">
+                <div className="mt-2 flex flex-col gap-3">
                   <p className="line-clamp-2 text-xs text-sand">{image.alt || image.url}</p>
-                  <button
-                    className="border border-navy/15 px-2 py-1 text-[9px] uppercase tracking-[0.12em] text-navy hover:border-terra hover:text-terra"
-                    onClick={() =>
-                      setExistingImages((current) => current.filter((_, itemIndex) => itemIndex !== index))
-                    }
-                    type="button"
-                  >
-                    Remover
-                  </button>
+                  <div className="flex items-start justify-between gap-2">
+                    <ImageAlignmentGrid
+                      value={normalizePosition(image.position)}
+                      onChange={(position) =>
+                        setExistingImages((current) =>
+                          current.map((item, itemIndex) =>
+                            itemIndex === index ? { ...item, position } : item
+                          )
+                        )
+                      }
+                    />
+                    <button
+                      className="border border-navy/15 px-2 py-1 text-[9px] uppercase tracking-[0.12em] text-navy hover:border-terra hover:text-terra"
+                      onClick={() =>
+                        setExistingImages((current) => current.filter((_, itemIndex) => itemIndex !== index))
+                      }
+                      type="button"
+                    >
+                      Remover
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
@@ -291,7 +511,7 @@ export function LancamentoForm({ lancamento }: { lancamento?: LancamentoFormData
 
       <label className="block">
         <span className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.18em] text-sand">
-          Novas imagens
+          Novas imagens da galeria
         </span>
         <input
           accept="image/*"
@@ -310,7 +530,7 @@ export function LancamentoForm({ lancamento }: { lancamento?: LancamentoFormData
       {selectedImages.length > 0 ? (
         <div>
           <span className="mb-2 block text-[10px] font-semibold uppercase tracking-[0.18em] text-sand">
-            Imagens selecionadas
+            Imagens selecionadas para galeria
           </span>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             {selectedImages.map((image) => (
@@ -320,20 +540,28 @@ export function LancamentoForm({ lancamento }: { lancamento?: LancamentoFormData
                     alt={image.file.name}
                     className="h-full w-full object-cover"
                     src={image.previewUrl}
+                    style={{ objectPosition: image.position }}
                   />
                 </div>
-                <div className="mt-2 flex items-start justify-between gap-2">
+                <div className="mt-2 flex flex-col gap-3">
                   <div>
                     <p className="line-clamp-1 text-xs text-navy">{image.file.name}</p>
                     <p className="mt-0.5 text-[11px] text-sand">{formatBytes(image.file.size)}</p>
                   </div>
-                  <button
-                    className="border border-navy/15 px-2 py-1 text-[9px] uppercase tracking-[0.12em] text-navy hover:border-terra hover:text-terra"
-                    onClick={() => removeSelectedImage(image.id)}
-                    type="button"
-                  >
-                    Remover
-                  </button>
+                  <div className="flex items-start justify-between gap-2">
+                    <ImageAlignmentGrid
+                      name="galeria_alinhamento"
+                      value={image.position}
+                      onChange={(position) => updateSelectedImagePosition(image.id, position)}
+                    />
+                    <button
+                      className="border border-navy/15 px-2 py-1 text-[9px] uppercase tracking-[0.12em] text-navy hover:border-terra hover:text-terra"
+                      onClick={() => removeSelectedImage(image.id)}
+                      type="button"
+                    >
+                      Remover
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}

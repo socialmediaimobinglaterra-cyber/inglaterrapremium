@@ -79,6 +79,7 @@ function RelatedCard({ lancamento }: { lancamento: LancamentoResumo }) {
             alt={`${lancamento.nome} - lançamento em ${lancamento.bairro}, Londrina`}
             className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
             src={lancamento.image}
+            style={{ objectPosition: lancamento.imagePosition }}
           />
         ) : (
           <EmptyImage nome={lancamento.nome} />
@@ -121,7 +122,7 @@ function JsonLd({ lancamento }: { lancamento: LancamentoDetail }) {
     name: lancamento.nome,
     description: lancamento.descricao,
     url: `/lancamentos/${lancamento.slug}`,
-    image: lancamento.galeria.map((foto) => foto.url),
+    image: [lancamento.capa?.url, ...lancamento.galeria.map((foto) => foto.url)].filter(Boolean),
     address: {
       "@type": "PostalAddress",
       streetAddress: lancamento.endereco ?? undefined,
@@ -183,6 +184,7 @@ export default async function LancamentoPage({ params }: PageProps) {
               alt={`${lancamento.nome} - perspectiva principal, ${lancamento.bairro}, Londrina`}
               className="h-full w-full object-cover"
               src={lancamento.image}
+              style={{ objectPosition: lancamento.imagePosition }}
             />
           ) : (
             <EmptyImage nome={lancamento.nome} />

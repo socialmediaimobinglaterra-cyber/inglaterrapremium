@@ -42,7 +42,8 @@ type LancamentoAdmin = {
   descricao: string | null;
   descricao2: string | null;
   diferenciais: string[];
-  galeria: Array<{ url: string; alt?: string }>;
+  capa: { url: string; alt?: string; position?: string } | null;
+  galeria: Array<{ url: string; alt?: string; position?: string }>;
   updatedAt: Date;
 };
 
@@ -68,9 +69,18 @@ function rawGallery(raw: Record<string, unknown>) {
       return {
         url: typeof record.url === "string" ? record.url : "",
         alt: typeof record.alt === "string" ? record.alt : "",
+        position: typeof record.position === "string" ? record.position : "center center",
       };
     })
-    .filter((item): item is { url: string; alt: string } => Boolean(item?.url));
+    .filter((item): item is { url: string; alt: string; position: string } => Boolean(item?.url));
+}
+
+function rawCover(raw: Record<string, unknown>) {
+  const coverValue = raw.capa;
+  const [cover] = rawGallery({
+    galeria: Array.isArray(coverValue) ? coverValue : coverValue ? [coverValue] : [],
+  });
+  return cover ?? null;
 }
 
 function mapLancamento(row: Record<string, any>): LancamentoAdmin {
@@ -97,6 +107,7 @@ function mapLancamento(row: Record<string, any>): LancamentoAdmin {
     descricao: rawString(raw, "descricao"),
     descricao2: rawString(raw, "descricao2"),
     diferenciais: rawArray(raw, "diferenciais"),
+    capa: rawCover(raw),
     galeria: rawGallery(raw),
     updatedAt: row.updated_at,
   };

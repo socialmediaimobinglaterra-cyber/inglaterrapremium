@@ -9,6 +9,7 @@ type FotoRaw = {
   url?: string;
   alt?: string;
   principal?: boolean;
+  position?: string;
 };
 
 type LancamentoRow = Record<string, any>;
@@ -22,6 +23,7 @@ export type LancamentoResumo = {
   estado: string;
   status: string | null;
   image: string | null;
+  imagePosition: string;
 };
 
 export type LancamentoDetail = LancamentoResumo & {
@@ -39,7 +41,14 @@ export type LancamentoDetail = LancamentoResumo & {
     url: string;
     alt: string;
     principal: boolean;
+    position: string;
   }>;
+  capa: {
+    url: string;
+    alt: string;
+    principal: boolean;
+    position: string;
+  } | null;
 };
 
 function numberOrNull(value: unknown) {
@@ -85,6 +94,22 @@ function rawArray(raw: unknown, keys: string[]) {
   return [];
 }
 
+function normalizePosition(value: unknown) {
+  const allowed = new Set([
+    "left top",
+    "center top",
+    "right top",
+    "left center",
+    "center center",
+    "right center",
+    "left bottom",
+    "center bottom",
+    "right bottom",
+  ]);
+
+  return typeof value === "string" && allowed.has(value) ? value : "center center";
+}
+
 function formatCurrency(value: number | null) {
   if (value === null) return null;
 
@@ -110,11 +135,16 @@ function mapFotos(fotos: FotoRaw[] | null, nome: string) {
       url: (foto.URLArquivo ?? foto.url) as string,
       alt: foto.FotoDescricao ?? foto.FotoTitulo ?? foto.alt ?? `${nome} - foto ${index + 1}`,
       principal: foto.principal === true || String(foto.Principal) === "1" || index === 0,
+      position: normalizePosition(foto.position),
     }));
 }
 
 function getMainImage(galeria: LancamentoDetail["galeria"]) {
   return galeria.find((foto) => foto.principal)?.url ?? galeria[0]?.url ?? null;
+}
+
+function getMainPosition(galeria: LancamentoDetail["galeria"]) {
+  return galeria.find((foto) => foto.principal)?.position ?? galeria[0]?.position ?? "center center";
 }
 
 function extractDifferentials(description: string | null) {
@@ -140,10 +170,19 @@ function mapLancamento(row: LancamentoRow): LancamentoDetail {
   const bairro = row.bairro_nome ?? row.imovel_bairro_nome ?? "Londrina";
   const imovelEndereco = [row.endereco, row.numero].filter(Boolean).join(", ") || null;
   const rawGallery = raw && typeof raw === "object" ? (raw as Record<string, unknown>).galeria : null;
+  const rawCover = raw && typeof raw === "object" ? (raw as Record<string, unknown>).capa : null;
   const galeria = mapFotos(
     Array.isArray(rawGallery) && rawGallery.length > 0
       ? (rawGallery as FotoRaw[])
       : row.fotos,
+    nome
+  );
+  const [capa] = mapFotos(
+    Array.isArray(rawCover)
+      ? (rawCover as FotoRaw[])
+      : rawCover && typeof rawCover === "object"
+        ? [rawCover as FotoRaw]
+        : null,
     nome
   );
   const descricao =
@@ -184,7 +223,9 @@ function mapLancamento(row: LancamentoRow): LancamentoDetail {
     latitude: numberOrNull(rawString(raw, ["latitude"]) ?? row.latitude),
     longitude: numberOrNull(rawString(raw, ["longitude"]) ?? row.longitude),
     galeria,
-    image: getMainImage(galeria),
+    capa: capa ?? null,
+    image: capa?.url ?? getMainImage(galeria),
+    imagePosition: capa?.position ?? getMainPosition(galeria),
   };
 }
 
