@@ -29,9 +29,7 @@ export function Footer() {
           <div className="mt-5 flex flex-col gap-1.5">
             <p className="text-[10px] text-white/30">CRECI-PR 12.345</p>
             <p className="text-[10px] text-white/30">(43) 3322-7575</p>
-            <p className="text-[10px] text-white/30">
-              contato@inglaterrapremium.com.br
-            </p>
+            <p className="text-[10px] text-white/30">bts@inglaterrapremium.com</p>
             <p className="text-[10px] text-white/30">
               Av. Duque de Caxias, 1726 · Londrina, PR
             </p>
