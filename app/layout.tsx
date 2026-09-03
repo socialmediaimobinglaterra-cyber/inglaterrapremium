@@ -16,6 +16,19 @@ const dmSans = DM_Sans({
 export const metadata: Metadata = {
   title: "Inglaterra Premium",
   description: "Imóveis de alto padrão em Londrina.",
+  icons: {
+    icon: "/favicon.ico",
+    apple: "/apple-touch-icon.png",
+  },
+  openGraph: {
+    title: "Inglaterra Premium",
+    description: "Imóveis de alto padrão em Londrina.",
+    url: absoluteUrl("/"),
+    siteName: "Inglaterra Premium",
+    images: [{ url: absoluteUrl("/images/capa-hero.jpg"), alt: "Inglaterra Premium" }],
+    locale: "pt_BR",
+    type: "website",
+  },
 };
 
 function organizationJsonLd() {

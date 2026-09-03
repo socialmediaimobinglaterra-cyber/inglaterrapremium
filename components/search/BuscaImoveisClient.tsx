@@ -6,6 +6,7 @@ import type { ImovelSearchFilters, ImovelSearchResult } from "@/lib/queries/imov
 
 type Props = {
   initialImoveis: ImovelSearchResult[];
+  initialNegocio?: (typeof NEGOCIO_OPTIONS)[number];
   bairros: string[];
   tipos: string[];
 };
@@ -134,9 +135,14 @@ function ListingCard({ imovel }: { imovel: ImovelSearchResult }) {
   );
 }
 
-export function BuscaImoveisClient({ initialImoveis, bairros, tipos }: Props) {
+export function BuscaImoveisClient({
+  initialImoveis,
+  initialNegocio = "Comprar",
+  bairros,
+  tipos,
+}: Props) {
   const [imoveis, setImoveis] = useState(initialImoveis);
-  const [negocio, setNegocio] = useState<(typeof NEGOCIO_OPTIONS)[number]>("Comprar");
+  const [negocio, setNegocio] = useState<(typeof NEGOCIO_OPTIONS)[number]>(initialNegocio);
   const [bairro, setBairro] = useState("Todos os bairros");
   const [tipo, setTipo] = useState("Todos os tipos");
   const [valor, setValor] = useState("Não definido");
