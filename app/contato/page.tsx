@@ -2,6 +2,11 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { organization } from "@/lib/site";
 
+const generalContact = {
+  telephone: "(43) 3343-3010",
+  email: "central@imobiliariainglaterra.com.br",
+};
+
 export const metadata: Metadata = {
   title: "Contato | Inglaterra Premium",
   description:
@@ -20,16 +25,20 @@ export default function ContatoPage() {
         </h1>
         <div className="grid max-w-[760px] grid-cols-1 gap-5 text-[14px] leading-[1.8] text-sand md:grid-cols-2">
           <div>
-            <p className="text-navy">{organization.telephone}</p>
-            <p>{organization.email}</p>
+            <p className="text-navy">{generalContact.telephone}</p>
+            <p>{generalContact.email}</p>
           </div>
           <div>
             <p>{organization.address.streetAddress}</p>
             <p>Londrina, PR</p>
           </div>
         </div>
+        <p className="mt-8 max-w-[520px] text-[13px] leading-relaxed text-sand">
+          Para atendimento específico sobre Inglaterra BTS, acesse o canal do
+          serviço.
+        </p>
         <Link
-          className="mt-8 inline-flex bg-terra px-6 py-3.5 text-[10px] uppercase tracking-[0.2em] text-white"
+          className="mt-4 inline-flex bg-terra px-6 py-3.5 text-[10px] uppercase tracking-[0.2em] text-white"
           href="/bts#formulario-bts"
         >
           Contato BTS
