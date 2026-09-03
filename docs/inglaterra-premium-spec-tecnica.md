@@ -12,7 +12,7 @@ Site institucional + portal de busca de imóveis para a **Inglaterra Premium**, 
 - Vitrine exclusiva de imóveis premium (não todo o estoque do Grupo)
 - Padrão de mercado de luxo (referência: Coelho da Fonseca)
 - Excelente desempenho técnico: SEO, AEO, GEO e velocidade
-- Atualização automática a partir do CRM Kenlo (XML)
+- Atualização automática por Importação XML de fonte externa, com Kenlo/ValueGaia apenas como fonte inicial/legada
 
 ---
 
@@ -25,9 +25,9 @@ Site institucional + portal de busca de imóveis para a **Inglaterra Premium**, 
 | Frontend/Framework | **Next.js 15 (App Router) + TypeScript + Tailwind CSS** | Melhor stack para SEO (SSR/SSG/ISR nativo), performance, e é o que Codex escreve com mais qualidade e previsibilidade |
 | Banco de dados | **Postgres gerenciado (Supabase ou Neon)** | Não usar o XML como fonte ao vivo — precisamos de um banco intermediário (explico no item 4) |
 | Hospedagem do site | **Vercel** | Integração nativa com Next.js, CDN global, cache de imagem automático, preview deploys, ótimo Core Web Vitals "de fábrica" |
-| Armazenamento de imagens | **Cache próprio via Vercel Image Optimization**, apontando para as URLs de imagem já hospedadas pela Kenlo, ou Supabase Storage se quiser independência total do CRM | Evita reprocessar/re-hospedar milhares de fotos sem necessidade |
-| Sincronização de dados | **Cron job (Vercel Cron ou Supabase Edge Function) rodando a cada 3–6h** puxando o XML da Kenlo, parseando, filtrando e gravando no Postgres | Desacopla o site da disponibilidade/latência do XML da Kenlo |
-| Domínio | O que você já tem registrado | Aponta o DNS para a Vercel (registro A/CNAME) |
+| Armazenamento de imagens | **Cache próprio via Vercel Image Optimization**, apontando para URLs de imagem do fornecedor XML quando disponíveis, ou Supabase/Vercel Blob se quiser independência total do CRM de origem | Evita reprocessar/re-hospedar milhares de fotos sem necessidade |
+| Importação XML / sincronização de fonte externa | **Cron job (Vercel Cron ou Supabase Edge Function) rodando a cada 3–6h** puxando XML de um fornecedor, parseando por adaptador, normalizando para contrato interno, filtrando e gravando no Postgres | Desacopla o site da disponibilidade/latência do XML e evita dependência estrutural de um CRM específico |
+| Domínio | `https://admin.inglaterrapremium.com` para o CRM/admin; domínio público do site apontado para a Vercel | Decisão do domínio do CRM resolvida; DNS via registros A/CNAME conforme a Vercel indicar |
 
 Essa é essencialmente a mesma arquitetura usada por portais imobiliários modernos de alto padrão (headless: dado separado da apresentação).
 
@@ -99,19 +99,19 @@ As peças do manual usam fotografia de **arquitetura/interiores contemporâneos,
 
 Pontos importantes:
 
-1. **Performance**: XMLs de estoque completo do Kenlo podem ter centenas de imóveis e vários MB. Parsear isso a cada visita do usuário destrói o tempo de carregamento.
-2. **Confiabilidade**: se o XML da Kenlo cair ou demorar, seu site cai/trava junto.
+1. **Performance**: XMLs de estoque completo de um CRM fornecedor podem ter centenas de imóveis e vários MB. Parsear isso a cada visita do usuário destrói o tempo de carregamento.
+2. **Confiabilidade**: se o XML externo cair ou demorar, seu site cai/trava junto.
 3. **SEO**: motores de busca precisam de páginas estáveis, com URLs fixas por imóvel, indexáveis e cacheáveis. Isso só funciona bem com um banco de dados próprio.
 4. **Curadoria "premium"**: o filtro (valor + bairro, e outros critérios que você quiser adicionar depois) precisa rodar em algum lugar — o lugar certo é no pipeline de sincronização, não no navegador do usuário.
 
 **Fluxo correto:**
 
 ```
-Kenlo (XML, todo o estoque)
+Fonte XML externa (Kenlo/ValueGaia como fonte inicial/legada)
    ↓ (cron a cada 3-6h)
-Serviço de sincronização (parse + filtro premium)
+Serviço de importação XML (adaptador do fornecedor + contrato interno normalizado + filtro premium)
    ↓
-Banco de dados Postgres (só imóveis premium)
+Banco de dados Postgres (catálogo interno e curadoria)
    ↓
 Next.js (gera/atualiza páginas via ISR)
    ↓
@@ -234,10 +234,10 @@ Precisa de uma ferramenta de e-mail marketing por trás (Mailchimp, RD Station, 
 
 ## 7. SEO técnico (checklist para o Codex implementar)
 
-- **Renderização**: SSG para páginas institucionais e de bairro; ISR (revalidate a cada poucas horas) para listagem e fichas de imóveis, para acompanhar a sincronização do XML.
+- **Renderização**: SSG para páginas institucionais e de bairro; ISR (revalidate a cada poucas horas) para listagem e fichas de imóveis, para acompanhar a Importação XML.
 - **URLs**: limpas e permanentes, ex. `/imoveis/casa-alto-padrao-gleba-palhano-4-suites-abc123` (slug + id, nunca reaproveitar URL de imóvel vendido para outro imóvel).
 - **Meta tags dinâmicas** por página (title, description, Open Graph, Twitter Card) geradas a partir dos dados do imóvel/bairro.
-- **Sitemap.xml** gerado automaticamente (Next.js `sitemap.ts`), atualizado a cada sincronização.
+- **Sitemap.xml** gerado automaticamente (Next.js `sitemap.ts`), atualizado a cada sincronização de fonte externa.
 - **robots.txt** liberando crawlers e apontando o sitemap.
 - **Dados estruturados (Schema.org / JSON-LD)**:
   - `RealEstateListing` em cada ficha de imóvel
@@ -287,11 +287,11 @@ Isso é o que diferencia um site "só bonito" de um site preparado para 2026 em 
 
 ## 10. Hospedagem, domínio e passo a passo de publicação
 
-1. **Domínio**: já registrado — você vai configurar os DNS (registro **A** ou **CNAME**, conforme a Vercel indicar) apontando para a Vercel.
+1. **Domínio**: CRM/admin confirmado em `https://admin.inglaterrapremium.com`; domínio público do site configurado no projeto Vercel correto.
 2. **Banco de dados**: criar projeto no Supabase (ou Neon) — plano gratuito é suficiente para começar, com upgrade simples depois.
 3. **Repositório de código**: GitHub (o Codex trabalha integrado a repositórios Git; a Vercel faz deploy automático a cada push).
 4. **Deploy**: conectar o repositório GitHub à Vercel → deploy automático a cada alteração aprovada.
-5. **Variáveis de ambiente** (chaves de banco, URL do XML da Kenlo) configuradas direto no painel da Vercel — nunca no código.
+5. **Variáveis de ambiente** (chaves de banco, URL da fonte XML externa e credenciais de serviços) configuradas direto no painel da Vercel — nunca no código.
 6. **Certificado SSL**: automático pela Vercel.
 7. **Ambiente de homologação**: a Vercel já gera automaticamente uma URL de preview para cada alteração antes de ir ao ar — útil para revisar antes de publicar.
 
@@ -302,7 +302,7 @@ Isso é o que diferencia um site "só bonito" de um site preparado para 2026 em 
 **Fase 1 — Fundação**
 - Setup do projeto Next.js + TypeScript + Tailwind
 - Modelagem do banco (tabela `imoveis`, `bairros`, `configuracoes_premium`, `sincronizacoes_log`)
-- Script de sincronização: buscar XML Kenlo → parsear → aplicar filtro premium → upsert no banco
+- Script de Importação XML: buscar XML da fonte externa inicial/legada → parsear por adaptador → normalizar para contrato interno → aplicar filtro premium → upsert no banco
 
 **Fase 2 — Páginas principais**
 - Home, listagem de imóveis com filtros, ficha de imóvel
@@ -329,9 +329,9 @@ Isso é o que diferencia um site "só bonito" de um site preparado para 2026 em 
 - [ ] Ferramenta de e-mail marketing para a newsletter (Mailchimp, RD Station, Brevo etc.)
 - [ ] Acesso à conta comercial do Instagram (para embed real de posts)
 - [ ] Confirmar valor mínimo e lista de bairros para o filtro premium
-- [ ] Acesso/documentação da URL do XML da Kenlo (a Kenlo fornece um link único por conta)
+- [ ] Acesso/documentação da URL XML da fonte externa inicial/legada (Kenlo/ValueGaia no primeiro adaptador)
 - [ ] Definir se o "Inglaterra Antecipa" deve aparecer neste site ou só no site da Imobiliária tradicional
-- [ ] Confirmar domínio já registrado
+- [x] ~~Confirmar domínio do CRM/admin~~ — definido como `https://admin.inglaterrapremium.com`
 - [ ] Decidir se a busca por IA da Home/Busca usa modelo de linguagem real já na v1, ou só filtros manuais (ver plano-implementacao-codex.md, Fase 3.2)
 
 ---

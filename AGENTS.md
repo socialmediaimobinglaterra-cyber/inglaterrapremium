@@ -13,7 +13,7 @@ Essas fontes já contêm as decisões de arquitetura, design e estrutura do proj
 
 ## O que é este projeto
 
-Site institucional + portal de imóveis de alto padrão da Inglaterra Premium, em Londrina/PR. Next.js 15 (App Router) + TypeScript + Tailwind CSS, banco Postgres (Supabase/Neon), dados de imóveis sincronizados via XML da Kenlo.
+Site institucional + portal de imóveis de alto padrão da Inglaterra Premium, em Londrina/PR. Next.js 15 (App Router) + TypeScript + Tailwind CSS, banco Postgres (Supabase/Neon), dados de imóveis importados por XML de fonte externa. Kenlo/ValueGaia é apenas a fonte inicial/legada, não uma dependência estrutural.
 
 ## O que é a pasta `prototypes/`
 
@@ -56,5 +56,5 @@ Se `.vercel/project.json` não existir no ambiente de trabalho, NÃO rode `verce
 - Next.js 15, App Router, TypeScript, Tailwind CSS
 - Banco: Postgres (Supabase ou Neon)
 - Deploy: Vercel (auto-deploy a partir do GitHub)
-- Sincronização de dados: cron job lendo XML da Kenlo, com filtro premium configurável (ver seção 5 de `docs/inglaterra-premium-spec-tecnica.md`)
+- Importação XML / sincronização de fonte externa: cron job lendo XML por adaptadores de fornecedor/formato, normalizando para um contrato interno e aplicando filtro premium configurável (ver seção 5 de `docs/inglaterra-premium-spec-tecnica.md`)
 - Rotas dinâmicas sem página de listagem/hub: `/lancamentos/[slug]` e `/condominios/[slug]` — a navegação entre eles acontece via dropdown no Header, não uma página `/lancamentos` ou `/condominios`

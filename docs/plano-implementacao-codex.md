@@ -90,7 +90,7 @@ inglaterra-premium/
 │   ├── robots.ts                       # Fase 6
 │   └── api/
 │       └── sync-kenlo/
-│           └── route.ts                # Endpoint chamado pelo cron job (Fase 2)
+│           └── route.ts                # Endpoint legado do primeiro adaptador XML; arquitetura geral = Importação XML
 │
 ├── components/
 │   ├── layout/
@@ -107,7 +107,7 @@ inglaterra-premium/
 │
 ├── lib/
 │   ├── db.ts                           # cliente do banco (Supabase/Neon)
-│   ├── kenlo-sync.ts                   # parser do XML + filtro premium (Fase 2)
+│   ├── kenlo-sync.ts                   # adaptador inicial/legado da fonte XML atual, não arquitetura permanente
 │   ├── queries/
 │   │   ├── imoveis.ts
 │   │   ├── bairros.ts
@@ -168,8 +168,8 @@ Coisas que travam o desenvolvimento se não estiverem prontas:
 - [ ] Codex Cloud conectado ao repositório (environment criado)
 - [ ] Projeto criado na Vercel, conectado ao mesmo repositório
 - [ ] Banco Postgres criado (Supabase ou Neon) — só o projeto, schema vem na Fase 2
-- [ ] Domínio com acesso ao DNS em mãos
-- [ ] URL do XML da Kenlo em mãos (a Kenlo fornece um link único por conta)
+- [x] Domínio oficial do CRM/admin definido: `https://admin.inglaterrapremium.com`
+- [ ] URL do XML da fonte externa inicial/legada em mãos (Kenlo/ValueGaia no primeiro adaptador)
 - [ ] Confirmar critério final do filtro premium: valor mínimo + lista de bairros
 - [ ] Frases reais dos 3 diretores (as atuais são ilustrativas)
 - [ ] Ferramenta de e-mail marketing definida (pro formulário de newsletter/lançamentos)
@@ -195,19 +195,19 @@ O que revisar antes de aprovar esta fase:
 
 ---
 
-## Fase 2 — Banco de dados + pipeline do XML
+## Fase 2 — Banco de dados + Importação XML
 
-**Objetivo único**: dados reais da Kenlo entrando no banco, filtrados por premium, sem nenhuma página ainda consumindo isso.
+**Objetivo único**: dados reais da fonte XML externa entrando no banco por um contrato interno normalizado, filtrados por premium, sem nenhuma página ainda consumindo isso. Kenlo/ValueGaia é apenas a fonte inicial/legada, não uma dependência estrutural.
 
 Passos:
 1. Criar o schema no banco: tabelas `imoveis`, `bairros`, `lancamentos`, `condominios`, `configuracoes_premium`, `sincronizacoes_log` (estrutura sugerida na seção 5 do documento técnico)
-2. Criar o script de sincronização (cron job via Vercel Cron): busca o XML da Kenlo → parseia → aplica filtro premium (valor + bairro, configurável na tabela `configuracoes_premium`) → grava no banco
+2. Criar o script de Importação XML (cron job via Vercel Cron): busca o XML da fonte externa → parseia com adaptador do fornecedor/formato → normaliza para contrato interno → aplica filtro premium (valor + bairro, configurável na tabela `configuracoes_premium`) → grava no banco
 3. Rodar manualmente uma vez e conferir: os imóveis que caíram no banco batem com o que você esperava?
 
 O que revisar antes de aprovar esta fase:
 - Rodar uma consulta simples no banco e ver imóveis reais de Londrina, já filtrados
 - Confirmar que imóveis fora do critério premium **não** entraram
-- Log de sincronização mostrando quantos imóveis entraram/saíram
+- Log de sincronização de fonte externa mostrando quantos imóveis entraram/saíram
 
 ---
 
