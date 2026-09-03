@@ -23,7 +23,7 @@ export const organization = {
   name: "Inglaterra Premium",
   legalName: "Grupo Inglaterra",
   email: "central@imobiliariainglaterra.com.br",
-  telephone: "+55 43 3343-3010",
+  telephone: "+554333433010",
   creci: "CRECI-PR 12.345",
   address: {
     streetAddress: "Av. Duque de Caxias, 1726",
