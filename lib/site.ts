@@ -22,8 +22,8 @@ export function absoluteUrl(path = "/") {
 export const organization = {
   name: "Inglaterra Premium",
   legalName: "Grupo Inglaterra",
-  email: "bts@inglaterrapremium.com",
-  telephone: "+55 43 3322-7575",
+  email: "central@imobiliariainglaterra.com.br",
+  telephone: "+55 43 3343-3010",
   creci: "CRECI-PR 12.345",
   address: {
     streetAddress: "Av. Duque de Caxias, 1726",

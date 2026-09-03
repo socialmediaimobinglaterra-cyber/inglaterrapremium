@@ -2,11 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { organization } from "@/lib/site";
 
-const generalContact = {
-  telephone: "(43) 3343-3010",
-  email: "central@imobiliariainglaterra.com.br",
-};
-
 export const metadata: Metadata = {
   title: "Contato | Inglaterra Premium",
   description:
@@ -25,8 +20,8 @@ export default function ContatoPage() {
         </h1>
         <div className="grid max-w-[760px] grid-cols-1 gap-5 text-[14px] leading-[1.8] text-sand md:grid-cols-2">
           <div>
-            <p className="text-navy">{generalContact.telephone}</p>
-            <p>{generalContact.email}</p>
+            <p className="text-navy">(43) 3343-3010</p>
+            <p>{organization.email}</p>
           </div>
           <div>
             <p>{organization.address.streetAddress}</p>
