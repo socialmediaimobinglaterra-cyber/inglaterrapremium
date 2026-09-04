@@ -29,7 +29,6 @@ type BairroAdmin = {
   descricao: string | null;
   faq: Array<{ pergunta: string; resposta: string }>;
   ativo: boolean;
-  updatedAt: Date;
 };
 
 function parseFaq(value: unknown): Array<{ pergunta: string; resposta: string }> {
@@ -64,14 +63,13 @@ function mapBairro(row: Record<string, any>): BairroAdmin {
     descricao: typeof row.descricao === "string" && row.descricao.trim() ? row.descricao : null,
     faq: parseFaq(row.faq),
     ativo: row.ativo,
-    updatedAt: row.updated_at,
   };
 }
 
 async function getBairrosData(editId?: string) {
   const pool = getPool();
   const result = await pool.query(`
-    select id, nome, slug, cidade, estado, imagem_capa, descricao, faq, ativo, updated_at
+    select id, nome, slug, cidade, estado, imagem_capa, descricao, faq, ativo
     from bairros
     order by nome
   `);

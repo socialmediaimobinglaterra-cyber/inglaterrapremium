@@ -25,12 +25,21 @@ function formatBytes(value: number) {
   return `${(value / (1024 * 1024)).toFixed(1).replace(".", ",")} MB`;
 }
 
-function newFaqItem(item?: Partial<FaqItem>): FaqItem {
+function newFaqItem(item?: Partial<FaqItem>, fallbackId = "faq-0"): FaqItem {
   return {
-    id: item?.id ?? crypto.randomUUID(),
+    id: item?.id ?? fallbackId,
     pergunta: item?.pergunta ?? "",
     resposta: item?.resposta ?? "",
   };
+}
+
+function createFaqItem(): FaqItem {
+  return newFaqItem(
+    undefined,
+    typeof crypto !== "undefined" && "randomUUID" in crypto
+      ? crypto.randomUUID()
+      : `faq-${Date.now()}`
+  );
 }
 
 export function BairroForm({ bairro }: { bairro?: BairroFormData | null }) {
@@ -42,8 +51,8 @@ export function BairroForm({ bairro }: { bairro?: BairroFormData | null }) {
   } | null>(null);
   const [faqItems, setFaqItems] = useState<FaqItem[]>(
     bairro?.faq.length
-      ? bairro.faq.map((item) => newFaqItem(item))
-      : [newFaqItem()]
+      ? bairro.faq.map((item, index) => newFaqItem(item, `faq-${index}`))
+      : [newFaqItem(undefined, "faq-0")]
   );
   const coverInputRef = useRef<HTMLInputElement>(null);
 
@@ -53,8 +62,8 @@ export function BairroForm({ bairro }: { bairro?: BairroFormData | null }) {
     setSelectedCover(null);
     setFaqItems(
       bairro?.faq.length
-        ? bairro.faq.map((item) => newFaqItem(item))
-        : [newFaqItem()]
+        ? bairro.faq.map((item, index) => newFaqItem(item, `faq-${index}`))
+        : [newFaqItem(undefined, "faq-0")]
     );
     if (coverInputRef.current) coverInputRef.current.value = "";
   }, [bairro?.id, bairro?.imagemCapa, bairro?.faq]);
@@ -220,7 +229,7 @@ export function BairroForm({ bairro }: { bairro?: BairroFormData | null }) {
           </div>
           <button
             className="border border-navy/15 px-3 py-2 text-[10px] uppercase tracking-[0.14em] text-navy hover:border-terra hover:text-terra"
-            onClick={() => setFaqItems((current) => [...current, newFaqItem()])}
+            onClick={() => setFaqItems((current) => [...current, createFaqItem()])}
             type="button"
           >
             Adicionar
@@ -239,7 +248,7 @@ export function BairroForm({ bairro }: { bairro?: BairroFormData | null }) {
                   onClick={() =>
                     setFaqItems((current) =>
                       current.length === 1
-                        ? [newFaqItem()]
+                        ? [createFaqItem()]
                         : current.filter((currentItem) => currentItem.id !== item.id)
                     )
                   }
