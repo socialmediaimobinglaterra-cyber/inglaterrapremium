@@ -119,7 +119,7 @@ function CaseCard({ item }: { item: (typeof cases)[number] }) {
           {[item.stat1, item.stat2].map((stat) => (
             <div key={stat.l}>
               <p className="text-[20px] font-medium text-terra">{stat.v}</p>
-              <p className="text-[9.5px] uppercase tracking-[0.05em] text-sand">
+              <p className="text-[9.5px] uppercase tracking-[0.05em] text-navy">
                 {stat.l}
               </p>
             </div>
@@ -164,14 +164,14 @@ export default function BtsPage() {
       <BreadcrumbJsonLd />
 
       <section className="site-container pt-[88px] md:pt-[108px]">
-        <p className="mb-4 text-[11px] text-sand">Início / Inglaterra BTS</p>
+        <p className="mb-4 text-[11px] text-navy">Início / Inglaterra BTS</p>
         <span className="mb-4 inline-block bg-terra px-3 py-1.5 text-[9px] font-semibold uppercase tracking-[0.15em] text-white">
           Built to Suit Corporativo
         </span>
         <h1 className="mb-3.5 max-w-[720px] text-[clamp(26px,8vw,34px)] font-light leading-[1.15] tracking-[0.01em] md:text-[clamp(32px,3.6vw,50px)]">
           Inglaterra BTS — Imóveis Corporativos Sob Medida em Londrina
         </h1>
-        <p className="mb-7 max-w-[580px] text-sm leading-[1.7] text-sand">
+        <p className="mb-7 max-w-[580px] text-sm leading-[1.7] text-navy">
           Desenvolvemos e locamos imóveis projetados especificamente para a
           operação da sua empresa — do terreno ao contrato de locação de longo prazo.
         </p>
@@ -211,7 +211,7 @@ export default function BtsPage() {
               <p className="mb-1 text-[15px] font-medium text-navy md:text-2xl">
                 {numero.v}
               </p>
-              <p className="text-[8.5px] uppercase tracking-[0.04em] text-sand md:text-[10.5px]">
+              <p className="text-[8.5px] uppercase tracking-[0.04em] text-navy md:text-[10.5px]">
                 {numero.l}
               </p>
             </div>
@@ -224,7 +224,7 @@ export default function BtsPage() {
           <h2 className="mb-2 text-[19px] font-normal text-navy md:text-[22px]">
             Você tem um terreno?
           </h2>
-          <p className="mb-5 text-[13px] text-sand">
+          <p className="mb-5 text-[13px] text-navy">
             Transforme seu terreno em renda garantida, sem construir nada
           </p>
           <FeatureList items={paraProprietarios} />
@@ -233,7 +233,7 @@ export default function BtsPage() {
           <h2 className="mb-2 text-[19px] font-normal text-navy md:text-[22px]">
             Sua empresa precisa de um espaço sob medida?
           </h2>
-          <p className="mb-5 text-[13px] text-sand">
+          <p className="mb-5 text-[13px] text-navy">
             Um imóvel projetado para a sua operação, sem investir em construção
           </p>
           <FeatureList items={paraEmpresas} />
@@ -303,7 +303,7 @@ export default function BtsPage() {
               <p className="mb-0.5 text-[17px] font-medium text-navy">
                 Wagner Lopes Redon
               </p>
-              <p className="mb-2 text-xs text-sand">
+              <p className="mb-2 text-xs text-navy">
                 Diretor de Locação · Inglaterra BTS
               </p>
               <a

@@ -111,14 +111,14 @@ function ImovelCard({ imovel }: { imovel: ImovelSearchResult }) {
         </span>
       </div>
       <div className="pt-3.5">
-        <p className="mb-1 text-[11px] tracking-[0.06em] text-sand">
+        <p className="mb-1 text-[11px] tracking-[0.06em] text-navy">
           {imovel.bairro}, Londrina
         </p>
         <h3 className="mb-2.5 text-[15px] font-normal leading-[1.3] text-navy">
           {imovel.titulo}
         </h3>
         <div className="flex items-baseline justify-between gap-4 border-t border-navy/10 pt-2.5">
-          <span className="text-[11px] text-sand">
+          <span className="text-[11px] text-navy">
             {area(imovel.area)}
             {imovel.suites && imovel.suites > 0 ? ` · ${imovel.suites} suítes` : ""}
           </span>
@@ -194,7 +194,7 @@ export default async function BairroPage({ params }: PageProps) {
           ].map((fact) => (
             <div className="flex-1 md:border-b md:border-navy/10 md:pb-6" key={fact.label}>
               <p className="mb-1 text-2xl font-light text-navy md:text-[32px]">{fact.value}</p>
-              <p className="text-[9px] uppercase leading-[1.4] tracking-[0.04em] text-sand md:text-[10.5px]">
+              <p className="text-[9px] uppercase leading-[1.4] tracking-[0.04em] text-navy md:text-[10.5px]">
                 {fact.label}
               </p>
             </div>

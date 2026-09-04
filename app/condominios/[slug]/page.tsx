@@ -58,7 +58,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 function EmptyImage({ nome }: { nome: string }) {
   return (
-    <div className="flex h-full min-h-[260px] items-center justify-center border border-dashed border-navy/10 bg-white text-center text-xs leading-relaxed text-sand">
+    <div className="flex h-full min-h-[260px] items-center justify-center border border-dashed border-navy/10 bg-white text-center text-xs leading-relaxed text-navy">
       Imagem do condomínio {nome} aguardando cadastro.
     </div>
   );
@@ -105,14 +105,14 @@ function ImovelCard({ imovel, condominio }: { imovel: ImovelSearchResult; condom
         </span>
       </div>
       <div className="pt-3.5">
-        <p className="mb-1 text-[11px] tracking-[0.06em] text-sand">
+        <p className="mb-1 text-[11px] tracking-[0.06em] text-navy">
           {condominio}, {imovel.bairro}
         </p>
         <h3 className="mb-2.5 text-[15px] font-normal leading-[1.3] text-navy">
           {imovel.titulo}
         </h3>
         <div className="flex items-baseline justify-between border-t border-navy/10 pt-2.5">
-          <span className="text-[11px] text-sand">{formatArea(imovel.area) ?? imovel.tipo}</span>
+          <span className="text-[11px] text-navy">{formatArea(imovel.area) ?? imovel.tipo}</span>
           <span className="text-[17px] font-medium text-navy">
             {formatCurrency(imovel.precoVenda ?? imovel.precoLocacao)}
           </span>
@@ -143,7 +143,7 @@ function RelatedCard({ condominio }: { condominio: CondominioResumo }) {
         </span>
       </div>
       <div className="pt-3.5">
-        <p className="mb-1 text-[11px] tracking-[0.06em] text-sand">
+        <p className="mb-1 text-[11px] tracking-[0.06em] text-navy">
           {condominio.bairro}, Londrina
         </p>
         <h3 className="text-[15px] font-normal leading-[1.3] text-navy">
@@ -206,7 +206,7 @@ export default async function CondominioPage({ params }: PageProps) {
       <JsonLd condominio={condominio} />
 
       <div className="site-container pt-[88px] md:pt-[108px]">
-        <p className="mb-4 text-[11px] text-sand">
+        <p className="mb-4 text-[11px] text-navy">
           Início / Condomínios / {condominio.nome}
         </p>
         <span className="mb-4 inline-block bg-navy px-3 py-1.5 text-[9px] font-semibold uppercase tracking-[0.15em] text-white">
@@ -216,7 +216,7 @@ export default async function CondominioPage({ params }: PageProps) {
           Condomínio {condominio.nome} em {condominio.bairro}, Londrina
         </h1>
         {(condominio.seguranca || condominio.unidades) ? (
-          <p className="text-[13px] text-sand">
+              <p className="text-[13px] text-navy">
             {[condominio.seguranca, condominio.unidades].filter(Boolean).join(" · ")}
           </p>
         ) : null}
@@ -244,7 +244,7 @@ export default async function CondominioPage({ params }: PageProps) {
                 <p className="mb-1 text-[13px] font-medium text-navy md:text-[17px]">
                   {fact.value}
                 </p>
-                <p className="text-[8.5px] uppercase tracking-[0.05em] text-sand md:text-[10px]">
+                <p className="text-[8.5px] uppercase tracking-[0.05em] text-navy md:text-[10px]">
                   {fact.label}
                 </p>
               </div>
@@ -306,10 +306,10 @@ export default async function CondominioPage({ params }: PageProps) {
           <h2 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.16em]">
             Localização
           </h2>
-          <p className="mb-4 text-[13px] text-sand">
+            <p className="mb-4 text-[13px] text-navy">
             {condominio.bairro}, Londrina - PR
           </p>
-          <div className="flex h-[200px] items-center justify-center border border-dashed border-navy/10 bg-offwhite text-center text-xs leading-relaxed text-sand md:h-[300px]">
+            <div className="flex h-[200px] items-center justify-center border border-dashed border-navy/10 bg-offwhite text-center text-xs leading-relaxed text-navy md:h-[300px]">
             {condominio.latitude && condominio.longitude
               ? `${condominio.latitude}, ${condominio.longitude} - ${condominio.bairro}, Londrina`
               : `${condominio.bairro}, Londrina - PR`}

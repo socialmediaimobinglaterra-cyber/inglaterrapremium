@@ -236,13 +236,13 @@ function Rule({ label, right }: { label?: string; right?: string }) {
     <div className="border-y border-navy/10">
       <div className="site-container flex items-center gap-5 py-4">
         {label ? (
-          <span className="max-w-[62vw] overflow-hidden text-ellipsis whitespace-nowrap text-[8px] uppercase tracking-[0.2em] text-sand md:tracking-[0.4em]">
+          <span className="max-w-[62vw] overflow-hidden text-ellipsis whitespace-nowrap text-[8px] uppercase tracking-[0.2em] text-navy md:tracking-[0.4em]">
             {label}
           </span>
         ) : null}
         <div className="h-px flex-1 bg-navy/10" />
         {right ? (
-          <span className="whitespace-nowrap text-[8px] uppercase tracking-[0.4em] text-sand">
+          <span className="whitespace-nowrap text-[8px] uppercase tracking-[0.4em] text-navy">
             {right}
           </span>
         ) : null}
@@ -289,7 +289,7 @@ function HeroSearch() {
           "Casa com 4 suítes no Terra Bonita",
         ].map((example) => (
           <button
-            className="rounded-full border border-navy/10 px-3 py-1.5 text-[10.5px] text-sand"
+            className="rounded-full border border-navy/10 px-3 py-1.5 text-[10.5px] text-navy"
             key={example}
             type="button"
           >
@@ -323,7 +323,7 @@ function PropCard({ p, h }: { p: FeaturedProperty; h: string }) {
         </span>
       </div>
       <div className="absolute inset-x-0 bottom-0 p-[22px] pt-12">
-        <p className="mb-2 text-[8px] uppercase tracking-[0.3em] text-sand">
+        <p className="mb-2 text-[8px] uppercase tracking-[0.3em] text-terra-light">
           {p.location}
         </p>
         <h3 className="text-xl leading-tight tracking-[0.03em] text-white">
@@ -359,7 +359,7 @@ function BairroCard({ b }: { b: Bairro }) {
       />
       <div className="absolute inset-0 bg-gradient-to-t from-navy/95 via-navy/70 to-navy/15" />
       <div className="absolute inset-x-2 bottom-2.5 md:inset-x-4 md:bottom-[18px]">
-        <p className="mb-1 text-[6px] uppercase tracking-[0.3em] text-sand md:text-[7px]">
+        <p className="mb-1 text-[6px] uppercase tracking-[0.3em] text-terra-light md:text-[7px]">
           {b.cidade}
         </p>
         <h3 className="text-xs leading-tight tracking-[0.02em] text-white md:text-[15px]">
@@ -425,7 +425,7 @@ function DirCard({ d }: { d: (typeof DIRECTORS)[0] }) {
         <h3 className="mb-3.5 text-xl leading-none tracking-[0.03em]">
           {d.name}
         </h3>
-        <p className="border-l-2 border-terra pl-3 text-xs italic leading-[1.8] text-sand">
+        <p className="border-l-2 border-terra pl-3 text-xs italic leading-[1.8] text-navy">
           {d.quote}
         </p>
       </div>
@@ -448,13 +448,13 @@ function NewsCard({ n }: { n: (typeof NEWS)[0] }) {
           <span className="text-[8px] uppercase tracking-[0.3em] text-terra">
             {n.cat}
           </span>
-          <span className="text-[8px] text-sand">·</span>
-          <span className="text-[9px] text-sand">{n.date}</span>
+          <span className="text-[8px] text-navy">·</span>
+          <span className="text-[9px] text-navy">{n.date}</span>
         </div>
         <h3 className="mb-2.5 text-base leading-snug tracking-[0.02em] decoration-navy/30 underline-offset-4 group-hover:underline">
           {n.title}
         </h3>
-        <p className="text-[11px] leading-[1.8] text-sand">{n.excerpt}</p>
+        <p className="text-[11px] leading-[1.8] text-navy">{n.excerpt}</p>
         <div className="mt-[18px] flex items-center gap-2">
           <span className="text-[8px] uppercase tracking-[0.25em] text-terra">
             Ler mais
@@ -490,7 +490,7 @@ function CaptureForm() {
         <Field label="Bairro / localização" placeholder="Onde fica?" />
       </div>
       <label>
-        <span className="mb-1 block text-[7px] uppercase tracking-[0.35em] text-sand">
+        <span className="mb-1 block text-[7px] uppercase tracking-[0.35em] text-navy">
           Observações
         </span>
         <textarea
@@ -514,7 +514,7 @@ function Field({
 }) {
   return (
     <label>
-      <span className="mb-1 block text-[7px] uppercase tracking-[0.35em] text-sand">
+      <span className="mb-1 block text-[7px] uppercase tracking-[0.35em] text-navy">
         {label}
       </span>
       <input
@@ -627,7 +627,7 @@ export default async function Home() {
         <div className="animate-marquee flex whitespace-nowrap">
           {[...TICKER, ...TICKER, ...TICKER, ...TICKER].map((item, index) => (
             <span
-              className="pr-12 text-[8px] uppercase tracking-[0.38em] text-sand"
+              className="pr-12 text-[8px] uppercase tracking-[0.38em] text-navy"
               key={`${item}-${index}`}
             >
               {item} ·
@@ -712,7 +712,7 @@ export default async function Home() {
                 {stat.value}
                 <span className="text-[0.4em] text-terra">{stat.suffix}</span>
               </p>
-              <p className="text-[11px] leading-[1.6] text-sand">{stat.label}</p>
+              <p className="text-[11px] leading-[1.6] text-navy">{stat.label}</p>
             </div>
           ))}
         </div>
@@ -726,7 +726,7 @@ export default async function Home() {
             <br />
             da Inglaterra Premium
           </h2>
-          <p className="max-w-[280px] text-xs leading-[1.9] text-sand">
+          <p className="max-w-[280px] text-xs leading-[1.9] text-navy">
             Três décadas de mercado imobiliário de alto padrão concentradas em
             uma liderança que conhece cada detalhe.
           </p>
@@ -813,7 +813,7 @@ export default async function Home() {
             <br />
             está na Inglaterra?
           </h2>
-          <p className="mb-7 max-w-[380px] text-[13px] leading-[1.9] text-sand">
+          <p className="mb-7 max-w-[380px] text-[13px] leading-[1.9] text-navy">
             Apresente seu imóvel de alto padrão em Londrina à nossa equipe de
             curadoria. Avaliamos gratuitamente e conectamos seu patrimônio aos
             compradores certos — com discrição e eficiência.
@@ -836,7 +836,7 @@ export default async function Home() {
       <section className="site-container border-t border-navy/10 bg-offwhite py-14">
         <div className="mb-6 flex flex-col items-start justify-between gap-3 md:flex-row md:items-end md:gap-0">
           <div>
-            <p className="mb-1.5 text-[8px] uppercase tracking-[0.4em] text-sand">
+            <p className="mb-1.5 text-[8px] uppercase tracking-[0.4em] text-navy">
               Siga no Instagram
             </p>
             <h2 className="text-xl tracking-[0.06em] md:text-[26px]">

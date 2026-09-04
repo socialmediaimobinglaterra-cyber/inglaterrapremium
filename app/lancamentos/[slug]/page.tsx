@@ -61,7 +61,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 function EmptyImage({ nome }: { nome: string }) {
   return (
-    <div className="flex h-full min-h-[260px] items-center justify-center border border-dashed border-navy/10 bg-white text-center text-xs leading-relaxed text-sand">
+    <div className="flex h-full min-h-[260px] items-center justify-center border border-dashed border-navy/10 bg-white text-center text-xs leading-relaxed text-navy">
       Imagem de {nome} aguardando cadastro.
     </div>
   );
@@ -95,7 +95,7 @@ function RelatedCard({ lancamento }: { lancamento: LancamentoResumo }) {
         ) : null}
       </div>
       <div className="pt-3.5">
-        <p className="mb-1 text-[11px] tracking-[0.06em] text-sand">
+        <p className="mb-1 text-[11px] tracking-[0.06em] text-navy">
           {lancamento.bairro}, Londrina
         </p>
         <h3 className="text-[15px] font-normal leading-[1.3] text-navy">
@@ -157,7 +157,7 @@ export default async function LancamentoPage({ params }: PageProps) {
       <JsonLd lancamento={lancamento} />
 
       <div className="site-container pt-[88px] md:pt-[108px]">
-        <p className="mb-4 text-[11px] text-sand">
+        <p className="mb-4 text-[11px] text-navy">
           Início / Lançamentos / {lancamento.nome}
         </p>
         {lancamento.status ? (
@@ -173,7 +173,7 @@ export default async function LancamentoPage({ params }: PageProps) {
           {lancamento.nome} - Lançamento em {lancamento.bairro}, Londrina
         </h1>
         {lancamento.entrega ? (
-          <p className="text-[13px] text-sand">{lancamento.entrega}</p>
+              <p className="text-[13px] text-navy">{lancamento.entrega}</p>
         ) : null}
         {(lancamento.construtoraNome || lancamento.construtoraLogo) ? (
           <div className="mt-5 flex flex-wrap items-center gap-3">
@@ -187,7 +187,7 @@ export default async function LancamentoPage({ params }: PageProps) {
               </div>
             ) : null}
             {lancamento.construtoraNome ? (
-              <p className="text-[11px] uppercase tracking-[0.14em] text-sand">
+                    <p className="text-[11px] uppercase tracking-[0.14em] text-navy">
                 Construtora · {lancamento.construtoraNome}
               </p>
             ) : null}
@@ -218,7 +218,7 @@ export default async function LancamentoPage({ params }: PageProps) {
                 <p className="mb-1 text-[13px] font-medium text-navy md:text-[17px]">
                   {fact.value}
                 </p>
-                <p className="text-[8.5px] uppercase tracking-[0.05em] text-sand md:text-[10px]">
+                <p className="text-[8.5px] uppercase tracking-[0.05em] text-navy md:text-[10px]">
                   {fact.label}
                 </p>
               </div>
@@ -280,10 +280,10 @@ export default async function LancamentoPage({ params }: PageProps) {
           <h2 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.16em]">
             Localização
           </h2>
-          <p className="mb-4 text-[13px] text-sand">
+            <p className="mb-4 text-[13px] text-navy">
             {lancamento.bairro}, Londrina - PR
           </p>
-          <div className="flex h-[200px] items-center justify-center border border-dashed border-navy/10 bg-offwhite text-center text-xs leading-relaxed text-sand md:h-[300px]">
+            <div className="flex h-[200px] items-center justify-center border border-dashed border-navy/10 bg-offwhite text-center text-xs leading-relaxed text-navy md:h-[300px]">
             {lancamento.latitude && lancamento.longitude
               ? `${lancamento.latitude}, ${lancamento.longitude} - ${lancamento.bairro}, Londrina`
               : `${lancamento.bairro}, Londrina - PR`}

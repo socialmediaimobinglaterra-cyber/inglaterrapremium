@@ -69,7 +69,7 @@ export default function SobrePage() {
         <h1 className="mb-8 max-w-[840px] text-[clamp(36px,7vw,72px)] font-light leading-[1.05] tracking-[0.01em]">
           25 anos na Avenida Inglaterra, em Londrina
         </h1>
-        <div className="flex max-w-[720px] flex-col gap-5 text-[15px] leading-[1.9] text-sand md:text-[16px]">
+        <div className="flex max-w-[720px] flex-col gap-5 text-[15px] leading-[1.9] text-navy md:text-[16px]">
           <p>
             O Grupo Inglaterra nasceu em 2001, na Avenida Inglaterra, em
             Londrina. O nome veio daí — do endereço onde tudo começou.
@@ -92,7 +92,7 @@ export default function SobrePage() {
               <h2 className="mb-5 text-[26px] font-light leading-tight md:text-[34px]">
                 {unidade.titulo}
               </h2>
-              <div className="flex flex-col gap-4 text-[14px] leading-[1.85] text-sand md:text-[15px]">
+              <div className="flex flex-col gap-4 text-[14px] leading-[1.85] text-navy md:text-[15px]">
                 {unidade.paragrafos.map((paragrafo) => (
                   <p key={paragrafo}>{paragrafo}</p>
                 ))}
@@ -123,7 +123,7 @@ export default function SobrePage() {
               Nossa missão
             </p>
             <h2 className="sr-only">Nossa missão</h2>
-            <p className="text-[15px] leading-[1.9] text-sand md:text-[16px]">
+            <p className="text-[15px] leading-[1.9] text-navy md:text-[16px]">
               Dar apoio completo a quem compra, vende ou aluga um imóvel — do
               primeiro contato à assinatura do contrato. Isso inclui a parte
               comercial, mas também a jurídica, a financeira e a burocrática,
@@ -137,7 +137,7 @@ export default function SobrePage() {
               Nossa visão
             </p>
             <h2 className="sr-only">Nossa visão</h2>
-            <p className="text-[15px] leading-[1.9] text-sand md:text-[16px]">
+            <p className="text-[15px] leading-[1.9] text-navy md:text-[16px]">
               Ir além do bom negócio. Cada imóvel representa um plano de vida —
               mudar de casa, investir, começar algo novo. Queremos estar do
               lado certo dessa história.
@@ -173,7 +173,7 @@ export default function SobrePage() {
           <h2 className="mb-5 text-[clamp(32px,6vw,58px)] font-light leading-[1.08] tracking-[0.01em]">
             Quem está à frente
           </h2>
-          <p className="text-[15px] leading-[1.9] text-sand md:text-[16px]">
+          <p className="text-[15px] leading-[1.9] text-navy md:text-[16px]">
             Três diretores, cada um responsável por uma frente da operação — e
             todos acessíveis a quem precisa resolver algo.
           </p>
@@ -197,7 +197,7 @@ export default function SobrePage() {
                 <p className="mb-4 text-[9px] font-semibold uppercase tracking-[0.18em] text-terra">
                   {diretor.cargo}
                 </p>
-                <p className="text-[13px] leading-[1.85] text-sand">
+                <p className="text-[13px] leading-[1.85] text-navy">
                   {diretor.descricao}
                 </p>
               </div>

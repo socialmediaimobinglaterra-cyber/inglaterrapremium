@@ -162,7 +162,7 @@ function SimilarCard({ imovel }: { imovel: ImovelSearchResult }) {
         </span>
       </div>
       <div className="pt-3.5">
-        <p className="mb-1 text-[11px] tracking-[0.06em] text-sand">
+        <p className="mb-1 text-[11px] tracking-[0.06em] text-navy">
           {imovel.bairro}, Londrina
         </p>
         <h3 className="mb-2 text-[15px] font-normal leading-[1.3] text-navy">
@@ -298,7 +298,7 @@ export default async function ImovelPage({ params }: PageProps) {
       />
 
       <div className="site-container pt-[88px] md:pt-[108px]">
-        <p className="text-[11px] text-sand">
+        <p className="text-[11px] text-navy">
           Início / Imóveis / {imovel.bairro} / {imovel.titulo}
         </p>
       </div>
@@ -345,7 +345,7 @@ export default async function ImovelPage({ params }: PageProps) {
             <h1 className="mb-3 max-w-[620px] text-[clamp(24px,7vw,30px)] font-light leading-[1.15] tracking-[0.01em] md:text-[clamp(28px,3vw,40px)]">
               {imovel.titulo}
             </h1>
-            <p className="mb-5 text-[13px] text-sand">{getAddress(imovel)}</p>
+            <p className="mb-5 text-[13px] text-navy">{getAddress(imovel)}</p>
             <p className="text-2xl font-medium text-navy md:text-3xl">
               {currency(getPrice(imovel))}
             </p>
@@ -360,7 +360,7 @@ export default async function ImovelPage({ params }: PageProps) {
             ].map((fact) => (
               <div className="bg-white px-2 py-3.5 text-center md:px-4 md:py-5" key={fact.label}>
                 <p className="mb-1 text-lg font-light text-navy md:text-2xl">{fact.value}</p>
-                <p className="text-[8.5px] uppercase tracking-[0.05em] text-sand md:text-[10px]">
+                <p className="text-[8.5px] uppercase tracking-[0.05em] text-navy md:text-[10px]">
                   {fact.label}
                 </p>
               </div>
@@ -399,7 +399,7 @@ export default async function ImovelPage({ params }: PageProps) {
             <h2 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.16em]">
               Localização
             </h2>
-            <div className="flex h-[200px] items-center justify-center border border-dashed border-navy/10 bg-white text-center text-xs leading-relaxed text-sand md:h-[260px]">
+            <div className="flex h-[200px] items-center justify-center border border-dashed border-navy/10 bg-white text-center text-xs leading-relaxed text-navy md:h-[260px]">
               {imovel.latitude && imovel.longitude
                 ? `${imovel.latitude}, ${imovel.longitude} — ${imovel.bairro}, Londrina`
                 : `${getAddress(imovel)}`}

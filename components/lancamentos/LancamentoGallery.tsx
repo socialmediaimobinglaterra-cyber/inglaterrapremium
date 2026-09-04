@@ -21,7 +21,7 @@ export function LancamentoGallery({
 
   if (images.length === 0) {
     return (
-      <div className="flex aspect-[4/3] items-center justify-center border border-dashed border-navy/10 bg-white text-center text-xs leading-relaxed text-sand md:aspect-auto md:h-[520px]">
+      <div className="flex aspect-[4/3] items-center justify-center border border-dashed border-navy/10 bg-white text-center text-xs leading-relaxed text-navy md:aspect-auto md:h-[520px]">
         Imagens do lançamento aguardando cadastro.
       </div>
     );

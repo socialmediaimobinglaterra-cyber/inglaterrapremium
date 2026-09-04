@@ -90,7 +90,7 @@ function PillSelect({
       <label className="sr-only" htmlFor={selectId}>
         {label}
       </label>
-      <span className="mb-0.5 block text-[8px] uppercase tracking-[0.14em] text-sand">
+      <span className="mb-0.5 block text-[8px] uppercase tracking-[0.14em] text-navy">
         {label}
       </span>
       <select
@@ -105,7 +105,7 @@ function PillSelect({
           </option>
         ))}
       </select>
-      <span className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-[9px] text-sand">
+      <span className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-[9px] text-navy">
         ▾
       </span>
     </div>
@@ -131,14 +131,14 @@ function ListingCard({ imovel }: { imovel: ImovelSearchResult }) {
         </span>
       </div>
       <div className="pt-4">
-        <p className="mb-1.5 text-[11px] tracking-[0.06em] text-sand">
+        <p className="mb-1.5 text-[11px] tracking-[0.06em] text-navy">
           {imovel.bairro}, Londrina
         </p>
         <h3 className="mb-2.5 text-base font-normal leading-[1.3] tracking-[0.01em] text-navy">
           {imovel.titulo}
         </h3>
         <div className="flex items-baseline justify-between gap-4 border-t border-navy/10 pt-2.5">
-          <span className="text-[11px] text-sand">
+          <span className="text-[11px] text-navy">
             {area(imovel.area)}
             {imovel.suites && imovel.suites > 0 ? ` · ${imovel.suites} suítes` : ""}
             {imovel.vagas && imovel.vagas > 0 ? ` · ${imovel.vagas} vagas` : ""}
@@ -293,11 +293,11 @@ export function BuscaImoveisClient({
     <main className="bg-offwhite text-navy">
       <section className="pt-24 md:pt-32">
         <div className="site-container mb-7 md:mb-10">
-          <p className="mb-4 text-[11px] text-sand">Início / Imóveis / Comprar</p>
+          <p className="mb-4 text-[11px] text-navy">Início / Imóveis / Comprar</p>
           <h1 className="mb-3.5 max-w-[720px] text-[clamp(26px,8vw,34px)] font-light leading-[1.1] tracking-[0.02em] text-navy md:text-[clamp(34px,4vw,52px)]">
             Imóveis de Alto Padrão à Venda em Londrina
           </h1>
-          <p className="max-w-[520px] text-sm leading-[1.7] text-sand">
+          <p className="max-w-[520px] text-sm leading-[1.7] text-navy">
             Seleção curada de casas, apartamentos e coberturas nos bairros mais valorizados da cidade — Gleba Palhano, Bela Suíça, Aurora, Nova Prochet, Jardim Higienópolis e Terra Bonita.
           </p>
         </div>
@@ -369,7 +369,7 @@ export function BuscaImoveisClient({
                 Perguntar →
               </button>
             </form>
-            {aiNote ? <p className="mt-2 text-[11px] text-sand">{aiNote}</p> : null}
+            {aiNote ? <p className="mt-2 text-[11px] text-navy">{aiNote}</p> : null}
           </div>
           <div className="flex flex-wrap gap-2 md:justify-end">
             {[
@@ -377,7 +377,7 @@ export function BuscaImoveisClient({
               "Casa com 4 suítes no Terra Bonita",
             ].map((example) => (
               <button
-                className="rounded-full border border-navy/10 px-3 py-1.5 text-[10.5px] text-sand"
+                className="rounded-full border border-navy/10 px-3 py-1.5 text-[10.5px] text-navy"
                 key={example}
                 onClick={() => {
                   setNaturalQuery(example);
@@ -396,12 +396,12 @@ export function BuscaImoveisClient({
         <div className="mb-7 flex flex-col items-start justify-between gap-2.5 border-b border-navy/10 pb-5 md:mb-10 md:flex-row md:items-baseline md:gap-0">
           <h2 className="text-lg font-medium text-navy md:text-xl">
             Resultados da busca{" "}
-            <span className="text-sm font-normal text-sand">
+            <span className="text-sm font-normal text-navy">
               {imoveis.length} imóveis encontrados
             </span>
           </h2>
           <div className="flex items-center gap-2">
-            <label className="text-xs text-sand" htmlFor="ordenar-imoveis">
+            <label className="text-xs text-navy" htmlFor="ordenar-imoveis">
               Ordenar por
             </label>
             <select
@@ -426,7 +426,7 @@ export function BuscaImoveisClient({
           </div>
         ) : (
           <div className="px-5 py-12 text-center">
-            <p className="mb-4 text-[15px] text-sand">
+            <p className="mb-4 text-[15px] text-navy">
               Nenhum imóvel encontrado com esses critérios.
             </p>
             <button

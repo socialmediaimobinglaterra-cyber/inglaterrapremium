@@ -113,7 +113,7 @@ function MobileDropdown({
         {entries.length > 0 ? (
           <span
             aria-hidden
-            className={`text-[14px] leading-none text-sand transition duration-200 ${
+            className={`text-[14px] leading-none text-navy transition duration-200 ${
               open ? "rotate-45" : ""
             }`}
           >
