@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import { getPool } from "@/lib/db";
+import { imageUrlOrFallback } from "@/lib/images";
 
 export const dynamic = "force-dynamic";
 
@@ -169,10 +171,9 @@ function slugify(value: string) {
 
 function getMainImage(fotos: Foto[] | null) {
   const all = Array.isArray(fotos) ? fotos : [];
-  return (
+  return imageUrlOrFallback(
     all.find((foto) => String(foto.Principal) === "1")?.URLArquivo ??
-    all[0]?.URLArquivo ??
-    "/images/capa-hero.jpg"
+      all[0]?.URLArquivo
   );
 }
 
@@ -305,10 +306,12 @@ function PropCard({ p, h }: { p: FeaturedProperty; h: string }) {
     <article
       className={`group relative h-[340px] cursor-pointer overflow-hidden bg-[#1e1e1e] ${h}`}
     >
-      <img
+      <Image
         alt={`${p.title} — ${p.location}`}
         className="absolute inset-0 h-full w-full object-cover opacity-[0.82] transition duration-700 group-hover:scale-105 group-hover:opacity-70"
-        src={p.image}
+        fill
+        sizes="(min-width: 768px) 50vw, 100vw"
+        src={imageUrlOrFallback(p.image)}
       />
       <div className="absolute inset-0 bg-gradient-to-t from-navy/90 via-transparent to-transparent" />
       <div className="absolute left-[22px] right-[22px] top-5 flex items-start justify-between">
@@ -347,10 +350,12 @@ function PropCard({ p, h }: { p: FeaturedProperty; h: string }) {
 function BairroCard({ b }: { b: Bairro }) {
   return (
     <article className="group relative h-[168px] cursor-pointer overflow-hidden bg-[#1e1e1e] md:h-80">
-      <img
+      <Image
         alt={`Bairro ${b.name}, ${b.cidade}`}
         className="absolute inset-0 h-full w-full object-cover opacity-65 transition duration-700 group-hover:scale-[1.07] group-hover:opacity-55"
-        src={b.image}
+        fill
+        sizes="(min-width: 768px) 25vw, 33vw"
+        src={imageUrlOrFallback(b.image)}
       />
       <div className="absolute inset-0 bg-gradient-to-t from-navy/95 via-navy/70 to-navy/15" />
       <div className="absolute inset-x-2 bottom-2.5 md:inset-x-4 md:bottom-[18px]">
@@ -782,9 +787,9 @@ export default async function Home() {
                 <p className="mb-2 text-[22px] font-light text-white/15 md:text-[28px]">
                   {diff.num}
                 </p>
-                <h4 className="mb-2 text-[13px] tracking-[0.03em] text-white md:text-[15px]">
+                <h3 className="mb-2 text-[13px] tracking-[0.03em] text-white md:text-[15px]">
                   {diff.title}
-                </h4>
+                </h3>
                 <p className="text-[11px] leading-[1.7] text-white/40">
                   {diff.text}
                 </p>

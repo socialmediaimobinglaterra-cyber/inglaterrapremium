@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { after } from "next/server";
 import { notFound } from "next/navigation";
 import { PropertyContactButton } from "@/components/analytics/PropertyContactButton";
 import { recordAnalyticsEvent } from "@/lib/analytics";
+import { imageUrlOrFallback } from "@/lib/images";
 import { absoluteUrl } from "@/lib/site";
 import {
   getImovelBySlug,
@@ -143,14 +145,17 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 function SimilarCard({ imovel }: { imovel: ImovelSearchResult }) {
   const price = imovel.precoVenda ?? imovel.precoLocacao;
+  const image = imageUrlOrFallback(imovel.image);
 
   return (
     <Link className="group block text-inherit no-underline" href={`/imoveis/${imovel.slug}`}>
       <div className="relative aspect-[5/4] overflow-hidden bg-[#1e1e1e]">
-        <img
+        <Image
           alt={`${imovel.titulo} — ${imovel.bairro}, Londrina`}
           className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
-          src={imovel.image}
+          fill
+          sizes="(min-width: 768px) 33vw, 100vw"
+          src={image}
         />
         <span className="absolute left-3.5 top-3.5 border border-white/40 px-2.5 py-[5px] text-[8px] uppercase tracking-[0.3em] text-white">
           {imovel.tag}
@@ -169,12 +174,15 @@ function SimilarCard({ imovel }: { imovel: ImovelSearchResult }) {
   );
 }
 
-function Field({ placeholder }: { placeholder: string }) {
+function Field({ label, placeholder }: { label: string; placeholder: string }) {
   return (
-    <input
-      className="border border-white/20 bg-white/10 px-3.5 py-3 text-[13px] text-white outline-none placeholder:text-white/40"
-      placeholder={placeholder}
-    />
+    <label className="block">
+      <span className="sr-only">{label}</span>
+      <input
+        className="w-full border border-white/20 bg-white/10 px-3.5 py-3 text-[13px] text-white outline-none placeholder:text-white/40"
+        placeholder={placeholder}
+      />
+    </label>
   );
 }
 
@@ -276,6 +284,7 @@ export default async function ImovelPage({ params }: PageProps) {
   const differentials = extractDifferentials(imovel.descricao);
   const corretor = imovel.corretor;
   const contactWhatsappHref = whatsappHref(imovel);
+  const mainImage = imageUrlOrFallback(gallery[0]?.url);
 
   return (
     <main className="bg-offwhite text-navy">
@@ -296,20 +305,25 @@ export default async function ImovelPage({ params }: PageProps) {
 
       <section className="site-container pt-5">
         <div className="md:grid md:h-[560px] md:grid-cols-[1.7fr_1fr] md:gap-2">
-          <div className="aspect-[4/3] overflow-hidden md:aspect-auto">
-            <img
+          <div className="relative aspect-[4/3] overflow-hidden md:aspect-auto">
+            <Image
               alt={`${imovel.titulo} — foto principal`}
               className="h-full w-full object-cover"
-              src={gallery[0]?.url}
+              fill
+              priority
+              sizes="(min-width: 768px) 63vw, 100vw"
+              src={mainImage}
             />
           </div>
           <div className="mt-2 grid grid-cols-4 gap-1.5 md:mt-0 md:grid-cols-2 md:grid-rows-2 md:gap-2">
             {gallery.slice(1, 5).map((foto, index) => (
               <div className="relative aspect-[4/3] overflow-hidden md:aspect-auto" key={foto.url}>
-                <img
+                <Image
                   alt={foto.alt ?? `${imovel.titulo} — foto ${index + 2}`}
                   className="h-full w-full object-cover"
-                  src={foto.url}
+                  fill
+                  sizes="(min-width: 768px) 19vw, 25vw"
+                  src={imageUrlOrFallback(foto.url)}
                 />
                 {index === 3 && gallery.length > 5 ? (
                   <div className="absolute inset-0 flex items-center justify-center bg-navy/60 text-[13px] font-medium text-white">
@@ -403,7 +417,7 @@ export default async function ImovelPage({ params }: PageProps) {
                 <img
                   alt={corretor.nome ?? "Contato Inglaterra Premium"}
                   className="h-[52px] w-[52px] shrink-0 rounded-full object-cover"
-                  src={corretor.foto}
+                  src={imageUrlOrFallback(corretor.foto)}
                 />
               ) : (
                 <div className="h-[52px] w-[52px] shrink-0 rounded-full bg-white/10" />
@@ -418,13 +432,16 @@ export default async function ImovelPage({ params }: PageProps) {
               </div>
             </div>
             <form className="flex flex-col gap-3.5">
-              <Field placeholder="Seu nome" />
-              <Field placeholder="WhatsApp" />
-              <textarea
-                className="resize-none border border-white/20 bg-white/10 px-3.5 py-3 text-[13px] text-white outline-none"
-                defaultValue={`Tenho interesse no imóvel "${imovel.titulo}". Gostaria de agendar uma visita.`}
-                rows={3}
-              />
+              <Field label="Seu nome" placeholder="Seu nome" />
+              <Field label="WhatsApp" placeholder="WhatsApp" />
+              <label className="block">
+                <span className="sr-only">Mensagem</span>
+                <textarea
+                  className="w-full resize-none border border-white/20 bg-white/10 px-3.5 py-3 text-[13px] text-white outline-none"
+                  defaultValue={`Tenho interesse no imóvel "${imovel.titulo}". Gostaria de agendar uma visita.`}
+                  rows={3}
+                />
+              </label>
               <PropertyContactButton
                 imovelId={imovel.id}
                 whatsappHref={contactWhatsappHref}

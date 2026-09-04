@@ -1,5 +1,6 @@
 import { XMLParser } from "fast-xml-parser";
 import { Pool, PoolClient } from "pg";
+import { normalizeImageUrl } from "./images";
 
 export const DEFAULT_KENLO_XML_URL =
   "https://imob.valuegaia.com.br/integra/midia.ashx?midia=AgendaCafeImovel&p=79jA%2fz7y9yJfyVhhZtMoUfPChbC91raf";
@@ -219,7 +220,10 @@ function asArray<T>(value: T | T[] | undefined): T[] {
 function getFotos(raw: RawRecord): RawRecord[] {
   const fotos = raw.Fotos as RawRecord | undefined;
   if (!fotos) return [];
-  return asArray((fotos.Foto as RawRecord | RawRecord[] | undefined) ?? []);
+  return asArray((fotos.Foto as RawRecord | RawRecord[] | undefined) ?? []).map((foto) => ({
+    ...foto,
+    URLArquivo: normalizeImageUrl(text(foto.URLArquivo)) ?? foto.URLArquivo,
+  }));
 }
 
 function parseImovel(raw: RawRecord): ParsedImovel | null {

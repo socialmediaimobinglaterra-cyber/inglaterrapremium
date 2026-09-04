@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { imageUrlOrFallback } from "@/lib/images";
 import { getBairroPageData, type BairroDetail } from "@/lib/queries/bairros";
 import type { ImovelSearchResult } from "@/lib/queries/imoveis";
 import { absoluteUrl } from "@/lib/site";
@@ -92,14 +94,17 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 function ImovelCard({ imovel }: { imovel: ImovelSearchResult }) {
   const price = imovel.precoVenda ?? imovel.precoLocacao;
+  const image = imageUrlOrFallback(imovel.image);
 
   return (
     <Link className="group block text-inherit no-underline" href={`/imoveis/${imovel.slug}`}>
       <div className="relative aspect-[5/4] overflow-hidden bg-[#1e1e1e]">
-        <img
+        <Image
           alt={`${imovel.titulo} — ${imovel.bairro}, Londrina`}
           className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
-          src={imovel.image}
+          fill
+          sizes="(min-width: 768px) 33vw, 100vw"
+          src={image}
         />
         <span className="absolute left-3.5 top-3.5 border border-white/40 px-2.5 py-[5px] text-[8px] uppercase tracking-[0.3em] text-white">
           {imovel.tag}
@@ -146,10 +151,13 @@ export default async function BairroPage({ params }: PageProps) {
       />
 
       <section className="relative flex h-[52vh] min-h-[340px] items-end md:h-[66vh] md:min-h-[480px]">
-        <img
+        <Image
           alt={`Vista do bairro ${bairro.nome}, Londrina`}
           className="absolute inset-0 h-full w-full object-cover"
-          src={bairro.heroImage}
+          fill
+          priority
+          sizes="100vw"
+          src={imageUrlOrFallback(bairro.heroImage)}
         />
         <div className="absolute inset-0 bg-gradient-to-b from-navy/5 to-navy/80" />
         <div className="site-container relative z-10 w-full pb-8 md:pb-14">
@@ -227,10 +235,12 @@ export default async function BairroPage({ params }: PageProps) {
               href={`/bairros/${other.slug}`}
               key={other.slug}
             >
-              <img
+              <Image
                 alt={`Bairro ${other.nome}, Londrina`}
                 className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
-                src={other.image}
+                fill
+                sizes="(min-width: 768px) 33vw, 100vw"
+                src={imageUrlOrFallback(other.image)}
               />
               <div className="absolute inset-0 bg-gradient-to-b from-transparent from-45% to-navy/85" />
               <div className="absolute inset-x-[18px] bottom-[18px]">

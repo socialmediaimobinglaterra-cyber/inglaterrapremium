@@ -1,4 +1,5 @@
 import { getPool } from "@/lib/db";
+import { imageUrlOrFallback } from "@/lib/images";
 
 export type ImovelSearchFilters = {
   bairro?: string | null;
@@ -84,10 +85,9 @@ function numberOrNull(value: unknown) {
 
 function getMainImage(fotos: Foto[] | null) {
   const all = Array.isArray(fotos) ? fotos : [];
-  return (
+  return imageUrlOrFallback(
     all.find((foto) => String(foto.Principal) === "1")?.URLArquivo ??
-    all[0]?.URLArquivo ??
-    "/images/capa-hero.jpg"
+      all[0]?.URLArquivo
   );
 }
 
@@ -96,7 +96,7 @@ function mapFotos(fotos: Array<Foto & { FotoDescricao?: string; FotoTitulo?: str
   return all
     .filter((foto) => Boolean(foto.URLArquivo))
     .map((foto) => ({
-      url: foto.URLArquivo as string,
+      url: imageUrlOrFallback(foto.URLArquivo),
       alt: foto.FotoDescricao ?? foto.FotoTitulo,
       principal: String(foto.Principal) === "1",
     }));

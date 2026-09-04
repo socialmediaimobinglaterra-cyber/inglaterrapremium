@@ -1,8 +1,10 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useState, useTransition } from "react";
 import type { ImovelSearchFilters, ImovelSearchResult } from "@/lib/queries/imoveis";
+import { imageUrlOrFallback } from "@/lib/images";
 
 type Props = {
   initialImoveis: ImovelSearchResult[];
@@ -77,13 +79,23 @@ function PillSelect({
   onChange: (value: string) => void;
   options: string[];
 }) {
+  const selectId = `filtro-${label
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")}`;
+
   return (
     <div className="relative min-w-[148px] shrink-0 rounded-[24px] border border-navy/10 py-2 pl-4 pr-[30px]">
+      <label className="sr-only" htmlFor={selectId}>
+        {label}
+      </label>
       <span className="mb-0.5 block text-[8px] uppercase tracking-[0.14em] text-sand">
         {label}
       </span>
       <select
         className="w-full cursor-pointer appearance-none border-0 bg-transparent text-[13px] font-medium text-navy outline-none"
+        id={selectId}
         onChange={(event) => onChange(event.target.value)}
         value={value}
       >
@@ -102,14 +114,17 @@ function PillSelect({
 
 function ListingCard({ imovel }: { imovel: ImovelSearchResult }) {
   const price = imovel.precoVenda ?? imovel.precoLocacao;
+  const image = imageUrlOrFallback(imovel.image);
 
   return (
     <Link className="group block text-inherit no-underline" href={`/imoveis/${imovel.slug}`}>
       <div className="relative aspect-[4/3] cursor-pointer overflow-hidden bg-[#1e1e1e] md:aspect-[5/4]">
-        <img
+        <Image
           alt={`${imovel.titulo} — ${imovel.bairro}, Londrina`}
           className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
-          src={imovel.image}
+          fill
+          sizes="(min-width: 768px) 33vw, 100vw"
+          src={image}
         />
         <span className="absolute left-3.5 top-3.5 border border-white/40 px-2.5 py-[5px] text-[8px] uppercase tracking-[0.3em] text-white">
           {imovel.tag}
@@ -344,6 +359,7 @@ export function BuscaImoveisClient({
               }}
             >
               <input
+                aria-label="Busca inteligente de imóveis"
                 className="flex-1 border-0 bg-transparent py-1 text-[15px] italic text-navy outline-none placeholder:text-navy/45 md:py-2.5 md:text-[19px]"
                 onChange={(event) => setNaturalQuery(event.target.value)}
                 placeholder="Descreva o imóvel que você procura..."
@@ -378,16 +394,19 @@ export function BuscaImoveisClient({
 
       <section className="site-container py-7 md:py-10">
         <div className="mb-7 flex flex-col items-start justify-between gap-2.5 border-b border-navy/10 pb-5 md:mb-10 md:flex-row md:items-baseline md:gap-0">
-          <p className="text-lg font-medium text-navy md:text-xl">
+          <h2 className="text-lg font-medium text-navy md:text-xl">
             Resultados da busca{" "}
             <span className="text-sm font-normal text-sand">
               {imoveis.length} imóveis encontrados
             </span>
-          </p>
+          </h2>
           <div className="flex items-center gap-2">
-            <span className="text-xs text-sand">Ordenar por</span>
+            <label className="text-xs text-sand" htmlFor="ordenar-imoveis">
+              Ordenar por
+            </label>
             <select
               className="cursor-pointer border-0 bg-transparent text-xs font-medium text-navy outline-none"
+              id="ordenar-imoveis"
               onChange={(event) => onOrderChange(event.target.value)}
               value={order}
             >
