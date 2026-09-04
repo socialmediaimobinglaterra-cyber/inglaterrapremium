@@ -31,6 +31,7 @@ type ParsedImovel = {
   cep: string | null;
   latitude: number | null;
   longitude: number | null;
+  nomeCondominioOriginal: string | null;
   nomeCondominio: string | null;
   nomeEdificio: string | null;
   statusComercial: string | null;
@@ -63,6 +64,14 @@ type SyncResult = {
   imoveisSairam: number;
   valorMinimoPendente: boolean;
   bairrosContagem: Record<string, number>;
+  condominiosNormalizados: {
+    totalOcorrencias: number;
+    nomes: Array<{
+      de: string;
+      para: string;
+      ocorrencias: number;
+    }>;
+  };
   sample: Array<{
     codigo: string;
     titulo: string;
@@ -76,6 +85,72 @@ function text(value: unknown): string | null {
   if (value === undefined || value === null) return null;
   const normalized = String(value).trim();
   return normalized.length > 0 ? normalized : null;
+}
+
+const CONDOMINIO_NAME_CORRECTIONS = [
+  ["Plange", "Plaenge"],
+] as const;
+
+const LOWERCASE_TITLE_WORDS = new Set(["de", "do", "da", "dos", "das", "e"]);
+
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function isAllCapsName(value: string) {
+  return value !== value.toLocaleLowerCase("pt-BR") && value === value.toLocaleUpperCase("pt-BR");
+}
+
+function titleCaseName(value: string) {
+  return value
+    .toLocaleLowerCase("pt-BR")
+    .replace(/\p{L}[\p{L}\p{M}]*/gu, (word) =>
+      LOWERCASE_TITLE_WORDS.has(word)
+        ? word
+        : `${word.charAt(0).toLocaleUpperCase("pt-BR")}${word.slice(1)}`
+    );
+}
+
+function normalizeCondominioName(value: string | null) {
+  if (!value) return null;
+
+  let normalized = value.trim().replace(/\s+/g, " ");
+
+  if (isAllCapsName(normalized)) {
+    normalized = titleCaseName(normalized);
+  }
+
+  normalized = normalized.replace(/^Edificio\b/i, "Edifício");
+
+  for (const [from, to] of CONDOMINIO_NAME_CORRECTIONS) {
+    normalized = normalized.replace(new RegExp(`\\b${escapeRegExp(from)}\\b`, "gi"), to);
+  }
+
+  return normalized;
+}
+
+function getCondominioNormalizationReport(imoveis: ParsedImovel[]) {
+  const changes = new Map<string, { de: string; para: string; ocorrencias: number }>();
+
+  for (const imovel of imoveis) {
+    if (!imovel.nomeCondominioOriginal || !imovel.nomeCondominio) continue;
+    if (imovel.nomeCondominioOriginal === imovel.nomeCondominio) continue;
+
+    const key = `${imovel.nomeCondominioOriginal}\n${imovel.nomeCondominio}`;
+    const current = changes.get(key);
+    changes.set(key, {
+      de: imovel.nomeCondominioOriginal,
+      para: imovel.nomeCondominio,
+      ocorrencias: (current?.ocorrencias ?? 0) + 1,
+    });
+  }
+
+  const nomes = [...changes.values()].sort((a, b) => a.de.localeCompare(b.de, "pt-BR"));
+
+  return {
+    totalOcorrencias: nomes.reduce((total, item) => total + item.ocorrencias, 0),
+    nomes,
+  };
 }
 
 function numberValue(value: unknown): number | null {
@@ -139,6 +214,7 @@ function parseImovel(raw: RawRecord): ParsedImovel | null {
   if (!codigo || !titulo) return null;
 
   const corretor = (raw.corretor as RawRecord | undefined) ?? {};
+  const nomeCondominioOriginal = text(raw.NomeCondominio);
 
   return {
     kenloCodigo: codigo,
@@ -158,7 +234,8 @@ function parseImovel(raw: RawRecord): ParsedImovel | null {
     cep: text(raw.CEP),
     latitude: numberValue(raw.latitude),
     longitude: numberValue(raw.longitude),
-    nomeCondominio: text(raw.NomeCondominio),
+    nomeCondominioOriginal,
+    nomeCondominio: normalizeCondominioName(nomeCondominioOriginal),
     nomeEdificio: text(raw.NomeEdificio),
     statusComercial: text(raw.StatusComercial),
     tipoOferta: text(raw.TipoOferta),
@@ -457,6 +534,7 @@ export async function syncKenlo(pool: Pool, xmlUrl = DEFAULT_KENLO_XML_URL) {
 
     const xml = await fetchXml(xmlUrl);
     const parsed = parseXml(xml);
+    const condominiosNormalizados = getCondominioNormalizationReport(parsed);
 
     await client.query("begin");
     const config = await getPremiumConfig(client);
@@ -594,6 +672,7 @@ export async function syncKenlo(pool: Pool, xmlUrl = DEFAULT_KENLO_XML_URL) {
       imoveisSairam,
       valorMinimoPendente: config.valorMinimoPendente,
       bairrosContagem,
+      condominiosNormalizados,
       sample: sample.rows,
     } satisfies SyncResult;
   } catch (error) {
