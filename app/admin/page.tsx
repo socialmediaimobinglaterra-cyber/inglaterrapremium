@@ -63,6 +63,15 @@ export default async function AdminPage() {
               Cadastrar, editar e remover páginas individuais de lançamentos.
             </p>
           </Link>
+          <Link
+            className="border border-navy/10 bg-offwhite p-5 transition hover:border-terra"
+            href="/admin/bairros"
+          >
+            <h2 className="mb-2 text-sm font-semibold">Bairros</h2>
+            <p className="text-sm leading-relaxed text-sand">
+              Editar imagem de capa, texto institucional e FAQ dos bairros.
+            </p>
+          </Link>
           {user.role === "admin" ? (
             <Link
               className="border border-navy/10 bg-offwhite p-5 transition hover:border-terra"

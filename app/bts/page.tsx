@@ -74,7 +74,7 @@ const cases = [
       "Galpão logístico de 4.200 m² desenvolvido sob medida para operação de e-commerce, com contrato de locação de 15 anos.",
     stat1: { v: "4.200 m²", l: "Área construída" },
     stat2: { v: "15 anos", l: "Contrato" },
-    image: "https://picsum.photos/seed/casebts1/900/700",
+    image: "/images/capa-hero.jpg",
   },
   {
     nome: "Sede Administrativa Gleba Palhano",
@@ -82,7 +82,7 @@ const cases = [
       "Edifício corporativo de 3 pavimentos projetado para a sede regional de uma empresa de tecnologia, com contrato de locação de 10 anos.",
     stat1: { v: "1.800 m²", l: "Área construída" },
     stat2: { v: "10 anos", l: "Contrato" },
-    image: "https://picsum.photos/seed/casebts2/900/700",
+    image: "/images/capa-hero.jpg",
   },
 ];
 
@@ -196,7 +196,7 @@ export default function BtsPage() {
           <img
             alt="Imóvel corporativo sob medida — Inglaterra BTS, Londrina"
             className="h-full w-full object-cover"
-            src="https://picsum.photos/seed/btsmain/1400/900"
+            src="/images/capa-hero.jpg"
           />
         </div>
       </div>

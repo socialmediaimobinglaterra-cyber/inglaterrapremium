@@ -31,7 +31,7 @@ type Bairro = {
   name: string;
   cidade: string;
   imoveis: number;
-  image: string;
+  image: string | null;
 };
 
 const PRODUCTS = [
@@ -40,21 +40,21 @@ const PRODUCTS = [
     desc: "Casas e apartamentos à venda em condomínios fechados de alto padrão em Londrina, com segurança 24h e localização privilegiada nos bairros mais valorizados da cidade.",
     cta: "Ver Condomínios",
     label: "CONDOMÍNIOS",
-    image: "https://picsum.photos/seed/inglaterra10/900/1100",
+    image: "/images/capa-hero.jpg",
   },
   {
     title: "Inglaterra BTS",
     desc: "Built to Suit corporativo em Londrina — imóveis projetados e construídos sob medida para a operação da sua empresa, com contrato de locação de longo prazo.",
     cta: "Conheça o BTS",
     label: "BTS",
-    image: "https://picsum.photos/seed/inglaterra11/900/1100",
+    image: "/images/capa-hero.jpg",
   },
   {
     title: "Lançamentos",
     desc: "Acesso antecipado a lançamentos imobiliários de alto padrão em Londrina, antes da divulgação ao mercado, com condições exclusivas de pré-lançamento.",
     cta: "Ver Lançamentos",
     label: "LANÇAMENTOS",
-    image: "https://picsum.photos/seed/inglaterra12/900/1100",
+    image: "/images/capa-hero.jpg",
   },
 ];
 
@@ -89,7 +89,7 @@ const NEWS = [
     title: "Alto padrão registra recorde de valorização em Londrina no 1º semestre",
     excerpt:
       "Imóveis de luxo em Londrina lideraram a valorização imobiliária da cidade, com alta de até 18% em 12 meses nos bairros Gleba Palhano e Bela Suíça, segundo levantamento da Inglaterra Premium.",
-    image: "https://picsum.photos/seed/inglaterra16/800/500",
+    image: "/images/capa-hero.jpg",
   },
   {
     cat: "Tendências",
@@ -97,7 +97,7 @@ const NEWS = [
     title: "Build to Suit: a nova fronteira para quem não abre mão da exclusividade",
     excerpt:
       "Clientes de alta renda de Londrina migram para imóveis 100% personalizados. Entenda como funciona o modelo Build to Suit da Inglaterra Premium, do terreno ao projeto pronto.",
-    image: "https://picsum.photos/seed/inglaterra17/800/500",
+    image: "/images/capa-hero.jpg",
   },
   {
     cat: "Legislação",
@@ -105,7 +105,7 @@ const NEWS = [
     title: "Novas regras para condomínios de luxo: o que muda em 2026",
     excerpt:
       "As alterações aprovadas no código civil afetam cláusulas de convenção em empreendimentos verticais de alto padrão em todo o Brasil, incluindo os condomínios de Londrina.",
-    image: "https://picsum.photos/seed/inglaterra18/800/500",
+    image: "/images/capa-hero.jpg",
   },
 ];
 
@@ -160,15 +160,6 @@ function area(value: string | number | null) {
   })} m²`;
 }
 
-function slugify(value: string) {
-  return value
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-}
-
 function getMainImage(fotos: Foto[] | null) {
   const all = Array.isArray(fotos) ? fotos : [];
   return imageUrlOrFallback(
@@ -189,11 +180,11 @@ async function getHomeData() {
       limit 4
     `),
     pool.query(`
-      select b.nome, b.cidade, count(i.id)::int as imoveis
+      select b.nome, b.cidade, b.imagem_capa, count(i.id)::int as imoveis
       from bairros b
       left join imoveis i on i.bairro_id = b.id and i.ativo = true and i.ativo_no_site = true
       where b.ativo = true
-      group by b.id, b.nome, b.cidade
+      group by b.id, b.nome, b.cidade, b.imagem_capa
       order by imoveis desc, b.nome
       limit 6
     `),
@@ -217,13 +208,14 @@ async function getHomeData() {
     image: getMainImage(row.fotos),
   }));
 
-  const bairros: Bairro[] = bairrosResult.rows.map((row, index) => ({
+  const bairros: Bairro[] = bairrosResult.rows.map((row) => ({
     name: row.nome,
     cidade: row.cidade ?? "Londrina",
     imoveis: row.imoveis,
-    image: `https://picsum.photos/seed/inglaterra-bairro-${index}-${slugify(
-      row.nome
-    )}/600/800`,
+    image:
+      typeof row.imagem_capa === "string" && row.imagem_capa.trim()
+        ? row.imagem_capa.trim()
+        : null,
   }));
 
   const totals = statsResult.rows[0] ?? { total_imoveis: 0, total_bairros: 0 };
@@ -349,14 +341,16 @@ function PropCard({ p, h }: { p: FeaturedProperty; h: string }) {
 
 function BairroCard({ b }: { b: Bairro }) {
   return (
-    <article className="group relative h-[168px] cursor-pointer overflow-hidden bg-[#1e1e1e] md:h-80">
-      <Image
-        alt={`Bairro ${b.name}, ${b.cidade}`}
-        className="absolute inset-0 h-full w-full object-cover opacity-65 transition duration-700 group-hover:scale-[1.07] group-hover:opacity-55"
-        fill
-        sizes="(min-width: 768px) 25vw, 33vw"
-        src={imageUrlOrFallback(b.image)}
-      />
+    <article className="group relative h-[168px] cursor-pointer overflow-hidden bg-navy md:h-80">
+      {b.image ? (
+        <Image
+          alt={`Bairro ${b.name}, ${b.cidade}`}
+          className="absolute inset-0 h-full w-full object-cover opacity-65 transition duration-700 group-hover:scale-[1.07] group-hover:opacity-55"
+          fill
+          sizes="(min-width: 768px) 25vw, 33vw"
+          src={imageUrlOrFallback(b.image)}
+        />
+      ) : null}
       <div className="absolute inset-0 bg-gradient-to-t from-navy/95 via-navy/70 to-navy/15" />
       <div className="absolute inset-x-2 bottom-2.5 md:inset-x-4 md:bottom-[18px]">
         <p className="mb-1 text-[6px] uppercase tracking-[0.3em] text-terra-light md:text-[7px]">
@@ -759,7 +753,7 @@ export default async function Home() {
         <img
           alt="Corretor de imóveis de alto padrão"
           className="absolute inset-0 h-full w-full object-cover opacity-30"
-          src="https://picsum.photos/seed/inglaterra27/1600/800"
+          src="/images/capa-hero.jpg"
         />
         <div className="site-container relative z-10 grid min-h-[520px] grid-cols-1 items-center gap-10 py-14 md:grid-cols-2 md:gap-20 md:py-20">
           <div>
@@ -855,8 +849,8 @@ export default async function Home() {
         <div className="grid grid-cols-1 gap-2 md:grid-cols-3 md:gap-[3px]">
           {[
             "/images/capa-hero.jpg",
-            "https://picsum.photos/seed/inglaterra20/400/400",
-            "https://picsum.photos/seed/inglaterra21/400/400",
+            "/images/capa-hero.jpg",
+            "/images/capa-hero.jpg",
           ].map((url, index) => (
             <div
               className="group relative aspect-square cursor-pointer overflow-hidden bg-[#c8bdb6]"

@@ -23,6 +23,7 @@ create table if not exists bairros (
   slug text not null unique,
   cidade text not null default 'Londrina',
   estado text not null default 'PR',
+  imagem_capa text,
   descricao text,
   faq jsonb,
   imoveis_xml_bruto integer not null default 0,
@@ -34,6 +35,7 @@ create table if not exists bairros (
 
 alter table bairros add column if not exists descricao text;
 alter table bairros add column if not exists faq jsonb;
+alter table bairros add column if not exists imagem_capa text;
 
 create table if not exists configuracoes_premium (
   id uuid primary key default gen_random_uuid(),

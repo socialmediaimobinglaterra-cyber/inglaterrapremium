@@ -87,7 +87,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       title,
       description,
       type: "website",
-      images: [{ url: data.bairro.heroImage, alt: `Bairro ${data.bairro.nome}, Londrina` }],
+      images: data.bairro.heroImage
+        ? [{ url: data.bairro.heroImage, alt: `Bairro ${data.bairro.nome}, Londrina` }]
+        : undefined,
     },
   };
 }
@@ -150,15 +152,17 @@ export default async function BairroPage({ params }: PageProps) {
         type="application/ld+json"
       />
 
-      <section className="relative flex h-[52vh] min-h-[340px] items-end md:h-[66vh] md:min-h-[480px]">
-        <Image
-          alt={`Vista do bairro ${bairro.nome}, Londrina`}
-          className="absolute inset-0 h-full w-full object-cover"
-          fill
-          priority
-          sizes="100vw"
-          src={imageUrlOrFallback(bairro.heroImage)}
-        />
+      <section className="relative flex h-[52vh] min-h-[340px] items-end bg-navy md:h-[66vh] md:min-h-[480px]">
+        {bairro.heroImage ? (
+          <Image
+            alt={`Vista do bairro ${bairro.nome}, Londrina`}
+            className="absolute inset-0 h-full w-full object-cover"
+            fill
+            priority
+            sizes="100vw"
+            src={imageUrlOrFallback(bairro.heroImage)}
+          />
+        ) : null}
         <div className="absolute inset-0 bg-gradient-to-b from-navy/5 to-navy/80" />
         <div className="site-container relative z-10 w-full pb-8 md:pb-14">
           <p className="mb-3 text-[9px] font-semibold uppercase tracking-[0.3em] text-terra-light">
@@ -221,6 +225,27 @@ export default async function BairroPage({ params }: PageProps) {
         </div>
       </section>
 
+      {bairro.faq.length > 0 ? (
+        <section className="site-container border-t border-navy/10 py-10 md:py-16">
+          <p className="mb-2 text-[9px] font-semibold uppercase tracking-[0.25em] text-terra">
+            Perguntas frequentes
+          </p>
+          <h2 className="mb-7 text-[22px] font-light tracking-[0.01em] md:text-3xl">
+            Sobre {bairro.nome}
+          </h2>
+          <div className="divide-y divide-navy/10 border-y border-navy/10">
+            {bairro.faq.map((item) => (
+              <div className="py-5" key={item.question}>
+                <h3 className="mb-2 text-base font-normal text-navy">{item.question}</h3>
+                <p className="max-w-3xl text-sm leading-[1.8] text-[#4a4a48]">
+                  {item.answer}
+                </p>
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
       <section className="site-container py-10 md:py-16">
         <p className="mb-2 text-[9px] font-semibold uppercase tracking-[0.25em] text-terra">
           Explore mais
@@ -231,17 +256,19 @@ export default async function BairroPage({ params }: PageProps) {
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3 md:gap-1">
           {outrosBairros.map((other) => (
             <Link
-              className="group relative block aspect-[16/10] overflow-hidden no-underline md:aspect-[4/5]"
+              className="group relative block aspect-[16/10] overflow-hidden bg-navy no-underline md:aspect-[4/5]"
               href={`/bairros/${other.slug}`}
               key={other.slug}
             >
-              <Image
-                alt={`Bairro ${other.nome}, Londrina`}
-                className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
-                fill
-                sizes="(min-width: 768px) 33vw, 100vw"
-                src={imageUrlOrFallback(other.image)}
-              />
+              {other.image ? (
+                <Image
+                  alt={`Bairro ${other.nome}, Londrina`}
+                  className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
+                  fill
+                  sizes="(min-width: 768px) 33vw, 100vw"
+                  src={imageUrlOrFallback(other.image)}
+                />
+              ) : null}
               <div className="absolute inset-0 bg-gradient-to-b from-transparent from-45% to-navy/85" />
               <div className="absolute inset-x-[18px] bottom-[18px]">
                 <p className="mb-1 text-[8px] uppercase tracking-[0.25em] text-terra-light">

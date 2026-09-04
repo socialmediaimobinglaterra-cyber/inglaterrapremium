@@ -17,11 +17,12 @@ export type BairroDetail = {
   slug: string;
   cidade: string;
   estado: string;
+  imagemCapa: string | null;
   descricao: string | null;
   faq: BairroFaq[];
   valorMedioVenda: number | null;
   imoveisDisponiveis: number;
-  heroImage: string;
+  heroImage: string | null;
 };
 
 export type BairroSummary = {
@@ -29,7 +30,7 @@ export type BairroSummary = {
   slug: string;
   cidade: string;
   imoveisDisponiveis: number;
-  image: string;
+  image: string | null;
 };
 
 function numberOrNull(value: unknown) {
@@ -89,7 +90,7 @@ export async function getBairroPageData(slug: string) {
   const pool = getPool();
   const bairroResult = await pool.query(
     `
-      select id, nome, slug, cidade, estado, descricao, faq
+      select id, nome, slug, cidade, estado, imagem_capa, descricao, faq
       from bairros
       where slug = $1 and ativo = true
       limit 1
@@ -100,7 +101,7 @@ export async function getBairroPageData(slug: string) {
   const bairroRow = bairroResult.rows[0];
   if (!bairroRow) return null;
 
-  const [metricsResult, imoveisResult, heroResult, outrosResult] = await Promise.all([
+  const [metricsResult, imoveisResult, outrosResult] = await Promise.all([
     pool.query(
       `
         select
@@ -129,40 +130,18 @@ export async function getBairroPageData(slug: string) {
     ),
     pool.query(
       `
-        select fotos
-        from imoveis
-        where ativo = true
-          and ativo_no_site = true
-          and bairro_id = $1
-          and jsonb_array_length(fotos) > 0
-        order by coalesce(preco_venda, preco_locacao) desc nulls last
-        limit 1
-      `,
-      [bairroRow.id]
-    ),
-    pool.query(
-      `
         select
           b.nome,
           b.slug,
           b.cidade,
-          count(i.id)::int as imoveis_disponiveis,
-          (
-            select i2.fotos
-            from imoveis i2
-            where i2.ativo = true
-              and i2.ativo_no_site = true
-              and i2.bairro_id = b.id
-              and jsonb_array_length(i2.fotos) > 0
-            order by coalesce(i2.preco_venda, i2.preco_locacao) desc nulls last
-            limit 1
-          ) as fotos
+          b.imagem_capa,
+          count(i.id)::int as imoveis_disponiveis
         from bairros b
         left join imoveis i on i.ativo = true
           and i.ativo_no_site = true
           and i.bairro_id = b.id
         where b.ativo = true and b.slug <> $1
-        group by b.id, b.nome, b.slug, b.cidade
+        group by b.id, b.nome, b.slug, b.cidade, b.imagem_capa
         order by imoveis_disponiveis desc, b.nome
         limit 3
       `,
@@ -177,11 +156,18 @@ export async function getBairroPageData(slug: string) {
     slug: bairroRow.slug,
     cidade: bairroRow.cidade,
     estado: bairroRow.estado,
+    imagemCapa:
+      typeof bairroRow.imagem_capa === "string" && bairroRow.imagem_capa.trim()
+        ? bairroRow.imagem_capa.trim()
+        : null,
     descricao: bairroRow.descricao,
     faq: parseFaq(bairroRow.faq),
     valorMedioVenda: numberOrNull(metrics.valor_medio_venda),
     imoveisDisponiveis: metrics.imoveis_disponiveis ?? 0,
-    heroImage: getMainImage(heroResult.rows[0]?.fotos ?? null),
+    heroImage:
+      typeof bairroRow.imagem_capa === "string" && bairroRow.imagem_capa.trim()
+        ? bairroRow.imagem_capa.trim()
+        : null,
   };
 
   const imoveis = imoveisResult.rows.map(mapImovel);
@@ -190,7 +176,10 @@ export async function getBairroPageData(slug: string) {
     slug: row.slug,
     cidade: row.cidade,
     imoveisDisponiveis: row.imoveis_disponiveis,
-    image: getMainImage(row.fotos),
+    image:
+      typeof row.imagem_capa === "string" && row.imagem_capa.trim()
+        ? row.imagem_capa.trim()
+        : null,
   }));
 
   return { bairro, imoveis, outrosBairros };
