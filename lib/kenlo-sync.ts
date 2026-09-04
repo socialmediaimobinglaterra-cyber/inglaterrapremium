@@ -72,6 +72,15 @@ type SyncResult = {
       ocorrencias: number;
     }>;
   };
+  condominiosExistentesNormalizados: Array<{
+    de: string;
+    para: string;
+  }>;
+  imoveisExistentesNormalizados: Array<{
+    de: string;
+    para: string;
+    ocorrencias: number;
+  }>;
   sample: Array<{
     codigo: string;
     titulo: string;
@@ -89,6 +98,10 @@ function text(value: unknown): string | null {
 
 const CONDOMINIO_NAME_CORRECTIONS = [
   ["Plange", "Plaenge"],
+  ["RESIDENC IAL ATHENAS", "Residencial Athenas"],
+  ["Porto das Aguas", "Porto das Águas"],
+  ["Estancia Cabral", "Estância Cabral"],
+  ["Condominio Caiuã", "Condomínio Caiuã"],
 ] as const;
 
 const LOWERCASE_TITLE_WORDS = new Set(["de", "do", "da", "dos", "das", "e"]);
@@ -116,15 +129,17 @@ function normalizeCondominioName(value: string | null) {
 
   let normalized = value.trim().replace(/\s+/g, " ");
 
+  for (const [from, to] of CONDOMINIO_NAME_CORRECTIONS) {
+    normalized = normalized.replace(new RegExp(`\\b${escapeRegExp(from)}\\b`, "gi"), to);
+  }
+
   if (isAllCapsName(normalized)) {
     normalized = titleCaseName(normalized);
   }
 
-  normalized = normalized.replace(/^Edificio\b/i, "Edifício");
-
-  for (const [from, to] of CONDOMINIO_NAME_CORRECTIONS) {
-    normalized = normalized.replace(new RegExp(`\\b${escapeRegExp(from)}\\b`, "gi"), to);
-  }
+  normalized = normalized
+    .replace(/\bEdificio\b/gi, "Edifício")
+    .replace(/\bCondominio\b/gi, "Condomínio");
 
   return normalized;
 }
@@ -518,6 +533,58 @@ async function refreshCondominios(
   );
 }
 
+async function normalizeExistingCondominios(client: PoolClient) {
+  const { rows } = await client.query<{ id: string; nome: string }>(
+    "select id, nome from condominios"
+  );
+  const changed: Array<{ de: string; para: string }> = [];
+
+  for (const row of rows) {
+    const normalized = normalizeCondominioName(row.nome);
+    if (!normalized || normalized === row.nome) continue;
+
+    await client.query(
+      "update condominios set nome = $2, updated_at = now() where id = $1",
+      [row.id, normalized]
+    );
+    changed.push({ de: row.nome, para: normalized });
+  }
+
+  return changed.sort((a, b) => a.de.localeCompare(b.de, "pt-BR"));
+}
+
+async function normalizeExistingKenloImoveis(client: PoolClient) {
+  const { rows } = await client.query<{ id: string; nome_condominio: string }>(
+    `
+      select id, nome_condominio
+      from imoveis
+      where origem = 'kenlo'
+        and nome_condominio is not null
+    `
+  );
+  const changed = new Map<string, { de: string; para: string; ocorrencias: number }>();
+
+  for (const row of rows) {
+    const normalized = normalizeCondominioName(row.nome_condominio);
+    if (!normalized || normalized === row.nome_condominio) continue;
+
+    await client.query(
+      "update imoveis set nome_condominio = $2, updated_at = now() where id = $1",
+      [row.id, normalized]
+    );
+
+    const key = `${row.nome_condominio}\n${normalized}`;
+    const current = changed.get(key);
+    changed.set(key, {
+      de: row.nome_condominio,
+      para: normalized,
+      ocorrencias: (current?.ocorrencias ?? 0) + 1,
+    });
+  }
+
+  return [...changed.values()].sort((a, b) => a.de.localeCompare(b.de, "pt-BR"));
+}
+
 export async function syncKenlo(pool: Pool, xmlUrl = DEFAULT_KENLO_XML_URL) {
   const client = await pool.connect();
   const seenAt = new Date();
@@ -609,6 +676,8 @@ export async function syncKenlo(pool: Pool, xmlUrl = DEFAULT_KENLO_XML_URL) {
     );
 
     await refreshCondominios(client, filtered, bairroIds, seenAt);
+    const condominiosExistentesNormalizados = await normalizeExistingCondominios(client);
+    const imoveisExistentesNormalizados = await normalizeExistingKenloImoveis(client);
 
     await client.query(
       `
@@ -673,6 +742,8 @@ export async function syncKenlo(pool: Pool, xmlUrl = DEFAULT_KENLO_XML_URL) {
       valorMinimoPendente: config.valorMinimoPendente,
       bairrosContagem,
       condominiosNormalizados,
+      condominiosExistentesNormalizados,
+      imoveisExistentesNormalizados,
       sample: sample.rows,
     } satisfies SyncResult;
   } catch (error) {
