@@ -19,6 +19,11 @@ type ValorOption = {
   valorMaximo: number | null;
 };
 
+type AiInterpretationNotice = {
+  interpreted: string[];
+  naoInterpretado: string[];
+};
+
 const NEGOCIO_OPTIONS = ["Comprar", "Alugar"] as const;
 const SUITES_OPTIONS = [
   { label: "Não definido", value: null },
@@ -47,6 +52,25 @@ function currency(value: number | null) {
 function area(value: number | null) {
   if (value === null) return "Área sob consulta";
   return `${value.toLocaleString("pt-BR", { maximumFractionDigits: 0 })} m²`;
+}
+
+function describeAiFilters(filters: ImovelSearchFilters) {
+  const labels = [
+    filters.tipo,
+    filters.bairro,
+    filters.negocio === "Alugar" ? "Locação" : filters.negocio === "Comprar" ? "Venda" : null,
+    filters.suitesMinimas ? `${filters.suitesMinimas}+ suítes` : null,
+    filters.vagasMinimas ? `${filters.vagasMinimas}+ vagas` : null,
+    filters.quartosMinimos ? `${filters.quartosMinimos}+ quartos` : null,
+    filters.areaMinima ? `a partir de ${area(filters.areaMinima)}` : null,
+    filters.valorMinimo
+      ? `acima de ${currency(filters.valorMinimo)}`
+      : filters.valorMaximo
+        ? `até ${currency(filters.valorMaximo)}`
+        : null,
+  ];
+
+  return labels.filter((label): label is string => Boolean(label));
 }
 
 function IconFiltros() {
@@ -165,6 +189,11 @@ export function BuscaImoveisClient({
   const [order, setOrder] = useState<NonNullable<ImovelSearchFilters["order"]>>("relevancia");
   const [naturalQuery, setNaturalQuery] = useState("");
   const [aiNote, setAiNote] = useState("");
+  const [aiOnlyFilters, setAiOnlyFilters] = useState<
+    Pick<ImovelSearchFilters, "vagasMinimas" | "quartosMinimos" | "areaMinima">
+  >({});
+  const [aiInterpretationNotice, setAiInterpretationNotice] =
+    useState<AiInterpretationNotice | null>(null);
   const [isPending, startTransition] = useTransition();
 
   const bairroOptions = useMemo(() => ["Todos os bairros", ...bairros], [bairros]);
@@ -179,6 +208,7 @@ export function BuscaImoveisClient({
     valorMinimo: valorOption.valorMinimo,
     valorMaximo: valorOption.valorMaximo,
     suitesMinimas: suitesOption.value,
+    ...aiOnlyFilters,
     order,
   };
 
@@ -198,36 +228,73 @@ export function BuscaImoveisClient({
     });
   }
 
+  function clearAiOnlyState() {
+    setAiOnlyFilters({});
+    setAiInterpretationNotice(null);
+  }
+
   function onBairroChange(value: string) {
+    clearAiOnlyState();
     setBairro(value);
-    updateFilters({ ...currentFilters, bairro: value });
+    updateFilters({
+      ...currentFilters,
+      bairro: value,
+      vagasMinimas: null,
+      quartosMinimos: null,
+      areaMinima: null,
+    });
   }
 
   function onTipoChange(value: string) {
+    clearAiOnlyState();
     setTipo(value);
-    updateFilters({ ...currentFilters, tipo: value });
+    updateFilters({
+      ...currentFilters,
+      tipo: value,
+      vagasMinimas: null,
+      quartosMinimos: null,
+      areaMinima: null,
+    });
   }
 
   function onNegocioChange(value: string) {
+    clearAiOnlyState();
     const next = value === "Alugar" ? "Alugar" : "Comprar";
     setNegocio(next);
-    updateFilters({ ...currentFilters, negocio: next });
+    updateFilters({
+      ...currentFilters,
+      negocio: next,
+      vagasMinimas: null,
+      quartosMinimos: null,
+      areaMinima: null,
+    });
   }
 
   function onValorChange(value: string) {
+    clearAiOnlyState();
     const option = VALOR_OPTIONS.find((item) => item.label === value) ?? VALOR_OPTIONS[0];
     setValor(value);
     updateFilters({
       ...currentFilters,
       valorMinimo: option.valorMinimo,
       valorMaximo: option.valorMaximo,
+      vagasMinimas: null,
+      quartosMinimos: null,
+      areaMinima: null,
     });
   }
 
   function onSuitesChange(value: string) {
+    clearAiOnlyState();
     const option = SUITES_OPTIONS.find((item) => item.label === value) ?? SUITES_OPTIONS[0];
     setSuites(value);
-    updateFilters({ ...currentFilters, suitesMinimas: option.value });
+    updateFilters({
+      ...currentFilters,
+      suitesMinimas: option.value,
+      vagasMinimas: null,
+      quartosMinimos: null,
+      areaMinima: null,
+    });
   }
 
   function onOrderChange(value: string) {
@@ -244,12 +311,14 @@ export function BuscaImoveisClient({
     setNegocio("Comprar");
     setOrder("relevancia");
     setAiNote("");
+    clearAiOnlyState();
     updateFilters({ negocio: "Comprar", order: "relevancia" });
   }
 
   async function runNaturalSearch(query = naturalQuery) {
     if (!query.trim()) return;
     setAiNote("");
+    setAiInterpretationNotice(null);
 
     startTransition(() => {
       void (async () => {
@@ -267,14 +336,48 @@ export function BuscaImoveisClient({
             return;
           }
 
-          const filters = data.filters as ImovelSearchFilters;
+          const rawFilters = data.filters as ImovelSearchFilters & {
+            naoInterpretado?: unknown;
+          };
+          const filters: ImovelSearchFilters = {
+            bairro: rawFilters.bairro,
+            tipo: rawFilters.tipo,
+            negocio: rawFilters.negocio,
+            suitesMinimas: rawFilters.suitesMinimas,
+            vagasMinimas: rawFilters.vagasMinimas,
+            quartosMinimos: rawFilters.quartosMinimos,
+            areaMinima: rawFilters.areaMinima,
+            valorMinimo: rawFilters.valorMinimo,
+            valorMaximo: rawFilters.valorMaximo,
+          };
+          const naoInterpretado = Array.isArray(data.naoInterpretado)
+            ? data.naoInterpretado.filter((item: unknown): item is string => typeof item === "string")
+            : Array.isArray(rawFilters.naoInterpretado)
+              ? rawFilters.naoInterpretado.filter(
+                  (item: unknown): item is string => typeof item === "string"
+                )
+              : [];
           const nextBairro = filters.bairro ?? "Todos os bairros";
           const nextTipo = filters.tipo ?? "Todos os tipos";
           const nextNegocio = filters.negocio ?? negocio;
+          const nextAiOnlyFilters = {
+            vagasMinimas: filters.vagasMinimas ?? null,
+            quartosMinimos: filters.quartosMinimos ?? null,
+            areaMinima: filters.areaMinima ?? null,
+          };
 
           setBairro(nextBairro);
           setTipo(nextTipo);
           setNegocio(nextNegocio === "Alugar" ? "Alugar" : "Comprar");
+          setAiOnlyFilters(nextAiOnlyFilters);
+          setAiInterpretationNotice(
+            naoInterpretado.length > 0
+              ? {
+                  interpreted: describeAiFilters(filters),
+                  naoInterpretado,
+                }
+              : null
+          );
           setSuites(
             SUITES_OPTIONS.find((item) => item.value === filters.suitesMinimas)?.label ??
               "Não definido"
@@ -283,6 +386,7 @@ export function BuscaImoveisClient({
           await runSearch({ ...filters, order });
         } catch {
           setAiNote("Busca inteligente indisponível no momento. Use os filtros rápidos.");
+          setAiInterpretationNotice(null);
           await runSearch(currentFilters);
         }
       })();
@@ -393,6 +497,21 @@ export function BuscaImoveisClient({
       </section>
 
       <section className="site-container py-7 md:py-10">
+        {aiInterpretationNotice ? (
+          <div className="mb-5 border border-navy/10 bg-white px-4 py-3 text-[13px] leading-relaxed text-navy">
+            Filtramos por:{" "}
+            <span className="font-medium">
+              {aiInterpretationNotice.interpreted.length > 0
+                ? aiInterpretationNotice.interpreted.join(", ")
+                : "filtros disponíveis"}
+            </span>
+            . Não conseguimos filtrar automaticamente por:{" "}
+            <span className="font-medium">
+              {aiInterpretationNotice.naoInterpretado.join(", ")}
+            </span>{" "}
+            — verifique os detalhes de cada imóvel.
+          </div>
+        ) : null}
         <div className="mb-7 flex flex-col items-start justify-between gap-2.5 border-b border-navy/10 pb-5 md:mb-10 md:flex-row md:items-baseline md:gap-0">
           <h2 className="text-lg font-medium text-navy md:text-xl">
             Resultados da busca{" "}

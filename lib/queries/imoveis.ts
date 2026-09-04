@@ -8,6 +8,9 @@ export type ImovelSearchFilters = {
   valorMinimo?: number | null;
   valorMaximo?: number | null;
   suitesMinimas?: number | null;
+  vagasMinimas?: number | null;
+  quartosMinimos?: number | null;
+  areaMinima?: number | null;
   order?: "relevancia" | "maior_valor" | "menor_valor" | "mais_recentes";
 };
 
@@ -106,10 +109,13 @@ export function normalizeSearchFilters(filters: ImovelSearchFilters) {
   return {
     bairro: filters.bairro && filters.bairro !== "Todos os bairros" ? filters.bairro : null,
     tipo: filters.tipo && filters.tipo !== "Todos os tipos" ? filters.tipo : null,
-    negocio: filters.negocio ?? "Comprar",
-    valorMinimo: filters.valorMinimo ?? null,
-    valorMaximo: filters.valorMaximo ?? null,
-    suitesMinimas: filters.suitesMinimas ?? null,
+    negocio: filters.negocio === "Alugar" ? "Alugar" : "Comprar",
+    valorMinimo: numberOrNull(filters.valorMinimo),
+    valorMaximo: numberOrNull(filters.valorMaximo),
+    suitesMinimas: numberOrNull(filters.suitesMinimas),
+    vagasMinimas: numberOrNull(filters.vagasMinimas),
+    quartosMinimos: numberOrNull(filters.quartosMinimos),
+    areaMinima: numberOrNull(filters.areaMinima),
     order: filters.order ?? "relevancia",
   } satisfies ImovelSearchFilters;
 }
@@ -173,6 +179,21 @@ export async function searchImoveis(rawFilters: ImovelSearchFilters, limit = 24)
   if (filters.suitesMinimas !== null && filters.suitesMinimas !== undefined) {
     values.push(filters.suitesMinimas);
     where.push("coalesce(suites, 0) >= $" + values.length);
+  }
+
+  if (filters.vagasMinimas !== null && filters.vagasMinimas !== undefined) {
+    values.push(filters.vagasMinimas);
+    where.push("coalesce(vagas, 0) >= $" + values.length);
+  }
+
+  if (filters.quartosMinimos !== null && filters.quartosMinimos !== undefined) {
+    values.push(filters.quartosMinimos);
+    where.push("coalesce(dormitorios, 0) >= $" + values.length);
+  }
+
+  if (filters.areaMinima !== null && filters.areaMinima !== undefined) {
+    values.push(filters.areaMinima);
+    where.push("coalesce(area_util, area_total, 0) >= $" + values.length);
   }
 
   values.push(limit);

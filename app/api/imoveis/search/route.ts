@@ -14,6 +14,9 @@ export async function POST(request: Request) {
       tipo: filters.tipo,
       valor_min: filters.valorMinimo,
       valor_max: filters.valorMaximo,
+      vagas_min: filters.vagasMinimas,
+      quartos_min: filters.quartosMinimos,
+      area_min: filters.areaMinima,
       termo_livre: null,
     };
 
