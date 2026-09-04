@@ -179,7 +179,7 @@ function Field({ label, placeholder }: { label: string; placeholder: string }) {
     <label className="block">
       <span className="sr-only">{label}</span>
       <input
-        className="w-full border border-white/20 bg-white/10 px-3.5 py-3 text-[13px] text-white outline-none placeholder:text-white/40"
+        className="w-full border border-white/20 bg-white/10 px-3.5 py-3 text-[13px] text-white outline-none placeholder:text-white/75"
         placeholder={placeholder}
       />
     </label>
@@ -426,7 +426,7 @@ export default async function ImovelPage({ params }: PageProps) {
                 <p className="text-[14.5px] font-medium text-white">
                   {corretor.nome ?? "Inglaterra Premium"}
                 </p>
-                <p className="text-[11.5px] text-white/50">
+                <p className="text-[11.5px] text-white/75">
                   {corretor.telefone || corretor.celular || corretor.email || imovel.bairro}
                 </p>
               </div>

@@ -211,7 +211,7 @@ export default function SobrePage() {
           <h2 className="mb-4 text-[clamp(30px,5vw,54px)] font-light leading-[1.08]">
             Vamos conversar?
           </h2>
-          <p className="mb-8 max-w-[560px] text-[15px] leading-[1.9] text-white/55 md:text-[16px]">
+          <p className="mb-8 max-w-[560px] text-[15px] leading-[1.9] text-white/75 md:text-[16px]">
             Se você quer comprar, vender, alugar ou investir em Londrina, nossa
             equipe está pronta para ajudar.
           </p>

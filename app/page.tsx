@@ -315,7 +315,7 @@ function PropCard({ p, h }: { p: FeaturedProperty; h: string }) {
       />
       <div className="absolute inset-0 bg-gradient-to-t from-navy/90 via-transparent to-transparent" />
       <div className="absolute left-[22px] right-[22px] top-5 flex items-start justify-between">
-        <span className="text-[32px] font-light leading-none text-white/20">
+        <span className="text-[32px] font-light leading-none text-white/75">
           {p.id}
         </span>
         <span className="border border-white/25 px-2.5 py-1 text-[8px] uppercase tracking-[0.38em] text-white/80">
@@ -330,7 +330,7 @@ function PropCard({ p, h }: { p: FeaturedProperty; h: string }) {
           {p.title}
         </h3>
         <div className="max-h-14 overflow-hidden opacity-100 transition duration-500 md:max-h-0 md:opacity-0 md:group-hover:max-h-14 md:group-hover:opacity-100">
-          <div className="flex flex-wrap gap-x-3.5 gap-y-1 pt-2.5 text-[10px] text-white/50">
+          <div className="flex flex-wrap gap-x-3.5 gap-y-1 pt-2.5 text-[10px] text-white/75">
             <span>{p.area}</span>
             {p.bedrooms > 0 ? (
               <>
@@ -366,7 +366,7 @@ function BairroCard({ b }: { b: Bairro }) {
           {b.name}
         </h3>
         <div className="max-h-6 overflow-hidden opacity-100 transition duration-300 md:max-h-0 md:opacity-0 md:group-hover:max-h-6 md:group-hover:opacity-100">
-          <p className="pt-1 text-[8px] text-white/50 md:text-[9px]">
+          <p className="pt-1 text-[8px] text-white/75 md:text-[9px]">
             {b.imoveis} imóveis
           </p>
         </div>
@@ -384,7 +384,7 @@ function ProdCard({ p }: { p: (typeof PRODUCTS)[0] }) {
         src={p.image}
       />
       <div className="absolute left-[22px] top-[22px]">
-        <span className="border border-white/20 px-2.5 py-1 text-[8px] uppercase tracking-[0.4em] text-white/50">
+        <span className="border border-white/20 px-2.5 py-1 text-[8px] uppercase tracking-[0.4em] text-white/75">
           {p.label}
         </span>
       </div>
@@ -393,7 +393,7 @@ function ProdCard({ p }: { p: (typeof PRODUCTS)[0] }) {
           {p.title}
         </h3>
         <div className="max-h-[120px] overflow-hidden opacity-100 transition duration-500 md:max-h-0 md:opacity-0 md:group-hover:max-h-[120px] md:group-hover:opacity-100">
-          <p className="mb-[18px] text-xs leading-[1.8] text-white/45">
+          <p className="mb-[18px] text-xs leading-[1.8] text-white/75">
             {p.desc}
           </p>
         </div>
@@ -530,7 +530,7 @@ function NewsletterBlock() {
   return (
     <section className="site-container grid grid-cols-1 items-center gap-8 bg-terra py-12 md:grid-cols-2 md:gap-16 md:py-16">
       <div>
-        <p className="mb-3.5 text-[8px] uppercase tracking-[0.45em] text-white/55">
+        <p className="mb-3.5 text-[8px] uppercase tracking-[0.45em] text-white/75">
           Newsletter
         </p>
         <h2 className="mb-3.5 text-[clamp(24px,6.5vw,38px)] font-light leading-tight tracking-[0.04em] text-white">
@@ -538,19 +538,19 @@ function NewsletterBlock() {
           <br />
           direto no seu e-mail
         </h2>
-        <p className="max-w-[340px] text-xs leading-[1.9] text-white/55">
+        <p className="max-w-[340px] text-xs leading-[1.9] text-white/75">
           Lançamentos exclusivos, análises de mercado e seleções da nossa
           curadoria — antes de todo mundo.
         </p>
       </div>
       <form className="flex flex-col gap-3">
-        <p className="text-[11px] leading-[1.7] text-white/50">
+        <p className="text-[11px] leading-[1.7] text-white/75">
           Sem spam. Conteúdo com real valor para quem vive ou investe em imóveis
           de alto padrão. Cancele a qualquer momento.
         </p>
         <div className="flex">
           <input
-            className="min-w-0 flex-1 border border-r-0 border-white/25 bg-white/10 px-[18px] py-[13px] text-xs text-white outline-none placeholder:text-white/45"
+            className="min-w-0 flex-1 border border-r-0 border-white/25 bg-white/10 px-[18px] py-[13px] text-xs text-white outline-none placeholder:text-white/75"
             placeholder="seu@email.com"
             type="email"
           />
@@ -602,7 +602,7 @@ export default async function Home() {
         <div className="absolute inset-0 bg-gradient-to-b from-navy/30 via-navy/20 to-navy/75" />
         <div className="site-container absolute inset-x-0 top-[74px] flex items-center gap-3.5 md:top-[100px]">
           <div className="h-px w-6 shrink-0 bg-terra-light" />
-          <span className="text-[8px] uppercase tracking-[0.3em] text-white/60 md:text-[9px]">
+          <span className="text-[8px] uppercase tracking-[0.3em] text-white/75 md:text-[9px]">
             Imóvel em destaque — Londrina, Paraná
           </span>
         </div>
@@ -612,12 +612,12 @@ export default async function Home() {
             <br />
             em Londrina
           </h1>
-          <p className="mb-5 text-[clamp(15px,4.4vw,18px)] font-light italic tracking-[0.02em] text-white/55 md:mb-9 md:text-[clamp(16px,1.8vw,22px)]">
+          <p className="mb-5 text-[clamp(15px,4.4vw,18px)] font-light italic tracking-[0.02em] text-white/75 md:mb-9 md:text-[clamp(16px,1.8vw,22px)]">
             Onde visão se torna patrimônio.
           </p>
           <HeroSearch />
         </div>
-        <div className="absolute bottom-12 right-16 hidden flex-col items-center gap-2 text-[8px] uppercase tracking-[0.35em] text-white/35 [writing-mode:vertical-rl] md:flex">
+        <div className="absolute bottom-12 right-16 hidden flex-col items-center gap-2 text-[8px] uppercase tracking-[0.35em] text-white/75 [writing-mode:vertical-rl] md:flex">
           Rolar
           <div className="mt-1 h-8 w-px bg-white/25" />
         </div>
@@ -685,10 +685,10 @@ export default async function Home() {
             <h2 className="text-[clamp(26px,7vw,46px)] font-light leading-tight tracking-[0.04em] text-white">
               Compre pronto, alugue sob medida
               <br />
-              <span className="text-white/35">ou entre antes de todo mundo</span>
+              <span className="text-white/75">ou entre antes de todo mundo</span>
             </h2>
           </div>
-          <p className="max-w-[280px] text-xs leading-[1.9] text-white/40">
+          <p className="max-w-[280px] text-xs leading-[1.9] text-white/75">
             Três caminhos para comprar, construir ou investir em Londrina —
             escolha o que faz sentido para você e sua família.
           </p>
@@ -774,7 +774,7 @@ export default async function Home() {
               <br />
               Inglaterra Premium
             </h2>
-            <p className="mb-8 max-w-[360px] text-[13px] leading-[1.9] text-white/45">
+            <p className="mb-8 max-w-[360px] text-[13px] leading-[1.9] text-white/75">
               Trabalhe como corretor de imóveis de alto padrão em Londrina.
               Represente clientes exigentes com o suporte de uma marca
               consolidada há 25 anos na cidade.
@@ -790,7 +790,7 @@ export default async function Home() {
                 <h3 className="mb-2 text-[13px] tracking-[0.03em] text-white md:text-[15px]">
                   {diff.title}
                 </h3>
-                <p className="text-[11px] leading-[1.7] text-white/40">
+                <p className="text-[11px] leading-[1.7] text-white/75">
                   {diff.text}
                 </p>
               </div>

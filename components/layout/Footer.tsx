@@ -23,15 +23,15 @@ export function Footer() {
               className="h-11 w-auto"
             />
           </div>
-          <p className="max-w-[220px] text-[11px] leading-[1.9] text-white/35">
+          <p className="max-w-[220px] text-[11px] leading-[1.9] text-white/75">
             Imóveis de alto padrão com curadoria e excelência há 25 anos em
             Londrina e região.
           </p>
           <div className="mt-5 flex flex-col gap-1.5">
-            <p className="text-[10px] text-white/30">CRECI-PR 12.345</p>
-            <p className="text-[10px] text-white/30">(43) 3343-3010</p>
-            <p className="text-[10px] text-white/30">{organization.email}</p>
-            <p className="text-[10px] text-white/30">
+            <p className="text-[10px] text-white/75">CRECI-PR 12.345</p>
+            <p className="text-[10px] text-white/75">(43) 3343-3010</p>
+            <p className="text-[10px] text-white/75">{organization.email}</p>
+            <p className="text-[10px] text-white/75">
               Av. Duque de Caxias, 1726 · Londrina, PR
             </p>
           </div>
@@ -45,7 +45,7 @@ export function Footer() {
             <div className="flex flex-col gap-2.5">
               {column.links.map((link) => (
                 <Link
-                  className="nav-focus text-[11px] text-white/30 transition duration-200 hover:text-white"
+                  className="nav-focus text-[11px] text-white/75 transition duration-200 hover:text-white"
                   href="#"
                   key={link}
                 >
@@ -59,10 +59,10 @@ export function Footer() {
 
       <div className="mb-5 h-[3px] bg-terra" />
       <div className="flex flex-col items-start justify-between gap-2 md:flex-row md:items-center md:gap-0">
-        <p className="text-[9px] text-white/20">
+        <p className="text-[9px] text-white/75">
           © 2026 Inglaterra Premium · Todos os direitos reservados
         </p>
-        <p className="text-[9px] text-white/20">
+        <p className="text-[9px] text-white/75">
           Política de Privacidade · Termos de Uso
         </p>
       </div>

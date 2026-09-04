@@ -66,7 +66,7 @@ export function GalleryLightbox({
       role="dialog"
     >
       <div className="flex items-center justify-between border-b border-white/10 px-4 py-3 md:px-6">
-        <p className="text-[10px] uppercase tracking-[0.18em] text-white/60">
+            <p className="text-[10px] uppercase tracking-[0.18em] text-white/75">
           {safeIndex + 1} / {images.length}
         </p>
         <button

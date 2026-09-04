@@ -67,7 +67,7 @@ function EmptyImage({ nome }: { nome: string }) {
 function ContactField({ placeholder }: { placeholder: string }) {
   return (
     <input
-      className="border border-white/20 bg-white/10 px-3.5 py-3 text-[13px] text-white outline-none placeholder:text-white/40"
+        className="border border-white/20 bg-white/10 px-3.5 py-3 text-[13px] text-white outline-none placeholder:text-white/75"
       placeholder={placeholder}
     />
   );

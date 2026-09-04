@@ -68,30 +68,30 @@ export function BtsContactForm() {
         </option>
       </select>
       <input
-        className="border border-white/20 bg-white/10 px-3.5 py-3 text-[13px] text-white outline-none placeholder:text-white/40"
+          className="border border-white/20 bg-white/10 px-3.5 py-3 text-[13px] text-white outline-none placeholder:text-white/75"
         name="nome"
         placeholder="Seu nome"
         required
       />
       <input
-        className="border border-white/20 bg-white/10 px-3.5 py-3 text-[13px] text-white outline-none placeholder:text-white/40"
+          className="border border-white/20 bg-white/10 px-3.5 py-3 text-[13px] text-white outline-none placeholder:text-white/75"
         name="empresa"
         placeholder="Empresa"
       />
       <input
-        className="border border-white/20 bg-white/10 px-3.5 py-3 text-[13px] text-white outline-none placeholder:text-white/40"
+          className="border border-white/20 bg-white/10 px-3.5 py-3 text-[13px] text-white outline-none placeholder:text-white/75"
         name="whatsapp"
         placeholder="WhatsApp"
         required
       />
       <input
-        className="border border-white/20 bg-white/10 px-3.5 py-3 text-[13px] text-white outline-none placeholder:text-white/40"
+          className="border border-white/20 bg-white/10 px-3.5 py-3 text-[13px] text-white outline-none placeholder:text-white/75"
         name="email"
         placeholder="E-mail"
         type="email"
       />
       <textarea
-        className="min-h-24 border border-white/20 bg-white/10 px-3.5 py-3 text-[13px] text-white outline-none placeholder:text-white/40"
+          className="min-h-24 border border-white/20 bg-white/10 px-3.5 py-3 text-[13px] text-white outline-none placeholder:text-white/75"
         name="mensagem"
         placeholder="Conte brevemente sobre o terreno ou a operação"
       />
