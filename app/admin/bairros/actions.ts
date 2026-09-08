@@ -7,7 +7,7 @@ import { getCurrentAdminUser } from "@/lib/admin/auth";
 import { ensureBairroEditorialColumns } from "@/lib/admin/bairros-schema";
 import { getPool } from "@/lib/db";
 
-const MAX_IMAGE_SIZE = 4 * 1024 * 1024;
+const MAX_IMAGE_SIZE = 1 * 1024 * 1024;
 
 export type SaveBairroState = {
   error?: string;
@@ -78,7 +78,7 @@ async function uploadCover(file: FormDataEntryValue | null, bairroNome: string) 
   }
 
   if (file.size > MAX_IMAGE_SIZE) {
-    throw new Error("A imagem de capa deve ter no máximo 4 MB.");
+    throw new Error("A imagem de capa excedeu o tamanho limite de 1 MB.");
   }
 
   const safeName = slugify(file.name.replace(/\.[^.]+$/, "")) || "capa";

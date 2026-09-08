@@ -54,6 +54,8 @@ type EditableImage = {
   position?: string;
 };
 
+const MAX_IMAGE_SIZE = 1 * 1024 * 1024;
+
 const imagePositions: Array<{ value: ImagePosition; label: string }> = [
   { value: "left top", label: "TL" },
   { value: "center top", label: "TC" },
@@ -177,6 +179,7 @@ function ImageAlignmentGrid({
 
 export function LancamentoForm({ lancamento }: { lancamento?: LancamentoFormData | null }) {
   const [formState, formAction, pending] = useActionState(saveLancamentoAction, {});
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const [nome, setNome] = useState(lancamento?.nome ?? "");
   const [slug, setSlug] = useState(lancamento?.slug ?? "");
   const [slugTouched, setSlugTouched] = useState(Boolean(lancamento?.slug));
@@ -205,6 +208,7 @@ export function LancamentoForm({ lancamento }: { lancamento?: LancamentoFormData
     if (selectedCover) URL.revokeObjectURL(selectedCover.previewUrl);
     if (selectedBuilderLogo) URL.revokeObjectURL(selectedBuilderLogo.previewUrl);
     setExistingCover(lancamento?.capa ?? null);
+    setUploadError(null);
     setSelectedCover(null);
     setExistingBuilderLogo(lancamento?.construtoraLogo ?? null);
     setSelectedBuilderLogo(null);
@@ -257,6 +261,16 @@ export function LancamentoForm({ lancamento }: { lancamento?: LancamentoFormData
     const files = Array.from(event.currentTarget.files ?? []);
     if (!files.length) return;
 
+    const oversized = files.filter((file) => file.size > MAX_IMAGE_SIZE);
+    if (oversized.length > 0) {
+      setUploadError(
+        `A imagem "${oversized[0].name}" excedeu o tamanho limite de 1 MB.`
+      );
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+
+    setUploadError(null);
     const images = files.map((file) => {
       const previewUrl = URL.createObjectURL(file);
       objectUrlsRef.current.push(previewUrl);
@@ -282,6 +296,13 @@ export function LancamentoForm({ lancamento }: { lancamento?: LancamentoFormData
     const [file] = Array.from(event.currentTarget.files ?? []);
     if (!file) return;
 
+    if (file.size > MAX_IMAGE_SIZE) {
+      setUploadError(`A imagem "${file.name}" excedeu o tamanho limite de 1 MB.`);
+      if (coverInputRef.current) coverInputRef.current.value = "";
+      return;
+    }
+
+    setUploadError(null);
     if (selectedCover) URL.revokeObjectURL(selectedCover.previewUrl);
 
     const previewUrl = URL.createObjectURL(file);
@@ -298,6 +319,13 @@ export function LancamentoForm({ lancamento }: { lancamento?: LancamentoFormData
     const [file] = Array.from(event.currentTarget.files ?? []);
     if (!file) return;
 
+    if (file.size > MAX_IMAGE_SIZE) {
+      setUploadError(`A imagem "${file.name}" excedeu o tamanho limite de 1 MB.`);
+      if (builderLogoInputRef.current) builderLogoInputRef.current.value = "";
+      return;
+    }
+
+    setUploadError(null);
     if (selectedBuilderLogo) URL.revokeObjectURL(selectedBuilderLogo.previewUrl);
 
     const previewUrl = URL.createObjectURL(file);
@@ -313,12 +341,14 @@ export function LancamentoForm({ lancamento }: { lancamento?: LancamentoFormData
   function removeSelectedCover() {
     if (selectedCover) URL.revokeObjectURL(selectedCover.previewUrl);
     setSelectedCover(null);
+    setUploadError(null);
     if (coverInputRef.current) coverInputRef.current.value = "";
   }
 
   function removeSelectedBuilderLogo() {
     if (selectedBuilderLogo) URL.revokeObjectURL(selectedBuilderLogo.previewUrl);
     setSelectedBuilderLogo(null);
+    setUploadError(null);
     if (builderLogoInputRef.current) builderLogoInputRef.current.value = "";
   }
 
@@ -343,6 +373,12 @@ export function LancamentoForm({ lancamento }: { lancamento?: LancamentoFormData
       {formState.error ? (
         <p className="border border-terra/20 bg-terra/5 px-4 py-3 text-sm leading-relaxed text-terra">
           {formState.error}
+        </p>
+      ) : null}
+
+      {uploadError ? (
+        <p className="border border-terra/20 bg-terra/5 px-4 py-3 text-sm leading-relaxed text-terra">
+          {uploadError}
         </p>
       ) : null}
 
@@ -467,7 +503,7 @@ export function LancamentoForm({ lancamento }: { lancamento?: LancamentoFormData
           type="file"
         />
         <span className="mt-1.5 block text-xs text-sand">
-          Opcional. Máximo de 4 MB.
+          Opcional. Máximo de 1 MB.
         </span>
       </div>
 
@@ -581,7 +617,7 @@ export function LancamentoForm({ lancamento }: { lancamento?: LancamentoFormData
           type="file"
         />
         <span className="mt-1.5 block text-xs text-sand">
-          Apenas imagem. Máximo de 4 MB.
+          Apenas imagem. Máximo de 1 MB.
         </span>
       </div>
 
@@ -645,7 +681,7 @@ export function LancamentoForm({ lancamento }: { lancamento?: LancamentoFormData
           type="file"
         />
         <span className="mt-1.5 block text-xs text-sand">
-          Apenas imagens. Máximo de 8 arquivos por envio, 4 MB por imagem.
+          Apenas imagens. Máximo de 8 arquivos por envio, 1 MB por imagem.
         </span>
       </label>
 

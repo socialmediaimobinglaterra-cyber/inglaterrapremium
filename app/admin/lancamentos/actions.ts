@@ -6,7 +6,7 @@ import { redirect } from "next/navigation";
 import { getCurrentAdminUser } from "@/lib/admin/auth";
 import { getPool } from "@/lib/db";
 
-const MAX_IMAGE_SIZE = 4 * 1024 * 1024;
+const MAX_IMAGE_SIZE = 1 * 1024 * 1024;
 const MAX_IMAGES = 8;
 
 export type SaveLancamentoState = {
@@ -150,7 +150,7 @@ async function uploadImages(
     }
 
     if (image.size > MAX_IMAGE_SIZE) {
-      throw new Error("Cada imagem deve ter no máximo 4 MB.");
+      throw new Error(`A imagem "${image.name}" excedeu o tamanho limite de 1 MB.`);
     }
 
     const safeName = slugify(image.name.replace(/\.[^.]+$/, "")) || `imagem-${index + 1}`;

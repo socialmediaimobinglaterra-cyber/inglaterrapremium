@@ -32,6 +32,8 @@ type ImagePosition =
   | "center bottom"
   | "right bottom";
 
+const MAX_IMAGE_SIZE = 1 * 1024 * 1024;
+
 const imagePositions: Array<{ value: ImagePosition; label: string }> = [
   { value: "left top", label: "TL" },
   { value: "center top", label: "TC" },
@@ -108,6 +110,7 @@ function ImageAlignmentGrid({
 
 export function BairroForm({ bairro }: { bairro?: BairroFormData | null }) {
   const [formState, formAction, pending] = useActionState(saveBairroAction, {});
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const [existingCover, setExistingCover] = useState(bairro?.imagemCapa ?? null);
   const [coverPosition, setCoverPosition] = useState<ImagePosition>(
     normalizePosition(bairro?.imagemCapaAlinhamento)
@@ -126,6 +129,7 @@ export function BairroForm({ bairro }: { bairro?: BairroFormData | null }) {
   useEffect(() => {
     if (selectedCover) URL.revokeObjectURL(selectedCover.previewUrl);
     setExistingCover(bairro?.imagemCapa ?? null);
+    setUploadError(null);
     setCoverPosition(normalizePosition(bairro?.imagemCapaAlinhamento));
     setSelectedCover(null);
     setFaqItems(
@@ -146,6 +150,13 @@ export function BairroForm({ bairro }: { bairro?: BairroFormData | null }) {
     const [file] = Array.from(event.currentTarget.files ?? []);
     if (!file) return;
 
+    if (file.size > MAX_IMAGE_SIZE) {
+      setUploadError("A imagem de capa excedeu o tamanho limite de 1 MB.");
+      if (coverInputRef.current) coverInputRef.current.value = "";
+      return;
+    }
+
+    setUploadError(null);
     if (selectedCover) URL.revokeObjectURL(selectedCover.previewUrl);
     setSelectedCover({ file, previewUrl: URL.createObjectURL(file) });
   }
@@ -153,6 +164,7 @@ export function BairroForm({ bairro }: { bairro?: BairroFormData | null }) {
   function removeSelectedCover() {
     if (selectedCover) URL.revokeObjectURL(selectedCover.previewUrl);
     setSelectedCover(null);
+    setUploadError(null);
     if (coverInputRef.current) coverInputRef.current.value = "";
   }
 
@@ -178,6 +190,12 @@ export function BairroForm({ bairro }: { bairro?: BairroFormData | null }) {
       {formState.error ? (
         <p className="border border-terra/20 bg-terra/5 px-4 py-3 text-sm leading-relaxed text-terra">
           {formState.error}
+        </p>
+      ) : null}
+
+      {uploadError ? (
+        <p className="border border-terra/20 bg-terra/5 px-4 py-3 text-sm leading-relaxed text-terra">
+          {uploadError}
         </p>
       ) : null}
 
@@ -282,7 +300,7 @@ export function BairroForm({ bairro }: { bairro?: BairroFormData | null }) {
           type="file"
         />
         <span className="mt-1.5 block text-xs text-sand">
-          Apenas imagem. Máximo de 4 MB.
+          Apenas imagem. Máximo de 1 MB.
         </span>
       </div>
 
