@@ -161,6 +161,7 @@ export default async function BairroPage({ params }: PageProps) {
             priority
             sizes="100vw"
             src={imageUrlOrFallback(bairro.heroImage)}
+            style={{ objectPosition: bairro.imagemCapaAlinhamento }}
           />
         ) : null}
         <div className="absolute inset-0 bg-gradient-to-b from-navy/5 to-navy/80" />
@@ -267,6 +268,7 @@ export default async function BairroPage({ params }: PageProps) {
                   fill
                   sizes="(min-width: 768px) 33vw, 100vw"
                   src={imageUrlOrFallback(other.image)}
+                  style={{ objectPosition: other.imagePosition }}
                 />
               ) : null}
               <div className="absolute inset-0 bg-gradient-to-b from-transparent from-45% to-navy/85" />

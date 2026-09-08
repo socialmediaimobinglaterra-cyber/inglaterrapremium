@@ -18,6 +18,7 @@ export type BairroDetail = {
   cidade: string;
   estado: string;
   imagemCapa: string | null;
+  imagemCapaAlinhamento: string;
   descricao: string | null;
   faq: BairroFaq[];
   valorMedioVenda: number | null;
@@ -31,6 +32,7 @@ export type BairroSummary = {
   cidade: string;
   imoveisDisponiveis: number;
   image: string | null;
+  imagePosition: string;
 };
 
 function numberOrNull(value: unknown) {
@@ -90,7 +92,7 @@ export async function getBairroPageData(slug: string) {
   const pool = getPool();
   const bairroResult = await pool.query(
     `
-      select id, nome, slug, cidade, estado, imagem_capa, descricao, faq
+      select id, nome, slug, cidade, estado, imagem_capa, imagem_capa_alinhamento, descricao, faq
       from bairros
       where slug = $1 and ativo = true
       limit 1
@@ -135,13 +137,14 @@ export async function getBairroPageData(slug: string) {
           b.slug,
           b.cidade,
           b.imagem_capa,
+          b.imagem_capa_alinhamento,
           count(i.id)::int as imoveis_disponiveis
         from bairros b
         left join imoveis i on i.ativo = true
           and i.ativo_no_site = true
           and i.bairro_id = b.id
         where b.ativo = true and b.slug <> $1
-        group by b.id, b.nome, b.slug, b.cidade, b.imagem_capa
+        group by b.id, b.nome, b.slug, b.cidade, b.imagem_capa, b.imagem_capa_alinhamento
         order by imoveis_disponiveis desc, b.nome
         limit 3
       `,
@@ -160,6 +163,11 @@ export async function getBairroPageData(slug: string) {
       typeof bairroRow.imagem_capa === "string" && bairroRow.imagem_capa.trim()
         ? bairroRow.imagem_capa.trim()
         : null,
+    imagemCapaAlinhamento:
+      typeof bairroRow.imagem_capa_alinhamento === "string" &&
+      bairroRow.imagem_capa_alinhamento.trim()
+        ? bairroRow.imagem_capa_alinhamento.trim()
+        : "center center",
     descricao: bairroRow.descricao,
     faq: parseFaq(bairroRow.faq),
     valorMedioVenda: numberOrNull(metrics.valor_medio_venda),
@@ -180,6 +188,10 @@ export async function getBairroPageData(slug: string) {
       typeof row.imagem_capa === "string" && row.imagem_capa.trim()
         ? row.imagem_capa.trim()
         : null,
+    imagePosition:
+      typeof row.imagem_capa_alinhamento === "string" && row.imagem_capa_alinhamento.trim()
+        ? row.imagem_capa_alinhamento.trim()
+        : "center center",
   }));
 
   return { bairro, imoveis, outrosBairros };

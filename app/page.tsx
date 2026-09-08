@@ -32,6 +32,7 @@ type Bairro = {
   cidade: string;
   imoveis: number;
   image: string | null;
+  imagePosition: string;
 };
 
 const PRODUCTS = [
@@ -180,11 +181,11 @@ async function getHomeData() {
       limit 4
     `),
     pool.query(`
-      select b.nome, b.cidade, b.imagem_capa, count(i.id)::int as imoveis
+      select b.nome, b.cidade, b.imagem_capa, b.imagem_capa_alinhamento, count(i.id)::int as imoveis
       from bairros b
       left join imoveis i on i.bairro_id = b.id and i.ativo = true and i.ativo_no_site = true
       where b.ativo = true
-      group by b.id, b.nome, b.cidade, b.imagem_capa
+      group by b.id, b.nome, b.cidade, b.imagem_capa, b.imagem_capa_alinhamento
       order by imoveis desc, b.nome
       limit 6
     `),
@@ -216,6 +217,10 @@ async function getHomeData() {
       typeof row.imagem_capa === "string" && row.imagem_capa.trim()
         ? row.imagem_capa.trim()
         : null,
+    imagePosition:
+      typeof row.imagem_capa_alinhamento === "string" && row.imagem_capa_alinhamento.trim()
+        ? row.imagem_capa_alinhamento.trim()
+        : "center center",
   }));
 
   const totals = statsResult.rows[0] ?? { total_imoveis: 0, total_bairros: 0 };
@@ -349,6 +354,7 @@ function BairroCard({ b }: { b: Bairro }) {
           fill
           sizes="(min-width: 768px) 25vw, 33vw"
           src={imageUrlOrFallback(b.image)}
+          style={{ objectPosition: b.imagePosition }}
         />
       ) : null}
       <div className="absolute inset-0 bg-gradient-to-t from-navy/95 via-navy/70 to-navy/15" />

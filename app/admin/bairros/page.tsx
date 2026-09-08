@@ -3,6 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { BairroForm } from "@/components/admin/BairroForm";
 import { getCurrentAdminUser } from "@/lib/admin/auth";
+import { ensureBairroEditorialColumns } from "@/lib/admin/bairros-schema";
 import { getPool } from "@/lib/db";
 import { logoutAction } from "../actions";
 
@@ -26,6 +27,7 @@ type BairroAdmin = {
   cidade: string;
   estado: string;
   imagemCapa: string | null;
+  imagemCapaAlinhamento: string;
   descricao: string | null;
   faq: Array<{ pergunta: string; resposta: string }>;
   ativo: boolean;
@@ -60,6 +62,10 @@ function mapBairro(row: Record<string, any>): BairroAdmin {
       typeof row.imagem_capa === "string" && row.imagem_capa.trim()
         ? row.imagem_capa.trim()
         : null,
+    imagemCapaAlinhamento:
+      typeof row.imagem_capa_alinhamento === "string" && row.imagem_capa_alinhamento.trim()
+        ? row.imagem_capa_alinhamento.trim()
+        : "center center",
     descricao: typeof row.descricao === "string" && row.descricao.trim() ? row.descricao : null,
     faq: parseFaq(row.faq),
     ativo: row.ativo,
@@ -68,8 +74,10 @@ function mapBairro(row: Record<string, any>): BairroAdmin {
 
 async function getBairrosData(editId?: string) {
   const pool = getPool();
+  await ensureBairroEditorialColumns(pool);
+
   const result = await pool.query(`
-    select id, nome, slug, cidade, estado, imagem_capa, descricao, faq, ativo
+    select id, nome, slug, cidade, estado, imagem_capa, imagem_capa_alinhamento, descricao, faq, ativo
     from bairros
     order by nome
   `);

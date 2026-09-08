@@ -16,9 +16,33 @@ type BairroFormData = {
   cidade: string;
   estado: string;
   imagemCapa: string | null;
+  imagemCapaAlinhamento: string;
   descricao: string | null;
   faq: Array<{ pergunta: string; resposta: string }>;
 };
+
+type ImagePosition =
+  | "left top"
+  | "center top"
+  | "right top"
+  | "left center"
+  | "center center"
+  | "right center"
+  | "left bottom"
+  | "center bottom"
+  | "right bottom";
+
+const imagePositions: Array<{ value: ImagePosition; label: string }> = [
+  { value: "left top", label: "TL" },
+  { value: "center top", label: "TC" },
+  { value: "right top", label: "TR" },
+  { value: "left center", label: "CL" },
+  { value: "center center", label: "C" },
+  { value: "right center", label: "CR" },
+  { value: "left bottom", label: "BL" },
+  { value: "center bottom", label: "BC" },
+  { value: "right bottom", label: "BR" },
+];
 
 function formatBytes(value: number) {
   if (value < 1024 * 1024) return `${Math.round(value / 1024)} KB`;
@@ -42,9 +66,52 @@ function createFaqItem(): FaqItem {
   );
 }
 
+function normalizePosition(value?: string | null): ImagePosition {
+  return imagePositions.some((item) => item.value === value)
+    ? (value as ImagePosition)
+    : "center center";
+}
+
+function ImageAlignmentGrid({
+  value,
+  onChange,
+}: {
+  value: ImagePosition;
+  onChange: (value: ImagePosition) => void;
+}) {
+  return (
+    <div>
+      <input name="imagem_capa_alinhamento" type="hidden" value={value} />
+      <span className="mb-1.5 block text-[9px] font-semibold uppercase tracking-[0.16em] text-sand">
+        Alinhamento
+      </span>
+      <div className="grid w-[94px] grid-cols-3 gap-1">
+        {imagePositions.map((position) => (
+          <button
+            aria-label={`Alinhar imagem: ${position.value}`}
+            className={`h-7 border text-[11px] ${
+              value === position.value
+                ? "border-navy bg-navy text-white"
+                : "border-navy/15 bg-white text-sand hover:border-terra hover:text-terra"
+            }`}
+            key={position.value}
+            onClick={() => onChange(position.value)}
+            type="button"
+          >
+            {position.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function BairroForm({ bairro }: { bairro?: BairroFormData | null }) {
   const [formState, formAction, pending] = useActionState(saveBairroAction, {});
   const [existingCover, setExistingCover] = useState(bairro?.imagemCapa ?? null);
+  const [coverPosition, setCoverPosition] = useState<ImagePosition>(
+    normalizePosition(bairro?.imagemCapaAlinhamento)
+  );
   const [selectedCover, setSelectedCover] = useState<{
     file: File;
     previewUrl: string;
@@ -59,6 +126,7 @@ export function BairroForm({ bairro }: { bairro?: BairroFormData | null }) {
   useEffect(() => {
     if (selectedCover) URL.revokeObjectURL(selectedCover.previewUrl);
     setExistingCover(bairro?.imagemCapa ?? null);
+    setCoverPosition(normalizePosition(bairro?.imagemCapaAlinhamento));
     setSelectedCover(null);
     setFaqItems(
       bairro?.faq.length
@@ -151,17 +219,21 @@ export function BairroForm({ bairro }: { bairro?: BairroFormData | null }) {
                 alt={`Imagem de capa de ${bairro.nome}`}
                 className="h-full w-full object-cover"
                 src={existingCover}
+                style={{ objectPosition: coverPosition }}
               />
             </div>
-            <div className="mt-2 flex items-center justify-between gap-3">
+            <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <p className="line-clamp-1 text-xs text-sand">{existingCover}</p>
-              <button
-                className="border border-navy/15 px-2 py-1 text-[9px] uppercase tracking-[0.12em] text-navy hover:border-terra hover:text-terra"
-                onClick={() => setExistingCover(null)}
-                type="button"
-              >
-                Remover
-              </button>
+              <div className="flex shrink-0 items-start gap-3">
+                <ImageAlignmentGrid value={coverPosition} onChange={setCoverPosition} />
+                <button
+                  className="border border-navy/15 px-2 py-1 text-[9px] uppercase tracking-[0.12em] text-navy hover:border-terra hover:text-terra"
+                  onClick={() => setExistingCover(null)}
+                  type="button"
+                >
+                  Remover
+                </button>
+              </div>
             </div>
           </div>
         ) : null}
@@ -173,24 +245,32 @@ export function BairroForm({ bairro }: { bairro?: BairroFormData | null }) {
                 alt={selectedCover.file.name}
                 className="h-full w-full object-cover"
                 src={selectedCover.previewUrl}
+                style={{ objectPosition: coverPosition }}
               />
             </div>
-            <div className="mt-2 flex items-center justify-between gap-3">
+            <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div>
                 <p className="line-clamp-1 text-xs text-navy">{selectedCover.file.name}</p>
                 <p className="mt-0.5 text-[11px] text-sand">
                   {formatBytes(selectedCover.file.size)}
                 </p>
               </div>
-              <button
-                className="border border-navy/15 px-2 py-1 text-[9px] uppercase tracking-[0.12em] text-navy hover:border-terra hover:text-terra"
-                onClick={removeSelectedCover}
-                type="button"
-              >
-                Remover
-              </button>
+              <div className="flex shrink-0 items-start gap-3">
+                <ImageAlignmentGrid value={coverPosition} onChange={setCoverPosition} />
+                <button
+                  className="border border-navy/15 px-2 py-1 text-[9px] uppercase tracking-[0.12em] text-navy hover:border-terra hover:text-terra"
+                  onClick={removeSelectedCover}
+                  type="button"
+                >
+                  Remover
+                </button>
+              </div>
             </div>
           </div>
+        ) : null}
+
+        {!existingCover && !selectedCover ? (
+          <ImageAlignmentGrid value={coverPosition} onChange={setCoverPosition} />
         ) : null}
 
         <input

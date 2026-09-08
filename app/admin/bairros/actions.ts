@@ -4,6 +4,7 @@ import { put } from "@vercel/blob";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getCurrentAdminUser } from "@/lib/admin/auth";
+import { ensureBairroEditorialColumns } from "@/lib/admin/bairros-schema";
 import { getPool } from "@/lib/db";
 
 const MAX_IMAGE_SIZE = 4 * 1024 * 1024;
@@ -29,6 +30,22 @@ function slugify(value: string) {
 
 function publicBlobImageUrl(blobUrl: string) {
   return `/api/blob-image?url=${encodeURIComponent(blobUrl)}`;
+}
+
+function normalizePosition(value: string | null) {
+  const allowed = new Set([
+    "left top",
+    "center top",
+    "right top",
+    "left center",
+    "center center",
+    "right center",
+    "left bottom",
+    "center bottom",
+    "right bottom",
+  ]);
+
+  return value && allowed.has(value) ? value : "center center";
 }
 
 function blobErrorMessage(error: unknown) {
@@ -115,6 +132,8 @@ export async function saveBairroAction(
   const pool = getPool();
 
   try {
+    await ensureBairroEditorialColumns(pool);
+
     const currentResult = await pool.query(
       `
         select nome, slug
@@ -131,6 +150,9 @@ export async function saveBairroAction(
     const existingCover = stringValue(formData, "imagem_capa_existente");
     const uploadedCover = await uploadCover(formData.get("imagem_capa"), current.nome);
     const imagemCapa = uploadedCover ?? existingCover;
+    const imagemCapaAlinhamento = normalizePosition(
+      stringValue(formData, "imagem_capa_alinhamento")
+    );
     const descricao = stringValue(formData, "descricao");
     const faq = parseFaq(formData);
 
@@ -138,12 +160,13 @@ export async function saveBairroAction(
       `
         update bairros
         set imagem_capa = $1,
-          descricao = $2,
-          faq = $3::jsonb,
+          imagem_capa_alinhamento = $2,
+          descricao = $3,
+          faq = $4::jsonb,
           updated_at = now()
-        where id = $4
+        where id = $5
       `,
-      [imagemCapa, descricao, JSON.stringify(faq), id]
+      [imagemCapa, imagemCapaAlinhamento, descricao, JSON.stringify(faq), id]
     );
 
     revalidatePath("/");
