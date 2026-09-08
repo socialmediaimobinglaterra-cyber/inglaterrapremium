@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Image from "next/image";
+import { HomeHeroSearch } from "@/components/search/HomeHeroSearch";
 import { getPool } from "@/lib/db";
 import { imageUrlOrFallback } from "@/lib/images";
 
@@ -256,45 +257,6 @@ function Anchor({ label }: { label: string }) {
     >
       {label}
     </a>
-  );
-}
-
-function HeroSearch() {
-  return (
-    <div className="w-full border border-white/50 bg-offwhite/90 px-5 py-[22px] shadow-[0_20px_48px_rgba(16,26,38,0.18)] backdrop-blur-[18px] md:max-w-[54vw] md:px-10 md:py-8">
-      <div className="mb-3.5 flex items-center gap-2">
-        <div className="h-1.5 w-1.5 rounded-full bg-terra" />
-        <span className="text-[9px] font-semibold uppercase tracking-[0.28em] text-terra">
-          Busca inteligente · Inglaterra AI
-        </span>
-      </div>
-      <form className="flex flex-col gap-2.5 border-b border-navy/10 pb-3 md:flex-row md:gap-0 md:pb-0">
-        <input
-          className="flex-1 border-0 bg-transparent py-1 text-[15px] italic text-navy outline-none placeholder:text-navy/45 md:py-2.5 md:text-[19px]"
-          placeholder="Descreva o imóvel que você procura..."
-        />
-        <button
-          className="py-1 text-left text-[10px] font-semibold uppercase tracking-[0.2em] text-terra md:py-2.5 md:pl-5 md:text-right"
-          type="button"
-        >
-          Perguntar →
-        </button>
-      </form>
-      <div className="mt-4 flex flex-wrap gap-2">
-        {[
-          "Apartamento na Gleba Palhano até R$ 3 milhões",
-          "Casa com 4 suítes no Terra Bonita",
-        ].map((example) => (
-          <button
-            className="rounded-full border border-navy/10 px-3 py-1.5 text-[10.5px] text-navy"
-            key={example}
-            type="button"
-          >
-            {example}
-          </button>
-        ))}
-      </div>
-    </div>
   );
 }
 
@@ -615,7 +577,7 @@ export default async function Home() {
           <p className="mb-5 text-[clamp(15px,4.4vw,18px)] font-light italic tracking-[0.02em] text-white/75 md:mb-9 md:text-[clamp(16px,1.8vw,22px)]">
             Onde visão se torna patrimônio.
           </p>
-          <HeroSearch />
+          <HomeHeroSearch />
         </div>
         <div className="absolute bottom-12 right-16 hidden flex-col items-center gap-2 text-[8px] uppercase tracking-[0.35em] text-white/75 [writing-mode:vertical-rl] md:flex">
           Rolar

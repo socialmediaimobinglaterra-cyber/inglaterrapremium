@@ -10,7 +10,14 @@ export const metadata: Metadata = {
     "Encontre casas, apartamentos, terrenos e imóveis premium em Londrina com filtros por bairro, tipo, valor e suítes.",
 };
 
-export default async function ImoveisPage() {
+type PageProps = {
+  searchParams: Promise<{
+    q?: string;
+  }>;
+};
+
+export default async function ImoveisPage({ searchParams }: PageProps) {
+  const params = await searchParams;
   const [options, initialImoveis] = await Promise.all([
     getImoveisFilterOptions(),
     searchImoveis({ negocio: "Comprar", order: "relevancia" }),
@@ -20,6 +27,7 @@ export default async function ImoveisPage() {
     <BuscaImoveisClient
       bairros={options.bairros}
       initialImoveis={initialImoveis}
+      initialNaturalQuery={params.q}
       tipos={options.tipos}
     />
   );

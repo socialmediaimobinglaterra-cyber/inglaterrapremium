@@ -2,13 +2,14 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import type { ImovelSearchFilters, ImovelSearchResult } from "@/lib/queries/imoveis";
 import { imageUrlOrFallback } from "@/lib/images";
 
 type Props = {
   initialImoveis: ImovelSearchResult[];
   initialNegocio?: (typeof NEGOCIO_OPTIONS)[number];
+  initialNaturalQuery?: string;
   bairros: string[];
   tipos: string[];
 };
@@ -177,6 +178,7 @@ function ListingCard({ imovel }: { imovel: ImovelSearchResult }) {
 export function BuscaImoveisClient({
   initialImoveis,
   initialNegocio = "Comprar",
+  initialNaturalQuery,
   bairros,
   tipos,
 }: Props) {
@@ -187,7 +189,7 @@ export function BuscaImoveisClient({
   const [valor, setValor] = useState("Não definido");
   const [suites, setSuites] = useState("Não definido");
   const [order, setOrder] = useState<NonNullable<ImovelSearchFilters["order"]>>("relevancia");
-  const [naturalQuery, setNaturalQuery] = useState("");
+  const [naturalQuery, setNaturalQuery] = useState(initialNaturalQuery ?? "");
   const [aiNote, setAiNote] = useState("");
   const [aiOnlyFilters, setAiOnlyFilters] = useState<
     Pick<ImovelSearchFilters, "vagasMinimas" | "quartosMinimos" | "areaMinima">
@@ -195,6 +197,7 @@ export function BuscaImoveisClient({
   const [aiInterpretationNotice, setAiInterpretationNotice] =
     useState<AiInterpretationNotice | null>(null);
   const [isPending, startTransition] = useTransition();
+  const initialNaturalQueryHandled = useRef(false);
 
   const bairroOptions = useMemo(() => ["Todos os bairros", ...bairros], [bairros]);
   const tipoOptions = useMemo(() => ["Todos os tipos", ...tipos], [tipos]);
@@ -392,6 +395,13 @@ export function BuscaImoveisClient({
       })();
     });
   }
+
+  useEffect(() => {
+    if (initialNaturalQueryHandled.current || !initialNaturalQuery?.trim()) return;
+    initialNaturalQueryHandled.current = true;
+    setNaturalQuery(initialNaturalQuery);
+    void runNaturalSearch(initialNaturalQuery);
+  }, [initialNaturalQuery]);
 
   return (
     <main className="bg-offwhite text-navy">
