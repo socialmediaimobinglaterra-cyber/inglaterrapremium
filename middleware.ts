@@ -11,8 +11,8 @@ type AdminSession = {
 
 function getSessionSecret() {
   return (
-    process.env.ADMIN_SESSION_SECRET ??
-    process.env.KENLO_SYNC_SECRET ??
+    process.env.ADMIN_SESSION_SECRET?.trim() ||
+    process.env.KENLO_SYNC_SECRET?.trim() ||
     "dev-admin-session-secret-change-me"
   );
 }
