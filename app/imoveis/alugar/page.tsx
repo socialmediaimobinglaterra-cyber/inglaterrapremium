@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 };
 
 export default async function ImoveisAlugarPage() {
-  const [options, initialImoveis] = await Promise.all([
+  const [options, initialSearchPage] = await Promise.all([
     getImoveisFilterOptions(),
     searchImoveis({ negocio: "Alugar", order: "relevancia" }),
   ]);
@@ -19,7 +19,7 @@ export default async function ImoveisAlugarPage() {
   return (
     <BuscaImoveisClient
       bairros={options.bairros}
-      initialImoveis={initialImoveis}
+      initialSearchPage={initialSearchPage}
       initialNegocio="Alugar"
       tipos={options.tipos}
     />

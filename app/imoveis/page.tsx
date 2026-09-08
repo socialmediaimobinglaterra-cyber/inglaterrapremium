@@ -18,7 +18,7 @@ type PageProps = {
 
 export default async function ImoveisPage({ searchParams }: PageProps) {
   const params = await searchParams;
-  const [options, initialImoveis] = await Promise.all([
+  const [options, initialSearchPage] = await Promise.all([
     getImoveisFilterOptions(),
     searchImoveis({ negocio: "Comprar", order: "relevancia" }),
   ]);
@@ -26,7 +26,7 @@ export default async function ImoveisPage({ searchParams }: PageProps) {
   return (
     <BuscaImoveisClient
       bairros={options.bairros}
-      initialImoveis={initialImoveis}
+      initialSearchPage={initialSearchPage}
       initialNaturalQuery={params.q}
       tipos={options.tipos}
     />

@@ -3,11 +3,15 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
-import type { ImovelSearchFilters, ImovelSearchResult } from "@/lib/queries/imoveis";
+import type {
+  ImovelSearchFilters,
+  ImovelSearchPage,
+  ImovelSearchResult,
+} from "@/lib/queries/imoveis";
 import { imageUrlOrFallback } from "@/lib/images";
 
 type Props = {
-  initialImoveis: ImovelSearchResult[];
+  initialSearchPage: ImovelSearchPage;
   initialNegocio?: (typeof NEGOCIO_OPTIONS)[number];
   initialNaturalQuery?: string;
   bairros: string[];
@@ -26,6 +30,7 @@ type AiInterpretationNotice = {
 };
 
 const NEGOCIO_OPTIONS = ["Comprar", "Alugar"] as const;
+const SEARCH_PER_PAGE = 24;
 const SUITES_OPTIONS = [
   { label: "Não definido", value: null },
   { label: "2+ suítes", value: 2 },
@@ -176,13 +181,16 @@ function ListingCard({ imovel }: { imovel: ImovelSearchResult }) {
 }
 
 export function BuscaImoveisClient({
-  initialImoveis,
+  initialSearchPage,
   initialNegocio = "Comprar",
   initialNaturalQuery,
   bairros,
   tipos,
 }: Props) {
-  const [imoveis, setImoveis] = useState(initialImoveis);
+  const [imoveis, setImoveis] = useState(initialSearchPage.imoveis);
+  const [total, setTotal] = useState(initialSearchPage.total);
+  const [page, setPage] = useState(initialSearchPage.page);
+  const [hasMore, setHasMore] = useState(initialSearchPage.hasMore);
   const [negocio, setNegocio] = useState<(typeof NEGOCIO_OPTIONS)[number]>(initialNegocio);
   const [bairro, setBairro] = useState("Todos os bairros");
   const [tipo, setTipo] = useState("Todos os tipos");
@@ -196,6 +204,7 @@ export function BuscaImoveisClient({
   >({});
   const [aiInterpretationNotice, setAiInterpretationNotice] =
     useState<AiInterpretationNotice | null>(null);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [isPending, startTransition] = useTransition();
   const initialNaturalQueryHandled = useRef(false);
 
@@ -215,14 +224,23 @@ export function BuscaImoveisClient({
     order,
   };
 
-  async function runSearch(filters: ImovelSearchFilters) {
+  async function runSearch(
+    filters: ImovelSearchFilters,
+    options: { page?: number; append?: boolean } = {}
+  ) {
+    const nextPage = options.page ?? 1;
     const response = await fetch("/api/imoveis/search", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(filters),
+      body: JSON.stringify({ ...filters, page: nextPage, perPage: SEARCH_PER_PAGE }),
     });
     const data = await response.json();
-    setImoveis(Array.isArray(data.imoveis) ? data.imoveis : []);
+    const nextImoveis = Array.isArray(data.imoveis) ? data.imoveis : [];
+
+    setImoveis((current) => (options.append ? [...current, ...nextImoveis] : nextImoveis));
+    setTotal(Number.isFinite(Number(data.total)) ? Number(data.total) : nextImoveis.length);
+    setPage(Number.isFinite(Number(data.page)) ? Number(data.page) : nextPage);
+    setHasMore(Boolean(data.hasMore));
   }
 
   function updateFilters(nextFilters: ImovelSearchFilters) {
@@ -316,6 +334,16 @@ export function BuscaImoveisClient({
     setAiNote("");
     clearAiOnlyState();
     updateFilters({ negocio: "Comprar", order: "relevancia" });
+  }
+
+  async function carregarMais() {
+    if (!hasMore || isLoadingMore) return;
+    setIsLoadingMore(true);
+    try {
+      await runSearch(currentFilters, { page: page + 1, append: true });
+    } finally {
+      setIsLoadingMore(false);
+    }
   }
 
   async function runNaturalSearch(query = naturalQuery) {
@@ -526,7 +554,7 @@ export function BuscaImoveisClient({
           <h2 className="text-lg font-medium text-navy md:text-xl">
             Resultados da busca{" "}
             <span className="text-sm font-normal text-navy">
-              {imoveis.length} imóveis encontrados
+              {total} imóveis encontrados
             </span>
           </h2>
           <div className="flex items-center gap-2">
@@ -568,14 +596,18 @@ export function BuscaImoveisClient({
           </div>
         )}
 
-        <div className="mt-10 flex justify-center md:mt-16">
-          <button
-            className="border border-navy bg-transparent px-9 py-3.5 text-[10px] uppercase tracking-[0.2em] text-navy transition hover:bg-navy hover:text-white"
-            type="button"
-          >
-            Carregar mais imóveis
-          </button>
-        </div>
+        {hasMore ? (
+          <div className="mt-10 flex justify-center md:mt-16">
+            <button
+              className="border border-navy bg-transparent px-9 py-3.5 text-[10px] uppercase tracking-[0.2em] text-navy transition hover:bg-navy hover:text-white disabled:cursor-wait disabled:opacity-60"
+              disabled={isLoadingMore}
+              onClick={carregarMais}
+              type="button"
+            >
+              {isLoadingMore ? "Carregando..." : "Carregar mais imóveis"}
+            </button>
+          </div>
+        ) : null}
       </section>
     </main>
   );

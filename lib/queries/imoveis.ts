@@ -32,6 +32,14 @@ export type ImovelSearchResult = {
   tag: string;
 };
 
+export type ImovelSearchPage = {
+  imoveis: ImovelSearchResult[];
+  total: number;
+  page: number;
+  perPage: number;
+  hasMore: boolean;
+};
+
 export type ImovelDetail = {
   id: string;
   codigo: string;
@@ -143,7 +151,7 @@ export async function getImoveisFilterOptions() {
   };
 }
 
-export async function searchImoveis(rawFilters: ImovelSearchFilters, limit = 24) {
+function buildSearchQuery(rawFilters: ImovelSearchFilters) {
   const filters = normalizeSearchFilters(rawFilters);
   const values: unknown[] = [];
   const where = ["ativo = true", "ativo_no_site = true"];
@@ -196,8 +204,6 @@ export async function searchImoveis(rawFilters: ImovelSearchFilters, limit = 24)
     where.push("coalesce(area_util, area_total, 0) >= $" + values.length);
   }
 
-  values.push(limit);
-
   const orderBy =
     filters.order === "maior_valor"
       ? `${priceColumn} desc nulls last`
@@ -207,7 +213,53 @@ export async function searchImoveis(rawFilters: ImovelSearchFilters, limit = 24)
           ? "updated_at desc nulls last"
           : "is_premium_override desc, updated_at desc nulls last";
 
-  const result = await getPool().query(
+  return { filters, values, where, orderBy };
+}
+
+function mapSearchRow(row: Record<string, any>, index: number): ImovelSearchResult {
+  const precoVenda = numberOrNull(row.preco_venda);
+  const precoLocacao = numberOrNull(row.preco_locacao);
+
+  return {
+    id: String(index + 1).padStart(2, "0"),
+    codigo: row.kenlo_codigo,
+    slug: row.slug,
+    titulo: row.titulo,
+    bairro: row.bairro_nome ?? "Londrina",
+    cidade: row.cidade ?? "Londrina",
+    tipo: row.tipo ?? "Imovel",
+    area: numberOrNull(row.area_util ?? row.area_total),
+    suites: row.suites,
+    dormitorios: row.dormitorios,
+    vagas: row.vagas,
+    precoVenda,
+    precoLocacao,
+    image: getMainImage(row.fotos),
+    tag: row.is_premium_override ? "EXCLUSIVO" : index < 3 ? "DESTAQUE" : "PREMIUM",
+  };
+}
+
+export async function searchImoveis(
+  rawFilters: ImovelSearchFilters,
+  options: { page?: number; perPage?: number } = {}
+): Promise<ImovelSearchPage> {
+  const { values, where, orderBy } = buildSearchQuery(rawFilters);
+  const page = Math.max(1, Math.trunc(options.page ?? 1));
+  const perPage = Math.min(48, Math.max(1, Math.trunc(options.perPage ?? 24)));
+  const offset = (page - 1) * perPage;
+  const pool = getPool();
+
+  const countResult = await pool.query(
+    `
+      select count(*)::int as total
+      from imoveis
+      where ${where.join(" and ")}
+    `,
+    values
+  );
+
+  const listValues = [...values, perPage, offset];
+  const result = await pool.query(
     `
       select id, kenlo_codigo, slug, titulo, bairro_nome, cidade, tipo,
         area_util, area_total, suites, dormitorios, vagas, preco_venda,
@@ -215,33 +267,24 @@ export async function searchImoveis(rawFilters: ImovelSearchFilters, limit = 24)
       from imoveis
       where ${where.join(" and ")}
       order by ${orderBy}
-      limit $${values.length}
+      limit $${listValues.length - 1}
+      offset $${listValues.length}
     `,
-    values
+    listValues
   );
 
-  return result.rows.map((row, index): ImovelSearchResult => {
-    const precoVenda = numberOrNull(row.preco_venda);
-    const precoLocacao = numberOrNull(row.preco_locacao);
+  const total = Number(countResult.rows[0]?.total ?? 0);
+  const imoveis = result.rows.map((row, index): ImovelSearchResult =>
+    mapSearchRow(row, offset + index)
+  );
 
-    return {
-      id: String(index + 1).padStart(2, "0"),
-      codigo: row.kenlo_codigo,
-      slug: row.slug,
-      titulo: row.titulo,
-      bairro: row.bairro_nome ?? "Londrina",
-      cidade: row.cidade ?? "Londrina",
-      tipo: row.tipo ?? "Imovel",
-      area: numberOrNull(row.area_util ?? row.area_total),
-      suites: row.suites,
-      dormitorios: row.dormitorios,
-      vagas: row.vagas,
-      precoVenda,
-      precoLocacao,
-      image: getMainImage(row.fotos),
-      tag: row.is_premium_override ? "EXCLUSIVO" : index < 3 ? "DESTAQUE" : "PREMIUM",
-    };
-  });
+  return {
+    imoveis,
+    total,
+    page,
+    perPage,
+    hasMore: offset + imoveis.length < total,
+  };
 }
 
 function mapDetailRow(row: Record<string, any>): ImovelDetail {
