@@ -11,12 +11,15 @@ const EXAMPLES = [
 export function HomeHeroSearch() {
   const router = useRouter();
   const [query, setQuery] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const isBusy = isSubmitting || isPending;
 
   function submitSearch(value = query) {
     const trimmed = value.trim();
-    if (!trimmed || isPending) return;
+    if (!trimmed || isBusy) return;
 
+    setIsSubmitting(true);
     startTransition(() => {
       router.push(`/imoveis?q=${encodeURIComponent(trimmed)}`);
     });
@@ -31,6 +34,7 @@ export function HomeHeroSearch() {
         </span>
       </div>
       <form
+        aria-busy={isBusy}
         className="flex flex-col gap-2.5 border-b border-navy/10 pb-3 md:flex-row md:gap-0 md:pb-0"
         onSubmit={(event) => {
           event.preventDefault();
@@ -46,17 +50,17 @@ export function HomeHeroSearch() {
         />
         <button
           className="py-1 text-left text-[10px] font-semibold uppercase tracking-[0.2em] text-terra disabled:cursor-wait disabled:opacity-70 md:py-2.5 md:pl-5 md:text-right"
-          disabled={isPending}
+          disabled={isBusy}
           type="submit"
         >
-          {isPending ? "Abrindo busca..." : "Perguntar →"}
+          {isBusy ? "Abrindo busca..." : "Perguntar →"}
         </button>
       </form>
       <div className="mt-4 flex flex-wrap gap-2">
         {EXAMPLES.map((example) => (
           <button
             className="rounded-full border border-navy/10 px-3 py-1.5 text-[10.5px] text-navy disabled:cursor-wait disabled:opacity-70"
-            disabled={isPending}
+            disabled={isBusy}
             key={example}
             onClick={() => {
               setQuery(example);

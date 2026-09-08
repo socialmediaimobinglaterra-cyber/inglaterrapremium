@@ -205,6 +205,7 @@ export function BuscaImoveisClient({
   const [aiInterpretationNotice, setAiInterpretationNotice] =
     useState<AiInterpretationNotice | null>(null);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [isAiSearching, setIsAiSearching] = useState(false);
   const [isPending, startTransition] = useTransition();
   const initialNaturalQueryHandled = useRef(false);
 
@@ -347,81 +348,81 @@ export function BuscaImoveisClient({
   }
 
   async function runNaturalSearch(query = naturalQuery) {
-    if (!query.trim()) return;
+    const trimmed = query.trim();
+    if (!trimmed || isAiSearching) return;
     setAiNote("");
     setAiInterpretationNotice(null);
+    setIsAiSearching(true);
 
-    startTransition(() => {
-      void (async () => {
-        try {
-          const response = await fetch("/api/imoveis/ai", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ query }),
-          });
-          const data = await response.json();
+    try {
+      const response = await fetch("/api/imoveis/ai", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query: trimmed }),
+      });
+      const data = await response.json();
 
-          if (!data.ok || !data.filters) {
-            setAiNote("Busca inteligente indisponível no momento. Use os filtros rápidos.");
-            await runSearch(currentFilters);
-            return;
-          }
+      if (!data.ok || !data.filters) {
+        setAiNote("Busca inteligente indisponível no momento. Use os filtros rápidos.");
+        await runSearch(currentFilters);
+        return;
+      }
 
-          const rawFilters = data.filters as ImovelSearchFilters & {
-            naoInterpretado?: unknown;
-          };
-          const filters: ImovelSearchFilters = {
-            bairro: rawFilters.bairro,
-            tipo: rawFilters.tipo,
-            negocio: rawFilters.negocio,
-            suitesMinimas: rawFilters.suitesMinimas,
-            vagasMinimas: rawFilters.vagasMinimas,
-            quartosMinimos: rawFilters.quartosMinimos,
-            areaMinima: rawFilters.areaMinima,
-            valorMinimo: rawFilters.valorMinimo,
-            valorMaximo: rawFilters.valorMaximo,
-          };
-          const naoInterpretado = Array.isArray(data.naoInterpretado)
-            ? data.naoInterpretado.filter((item: unknown): item is string => typeof item === "string")
-            : Array.isArray(rawFilters.naoInterpretado)
-              ? rawFilters.naoInterpretado.filter(
-                  (item: unknown): item is string => typeof item === "string"
-                )
-              : [];
-          const nextBairro = filters.bairro ?? "Todos os bairros";
-          const nextTipo = filters.tipo ?? "Todos os tipos";
-          const nextNegocio = filters.negocio ?? negocio;
-          const nextAiOnlyFilters = {
-            vagasMinimas: filters.vagasMinimas ?? null,
-            quartosMinimos: filters.quartosMinimos ?? null,
-            areaMinima: filters.areaMinima ?? null,
-          };
+      const rawFilters = data.filters as ImovelSearchFilters & {
+        naoInterpretado?: unknown;
+      };
+      const filters: ImovelSearchFilters = {
+        bairro: rawFilters.bairro,
+        tipo: rawFilters.tipo,
+        negocio: rawFilters.negocio,
+        suitesMinimas: rawFilters.suitesMinimas,
+        vagasMinimas: rawFilters.vagasMinimas,
+        quartosMinimos: rawFilters.quartosMinimos,
+        areaMinima: rawFilters.areaMinima,
+        valorMinimo: rawFilters.valorMinimo,
+        valorMaximo: rawFilters.valorMaximo,
+      };
+      const naoInterpretado = Array.isArray(data.naoInterpretado)
+        ? data.naoInterpretado.filter((item: unknown): item is string => typeof item === "string")
+        : Array.isArray(rawFilters.naoInterpretado)
+          ? rawFilters.naoInterpretado.filter(
+              (item: unknown): item is string => typeof item === "string"
+            )
+          : [];
+      const nextBairro = filters.bairro ?? "Todos os bairros";
+      const nextTipo = filters.tipo ?? "Todos os tipos";
+      const nextNegocio = filters.negocio ?? negocio;
+      const nextAiOnlyFilters = {
+        vagasMinimas: filters.vagasMinimas ?? null,
+        quartosMinimos: filters.quartosMinimos ?? null,
+        areaMinima: filters.areaMinima ?? null,
+      };
 
-          setBairro(nextBairro);
-          setTipo(nextTipo);
-          setNegocio(nextNegocio === "Alugar" ? "Alugar" : "Comprar");
-          setAiOnlyFilters(nextAiOnlyFilters);
-          setAiInterpretationNotice(
-            naoInterpretado.length > 0
-              ? {
-                  interpreted: describeAiFilters(filters),
-                  naoInterpretado,
-                }
-              : null
-          );
-          setSuites(
-            SUITES_OPTIONS.find((item) => item.value === filters.suitesMinimas)?.label ??
-              "Não definido"
-          );
-          setValor("Não definido");
-          await runSearch({ ...filters, order });
-        } catch {
-          setAiNote("Busca inteligente indisponível no momento. Use os filtros rápidos.");
-          setAiInterpretationNotice(null);
-          await runSearch(currentFilters);
-        }
-      })();
-    });
+      setBairro(nextBairro);
+      setTipo(nextTipo);
+      setNegocio(nextNegocio === "Alugar" ? "Alugar" : "Comprar");
+      setAiOnlyFilters(nextAiOnlyFilters);
+      setAiInterpretationNotice(
+        naoInterpretado.length > 0
+          ? {
+              interpreted: describeAiFilters(filters),
+              naoInterpretado,
+            }
+          : null
+      );
+      setSuites(
+        SUITES_OPTIONS.find((item) => item.value === filters.suitesMinimas)?.label ??
+          "Não definido"
+      );
+      setValor("Não definido");
+      await runSearch({ ...filters, order });
+    } catch {
+      setAiNote("Busca inteligente indisponível no momento. Use os filtros rápidos.");
+      setAiInterpretationNotice(null);
+      await runSearch(currentFilters);
+    } finally {
+      setIsAiSearching(false);
+    }
   }
 
   useEffect(() => {
@@ -494,6 +495,7 @@ export function BuscaImoveisClient({
               </span>
             </div>
             <form
+              aria-busy={isAiSearching}
               className="flex flex-col gap-2 border-b border-navy/10 pb-3 md:max-w-[720px] md:flex-row md:gap-0 md:pb-0"
               onSubmit={(event) => {
                 event.preventDefault();
@@ -507,8 +509,12 @@ export function BuscaImoveisClient({
                 placeholder="Descreva o imóvel que você procura..."
                 value={naturalQuery}
               />
-              <button className="py-1 text-left text-[10px] font-semibold uppercase tracking-[0.2em] text-terra md:py-2.5 md:pl-5 md:text-right" type="submit">
-                Perguntar →
+              <button
+                className="py-1 text-left text-[10px] font-semibold uppercase tracking-[0.2em] text-terra disabled:cursor-wait disabled:opacity-70 md:py-2.5 md:pl-5 md:text-right"
+                disabled={isAiSearching}
+                type="submit"
+              >
+                {isAiSearching ? "Interpretando..." : "Perguntar →"}
               </button>
             </form>
             {aiNote ? <p className="mt-2 text-[11px] text-navy">{aiNote}</p> : null}
@@ -519,7 +525,8 @@ export function BuscaImoveisClient({
               "Casa com 4 suítes no Terra Bonita",
             ].map((example) => (
               <button
-                className="rounded-full border border-navy/10 px-3 py-1.5 text-[10.5px] text-navy"
+                className="rounded-full border border-navy/10 px-3 py-1.5 text-[10.5px] text-navy disabled:cursor-wait disabled:opacity-70"
+                disabled={isAiSearching}
                 key={example}
                 onClick={() => {
                   setNaturalQuery(example);
