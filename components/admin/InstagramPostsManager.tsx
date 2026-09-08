@@ -7,10 +7,18 @@ import {
   deleteInstagramPostAction,
   reorderInstagramPostsAction,
   toggleInstagramPostAction,
+  updateInstagramPostAction,
 } from "@/app/admin/instagram/actions";
 import type { InstagramPost } from "@/lib/queries/instagram-posts";
 
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
+
+type SelectedImage = {
+  file: File;
+  previewUrl: string;
+  width: number | null;
+  height: number | null;
+};
 
 function formatBytes(value: number) {
   if (value < 1024 * 1024) return `${Math.round(value / 1024)} KB`;
@@ -64,19 +72,19 @@ function ImageFallback() {
 
 export function InstagramPostsManager({ posts }: { posts: InstagramPost[] }) {
   const [formState, formAction, pending] = useActionState(addInstagramPostAction, {});
+  const [editState, editAction, editPending] = useActionState(updateInstagramPostAction, {});
   const [items, setItems] = useState(posts);
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [previewPost, setPreviewPost] = useState<InstagramPost | null>(null);
-  const [selectedImage, setSelectedImage] = useState<{
-    file: File;
-    previewUrl: string;
-    width: number | null;
-    height: number | null;
-  } | null>(null);
+  const [editPost, setEditPost] = useState<InstagramPost | null>(null);
+  const [selectedImage, setSelectedImage] = useState<SelectedImage | null>(null);
+  const [editSelectedImage, setEditSelectedImage] = useState<SelectedImage | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [editUploadError, setEditUploadError] = useState<string | null>(null);
   const [brokenImages, setBrokenImages] = useState<Set<string>>(new Set());
   const [isPending, startTransition] = useTransition();
   const imageInputRef = useRef<HTMLInputElement>(null);
+  const editImageInputRef = useRef<HTMLInputElement>(null);
   const objectUrlsRef = useRef<string[]>([]);
 
   useEffect(() => {
@@ -127,6 +135,54 @@ export function InstagramPostsManager({ posts }: { posts: InstagramPost[] }) {
       setSelectedImage({ file, previewUrl, width: null, height: null });
     };
     probe.src = previewUrl;
+  }
+
+  function handleEditImageSelect(event: ChangeEvent<HTMLInputElement>) {
+    const [file] = Array.from(event.currentTarget.files ?? []);
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      setEditUploadError("O arquivo do post precisa ser uma imagem.");
+      if (editImageInputRef.current) editImageInputRef.current.value = "";
+      return;
+    }
+
+    if (file.size > MAX_IMAGE_SIZE) {
+      setEditUploadError(
+        `A imagem "${file.name}" excedeu o tamanho limite de ${formatBytes(MAX_IMAGE_SIZE)}.`
+      );
+      if (editImageInputRef.current) editImageInputRef.current.value = "";
+      return;
+    }
+
+    setEditUploadError(null);
+    if (editSelectedImage) URL.revokeObjectURL(editSelectedImage.previewUrl);
+
+    const previewUrl = URL.createObjectURL(file);
+    objectUrlsRef.current.push(previewUrl);
+    setEditSelectedImage({ file, previewUrl, width: null, height: null });
+
+    const probe = new window.Image();
+    probe.onload = () => {
+      setEditSelectedImage({
+        file,
+        previewUrl,
+        width: probe.naturalWidth,
+        height: probe.naturalHeight,
+      });
+    };
+    probe.onerror = () => {
+      setEditSelectedImage({ file, previewUrl, width: null, height: null });
+    };
+    probe.src = previewUrl;
+  }
+
+  function openEdit(post: InstagramPost) {
+    if (editSelectedImage) URL.revokeObjectURL(editSelectedImage.previewUrl);
+    setEditSelectedImage(null);
+    setEditUploadError(null);
+    setEditPost(post);
+    if (editImageInputRef.current) editImageInputRef.current.value = "";
   }
 
   function persistOrder(nextItems: InstagramPost[]) {
@@ -323,6 +379,13 @@ export function InstagramPostsManager({ posts }: { posts: InstagramPost[] }) {
                   <div className="flex shrink-0 items-center gap-2">
                     <button
                       className="border border-navy/15 px-3 py-2 text-[10px] uppercase tracking-[0.14em] text-navy hover:border-terra hover:text-terra"
+                      onClick={() => openEdit(post)}
+                      type="button"
+                    >
+                      Editar
+                    </button>
+                    <button
+                      className="border border-navy/15 px-3 py-2 text-[10px] uppercase tracking-[0.14em] text-navy hover:border-terra hover:text-terra"
                       onClick={() => setPreviewPost(post)}
                       type="button"
                     >
@@ -405,6 +468,133 @@ export function InstagramPostsManager({ posts }: { posts: InstagramPost[] }) {
             >
               Abrir post original
             </a>
+          </div>
+        </div>
+      ) : null}
+
+      {editPost ? (
+        <div
+          aria-modal="true"
+          className="fixed inset-0 z-50 grid place-items-center bg-navy/65 p-4"
+          role="dialog"
+        >
+          <div className="max-h-[92vh] w-full max-w-[760px] overflow-y-auto bg-white p-4 shadow-2xl md:p-5">
+            <div className="mb-4 flex items-center justify-between gap-4 border-b border-navy/10 pb-3">
+              <div>
+                <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-terra">
+                  Instagram
+                </p>
+                <h2 className="text-lg font-light text-navy">Editar post</h2>
+              </div>
+              <button
+                className="border border-navy/15 px-3 py-2 text-[10px] uppercase tracking-[0.14em] text-navy hover:border-terra hover:text-terra"
+                onClick={() => setEditPost(null)}
+                type="button"
+              >
+                Fechar
+              </button>
+            </div>
+
+            <form action={editAction} className="space-y-4" encType="multipart/form-data">
+              <input name="id" type="hidden" value={editPost.id} />
+              <input name="imagem_existente" type="hidden" value={editPost.imagem ?? ""} />
+
+              {editState.error ? (
+                <p className="border border-terra/20 bg-terra/5 px-4 py-3 text-sm leading-relaxed text-terra">
+                  {editState.error}
+                </p>
+              ) : null}
+
+              {editUploadError ? (
+                <p className="border border-terra/20 bg-terra/5 px-4 py-3 text-sm leading-relaxed text-terra">
+                  {editUploadError}
+                </p>
+              ) : null}
+
+              <label className="block">
+                <span className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.18em] text-navy">
+                  URL do post ou reel
+                </span>
+                <input
+                  className="h-11 w-full border border-navy/15 bg-offwhite px-3 text-sm text-navy outline-none focus:border-terra"
+                  defaultValue={editPost.url}
+                  name="url"
+                  required
+                  type="url"
+                />
+              </label>
+
+              <label className="block">
+                <span className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.18em] text-navy">
+                  Legenda opcional
+                </span>
+                <input
+                  className="h-11 w-full border border-navy/15 bg-offwhite px-3 text-sm text-navy outline-none focus:border-terra"
+                  defaultValue={editPost.legenda ?? ""}
+                  maxLength={140}
+                  name="legenda"
+                  placeholder="Texto curto para hover"
+                />
+              </label>
+
+              <div className="border border-navy/10 bg-offwhite p-3">
+                <span className="mb-1.5 block text-[10px] font-semibold uppercase tracking-[0.18em] text-navy">
+                  Imagem própria
+                </span>
+                <p className="mb-3 text-xs leading-relaxed text-navy">
+                  Para manter a imagem atual, salve sem escolher novo arquivo. Recomendado: 1200 x 1200 px. Tamanho máximo: {formatBytes(MAX_IMAGE_SIZE)}.
+                </p>
+
+                <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center">
+                  {editSelectedImage ? (
+                    <img
+                      alt=""
+                      className="h-24 w-24 border border-navy/10 object-cover"
+                      src={editSelectedImage.previewUrl}
+                    />
+                  ) : editPost.imagem ? (
+                    <img
+                      alt=""
+                      className="h-24 w-24 border border-navy/10 object-cover"
+                      src={editPost.imagem}
+                    />
+                  ) : (
+                    <div className="grid h-24 w-24 place-items-center bg-navy text-offwhite">
+                      <InstagramMark />
+                    </div>
+                  )}
+                  <div className="text-xs leading-relaxed text-navy">
+                    {editSelectedImage ? (
+                      <p>
+                        {editSelectedImage.width && editSelectedImage.height
+                          ? `${editSelectedImage.width} x ${editSelectedImage.height} px · `
+                          : ""}
+                        {formatBytes(editSelectedImage.file.size)}
+                      </p>
+                    ) : (
+                      <p>{editPost.imagem ? "Imagem atual cadastrada." : "Este post ainda não tem imagem própria."}</p>
+                    )}
+                  </div>
+                </div>
+
+                <input
+                  accept="image/*"
+                  className="w-full border border-navy/15 bg-white px-3 py-2.5 text-sm text-navy file:mr-4 file:border-0 file:bg-navy file:px-4 file:py-2 file:text-[10px] file:uppercase file:tracking-[0.16em] file:text-white"
+                  name="imagem"
+                  onChange={handleEditImageSelect}
+                  ref={editImageInputRef}
+                  type="file"
+                />
+              </div>
+
+              <button
+                className="bg-terra px-6 py-3 text-[10px] font-semibold uppercase tracking-[0.2em] text-white disabled:opacity-60"
+                disabled={editPending}
+                type="submit"
+              >
+                {editPending ? "Salvando..." : "Salvar alterações"}
+              </button>
+            </form>
           </div>
         </div>
       ) : null}

@@ -69,9 +69,10 @@ function blobErrorMessage(error: unknown) {
   )}`;
 }
 
-async function uploadInstagramImage(file: FormDataEntryValue | null, url: string) {
+async function uploadInstagramImage(file: FormDataEntryValue | null, url: string, required = true) {
   if (!(file instanceof File) || file.size === 0) {
-    throw new Error("Envie uma imagem própria para este post.");
+    if (required) throw new Error("Envie uma imagem própria para este post.");
+    return null;
   }
 
   const token = process.env.BLOB_READ_WRITE_TOKEN;
@@ -126,7 +127,7 @@ export async function addInstagramPostAction(
 
   try {
     const url = normalizeInstagramUrl(stringValue(formData, "url") ?? "");
-    const imagem = await uploadInstagramImage(formData.get("imagem"), url);
+    const imagem = await uploadInstagramImage(formData.get("imagem"), url, true);
     const legenda = stringValue(formData, "legenda");
     const pool = getPool();
     await ensureInstagramPostsTable(pool);
@@ -152,6 +153,50 @@ export async function addInstagramPostAction(
   }
 
   redirect("/admin/instagram?ok=adicionado");
+}
+
+export async function updateInstagramPostAction(
+  _previousState: InstagramPostActionState,
+  formData: FormData
+): Promise<InstagramPostActionState> {
+  await requireEditor();
+
+  try {
+    const id = stringValue(formData, "id");
+    if (!id) throw new Error("Post não encontrado.");
+
+    const url = normalizeInstagramUrl(stringValue(formData, "url") ?? "");
+    const legenda = stringValue(formData, "legenda");
+    const existingImage = stringValue(formData, "imagem_existente");
+    const uploadedImage = await uploadInstagramImage(formData.get("imagem"), url, false);
+    const imagem = uploadedImage ?? existingImage;
+
+    if (!imagem) {
+      throw new Error("Envie uma imagem própria para este post.");
+    }
+
+    const pool = getPool();
+    await ensureInstagramPostsTable(pool);
+
+    await pool.query(
+      `
+        update instagram_posts
+        set url = $1,
+          imagem = $2,
+          legenda = $3
+        where id = $4
+      `,
+      [url, imagem, legenda, id]
+    );
+
+    revalidatePath("/");
+    revalidatePath("/admin/instagram");
+  } catch (error) {
+    console.error("Erro ao editar post do Instagram", error);
+    return errorState(error);
+  }
+
+  redirect("/admin/instagram?ok=editado");
 }
 
 export async function toggleInstagramPostAction(formData: FormData) {

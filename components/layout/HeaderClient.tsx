@@ -47,7 +47,7 @@ function ContactButton({ className = "" }: { className?: string }) {
   return (
     <Link
       href="/contato"
-      className={`nav-focus inline-flex border border-navy/30 px-5 py-[9px] text-[9px] uppercase tracking-[0.22em] text-navy transition duration-200 hover:border-terra hover:bg-terra hover:text-white ${className}`}
+      className={`nav-focus inline-flex border border-navy/30 px-5 py-[9px] text-[10px] uppercase tracking-[0.22em] text-navy transition duration-200 hover:border-terra hover:bg-terra hover:text-white ${className}`}
     >
       Contato
     </Link>
@@ -60,7 +60,7 @@ function DesktopDropdown({ item, active }: { item: NavItem; active: boolean }) {
   return (
     <div className="group relative">
       <button
-        className={`nav-focus border-b py-1 text-[11px] tracking-[0.08em] transition duration-200 ${
+        className={`nav-focus border-b py-1 text-[12px] tracking-[0.08em] transition duration-200 ${
           active
             ? "border-terra text-terra opacity-100"
             : "border-transparent text-navy opacity-50 hover:opacity-100"
@@ -74,7 +74,7 @@ function DesktopDropdown({ item, active }: { item: NavItem; active: boolean }) {
           <div className="max-h-[calc(100dvh-92px)] overflow-y-auto overscroll-contain border border-navy/10 bg-offwhite shadow-nav-blur">
             {entries.map((entry) => (
               <Link
-                className="nav-focus block border-b border-navy/10 px-5 py-4 text-[11px] tracking-[0.08em] text-navy/55 transition duration-200 last:border-b-0 hover:bg-white/55 hover:text-terra"
+                className="nav-focus block border-b border-navy/10 px-5 py-4 text-[12px] tracking-[0.08em] text-navy/60 transition duration-200 last:border-b-0 hover:bg-white/55 hover:text-terra"
                 href={entry.href}
                 key={entry.href}
               >
@@ -103,7 +103,7 @@ function MobileDropdown({
   return (
     <div className="border-b border-navy/10">
       <button
-        className={`nav-focus flex w-full items-center justify-between px-5 py-4 text-left text-[13px] tracking-[0.06em] ${
+        className={`nav-focus flex w-full items-center justify-between px-5 py-4 text-left text-[14px] tracking-[0.06em] ${
           active ? "text-terra" : "text-navy"
         }`}
         onClick={() => setOpen((value) => !value)}
@@ -129,7 +129,7 @@ function MobileDropdown({
         >
           {entries.map((entry) => (
             <Link
-              className="nav-focus block border-t border-navy/10 px-8 py-3 text-[11px] tracking-[0.08em] text-navy/60"
+              className="nav-focus block border-t border-navy/10 px-8 py-3 text-[12px] tracking-[0.08em] text-navy/65"
               href={entry.href}
               key={entry.href}
               onClick={closeMenu}
@@ -185,7 +185,7 @@ export function HeaderClient({
 
             return (
               <Link
-                className={`nav-focus border-b py-1 text-[11px] tracking-[0.08em] transition duration-200 ${
+                className={`nav-focus border-b py-1 text-[12px] tracking-[0.08em] transition duration-200 ${
                   active
                     ? "border-terra text-terra opacity-100"
                     : "border-transparent text-navy opacity-50 hover:opacity-100"
@@ -248,7 +248,7 @@ export function HeaderClient({
 
           return (
             <Link
-              className={`nav-focus block w-full border-b border-navy/10 px-5 py-4 text-left text-[13px] tracking-[0.06em] ${
+              className={`nav-focus block w-full border-b border-navy/10 px-5 py-4 text-left text-[14px] tracking-[0.06em] ${
                 active ? "text-terra" : "text-navy"
               }`}
               href={item.href ?? "/"}
