@@ -140,12 +140,15 @@ const TICKER = [
   "Gleba Palhano",
   "Terra Bonita",
   "Bela Suíça",
-  "Aurora",
   "Nova Prochet",
-  "Jardim Higienópolis",
   "Condomínios de Alto Padrão",
   "Residenciais de Luxo",
 ];
+
+const ACCENTED_CHARS =
+  "ÁÀÂÃÄáàâãäÉÈÊËéèêëÍÌÎÏíìîïÓÒÔÕÖóòôõöÚÙÛÜúùûüÇç";
+const UNACCENTED_CHARS =
+  "AAAAAaaaaaEEEEeeeeIIIIiiiiOOOOOoooooUUUUuuuuCc";
 
 function currency(value: string | number | null) {
   if (value === null) return "Sob consulta";
@@ -184,11 +187,21 @@ async function getHomeData() {
       limit 4
     `),
     pool.query(`
+      with premium_config as (
+        select array(
+          select lower(translate(unnest(bairros_permitidos), '${ACCENTED_CHARS}', '${UNACCENTED_CHARS}'))
+          from configuracoes_premium
+          where chave = 'criterios_premium'
+        ) as bairros_normalizados
+      )
       select b.nome, b.cidade, b.imagem_capa, b.imagem_capa_alinhamento,
         b.imagem_home, b.imagem_home_alinhamento, count(i.id)::int as imoveis
       from bairros b
+      cross join premium_config
       left join imoveis i on i.bairro_id = b.id and i.ativo = true and i.ativo_no_site = true
       where b.ativo = true
+        and lower(translate(b.nome, '${ACCENTED_CHARS}', '${UNACCENTED_CHARS}')) =
+          any(premium_config.bairros_normalizados)
       group by b.id, b.nome, b.cidade, b.imagem_capa, b.imagem_capa_alinhamento,
         b.imagem_home, b.imagem_home_alinhamento
       order by imoveis desc, b.nome

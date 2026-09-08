@@ -13,6 +13,11 @@ function lastModified(value: Date | string | null) {
   return value ? new Date(value) : new Date();
 }
 
+const ACCENTED_CHARS =
+  "ÁÀÂÃÄáàâãäÉÈÊËéèêëÍÌÎÏíìîïÓÒÔÕÖóòôõöÚÙÛÜúùûüÇç";
+const UNACCENTED_CHARS =
+  "AAAAAaaaaaEEEEeeeeIIIIiiiiOOOOOoooooUUUUuuuuCc";
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const pool = getPool();
   const [imoveisResult, bairrosResult] = await Promise.all([
@@ -24,9 +29,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       order by updated_at desc nulls last, slug
     `),
     pool.query<SitemapRow>(`
+      with premium_config as (
+        select array(
+          select lower(translate(unnest(bairros_permitidos), '${ACCENTED_CHARS}', '${UNACCENTED_CHARS}'))
+          from configuracoes_premium
+          where chave = 'criterios_premium'
+        ) as bairros_normalizados
+      )
       select slug, updated_at
       from bairros
+      cross join premium_config
       where ativo = true
+        and lower(translate(nome, '${ACCENTED_CHARS}', '${UNACCENTED_CHARS}')) =
+          any(premium_config.bairros_normalizados)
       order by nome
     `),
   ]);

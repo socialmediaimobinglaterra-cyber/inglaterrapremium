@@ -71,6 +71,11 @@ function parseFaq(value: unknown): BairroFaq[] {
     .filter((item): item is BairroFaq => item !== null);
 }
 
+const ACCENTED_CHARS =
+  "ÁÀÂÃÄáàâãäÉÈÊËéèêëÍÌÎÏíìîïÓÒÔÕÖóòôõöÚÙÛÜúùûüÇç";
+const UNACCENTED_CHARS =
+  "AAAAAaaaaaEEEEeeeeIIIIiiiiOOOOOoooooUUUUuuuuCc";
+
 function mapImovel(row: Record<string, any>, index: number): ImovelSearchResult {
   return {
     id: String(index + 1).padStart(2, "0"),
@@ -96,13 +101,23 @@ export async function getBairroPageData(slug: string) {
   await ensureBairroEditorialColumns(pool);
   const bairroResult = await pool.query(
     `
+      with premium_config as (
+        select array(
+          select lower(translate(unnest(bairros_permitidos), $2, $3))
+          from configuracoes_premium
+          where chave = 'criterios_premium'
+        ) as bairros_normalizados
+      )
       select id, nome, slug, cidade, estado, imagem_capa, imagem_capa_alinhamento,
         imagem_home, imagem_home_alinhamento, descricao, faq
       from bairros
-      where slug = $1 and ativo = true
+      cross join premium_config
+      where slug = $1
+        and ativo = true
+        and lower(translate(nome, $2, $3)) = any(premium_config.bairros_normalizados)
       limit 1
     `,
-    [slug]
+    [slug, ACCENTED_CHARS, UNACCENTED_CHARS]
   );
 
   const bairroRow = bairroResult.rows[0];
@@ -137,6 +152,13 @@ export async function getBairroPageData(slug: string) {
     ),
     pool.query(
       `
+        with premium_config as (
+          select array(
+            select lower(translate(unnest(bairros_permitidos), $2, $3))
+            from configuracoes_premium
+            where chave = 'criterios_premium'
+          ) as bairros_normalizados
+        )
         select
           b.nome,
           b.slug,
@@ -150,13 +172,16 @@ export async function getBairroPageData(slug: string) {
         left join imoveis i on i.ativo = true
           and i.ativo_no_site = true
           and i.bairro_id = b.id
-        where b.ativo = true and b.slug <> $1
+        cross join premium_config
+        where b.ativo = true
+          and b.slug <> $1
+          and lower(translate(b.nome, $2, $3)) = any(premium_config.bairros_normalizados)
         group by b.id, b.nome, b.slug, b.cidade, b.imagem_capa, b.imagem_capa_alinhamento,
           b.imagem_home, b.imagem_home_alinhamento
         order by imoveis_disponiveis desc, b.nome
         limit 3
       `,
-      [slug]
+      [slug, ACCENTED_CHARS, UNACCENTED_CHARS]
     ),
   ]);
 
