@@ -4,6 +4,7 @@ import { HomeHeroSearch } from "@/components/search/HomeHeroSearch";
 import { ensureBairroEditorialColumns } from "@/lib/admin/bairros-schema";
 import { getPool } from "@/lib/db";
 import { imageUrlOrFallback } from "@/lib/images";
+import { getLatestInstagramPosts } from "@/lib/instagram";
 
 export const dynamic = "force-dynamic";
 
@@ -177,7 +178,7 @@ function getMainImage(fotos: Foto[] | null) {
 async function getHomeData() {
   const pool = getPool();
   await ensureBairroEditorialColumns(pool);
-  const [featuredResult, bairrosResult, statsResult] = await Promise.all([
+  const [featuredResult, bairrosResult, statsResult, instagramPosts] = await Promise.all([
     pool.query(`
       select kenlo_codigo, titulo, bairro_nome, cidade, area_util, area_total,
         dormitorios, preco_venda, preco_locacao, tipo, fotos
@@ -214,6 +215,7 @@ async function getHomeData() {
       from imoveis
       where ativo = true and ativo_no_site = true
     `),
+    getLatestInstagramPosts(3),
   ]);
 
   const featured: FeaturedProperty[] = featuredResult.rows.map((row, index) => ({
@@ -247,7 +249,7 @@ async function getHomeData() {
 
   const totals = statsResult.rows[0] ?? { total_imoveis: 0, total_bairros: 0 };
 
-  return { featured, bairros, totals };
+  return { featured, bairros, totals, instagramPosts };
 }
 
 function Rule({ label, right }: { label?: string; right?: string }) {
@@ -394,7 +396,7 @@ function ProdCard({ p }: { p: (typeof PRODUCTS)[0] }) {
 function DirCard({ d }: { d: (typeof DIRECTORS)[0] }) {
   return (
     <article className="border-t-[3px] border-transparent bg-offwhite transition hover:border-terra">
-      <div className="aspect-[2/3] overflow-hidden bg-[#c8bdb6]">
+      <div className="aspect-square overflow-hidden bg-[#c8bdb6]">
         <img
           alt={`${d.name}, ${d.title} da Inglaterra Premium`}
           className="h-full w-full object-cover object-top grayscale-[20%] transition duration-700 hover:scale-[1.03]"
@@ -550,7 +552,7 @@ function NewsletterBlock() {
 }
 
 export default async function Home() {
-  const { featured, bairros, totals } = await getHomeData();
+  const { featured, bairros, totals, instagramPosts } = await getHomeData();
   const stats = [
     {
       value: "25",
@@ -738,12 +740,7 @@ export default async function Home() {
         </div>
       </section>
 
-      <section className="relative min-h-[520px] overflow-hidden bg-[#1e1e1e]">
-        <img
-          alt="Corretor de imóveis de alto padrão"
-          className="absolute inset-0 h-full w-full object-cover opacity-30"
-          src="/images/capa-hero.jpg"
-        />
+      <section className="relative min-h-[520px] overflow-hidden bg-navy">
         <div className="site-container relative z-10 grid min-h-[520px] grid-cols-1 items-center gap-10 py-14 md:grid-cols-2 md:gap-20 md:py-20">
           <div>
             <div className="mb-5 flex items-center gap-3.5">
@@ -828,34 +825,35 @@ export default async function Home() {
           </div>
           <a
             className="border-b border-terra pb-0.5 text-[9px] uppercase tracking-[0.3em] text-terra"
-            href="https://instagram.com"
+            href="https://www.instagram.com/inglaterrapremium/"
             rel="noreferrer"
             target="_blank"
           >
             Abrir Instagram
           </a>
         </div>
-        <div className="grid grid-cols-1 gap-2 md:grid-cols-3 md:gap-[3px]">
-          {[
-            "/images/capa-hero.jpg",
-            "/images/capa-hero.jpg",
-            "/images/capa-hero.jpg",
-          ].map((url, index) => (
-            <div
-              className="group relative aspect-square cursor-pointer overflow-hidden bg-[#c8bdb6]"
-              key={url}
-            >
-              <img
-                alt={`Publicação ${index + 1} do Instagram da Inglaterra Premium`}
-                className="h-full w-full object-cover transition duration-500 group-hover:scale-110"
-                src={url}
-              />
-              <div className="absolute inset-0 hidden items-center justify-center bg-navy/45 group-hover:flex">
-                <span className="text-lg text-white">♡</span>
-              </div>
-            </div>
-          ))}
-        </div>
+        {instagramPosts.length > 0 ? (
+          <div className="grid grid-cols-1 gap-2 md:grid-cols-3 md:gap-[3px]">
+            {instagramPosts.map((post) => (
+              <a
+                className="group relative aspect-square cursor-pointer overflow-hidden bg-[#c8bdb6]"
+                href={post.permalink}
+                key={post.id}
+                rel="noreferrer"
+                target="_blank"
+              >
+                <img
+                  alt={post.alt}
+                  className="h-full w-full object-cover transition duration-500 group-hover:scale-110"
+                  src={post.imageUrl}
+                />
+                <div className="absolute inset-0 hidden items-center justify-center bg-navy/45 group-hover:flex">
+                  <span className="text-lg text-white">♡</span>
+                </div>
+              </a>
+            ))}
+          </div>
+        ) : null}
       </section>
 
       <NewsletterBlock />

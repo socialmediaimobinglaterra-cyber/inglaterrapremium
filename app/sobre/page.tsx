@@ -181,10 +181,10 @@ export default function SobrePage() {
         <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
           {diretores.map((diretor) => (
             <article className="bg-white" key={diretor.nome}>
-              <div className="relative aspect-[4/5] overflow-hidden">
+              <div className="relative aspect-square overflow-hidden">
                 <Image
                   alt={`${diretor.nome} — ${diretor.cargo}, Grupo Inglaterra em Londrina`}
-                  className="object-cover"
+                  className="object-cover object-top"
                   fill
                   sizes="(min-width: 768px) 33vw, 100vw"
                   src={diretor.foto}
