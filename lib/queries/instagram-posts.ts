@@ -1,4 +1,5 @@
 import { getPool } from "@/lib/db";
+import { ensureInstagramPostsTable } from "@/lib/admin/instagram-schema";
 
 export type InstagramPost = {
   id: string;
@@ -25,6 +26,7 @@ function mapInstagramPost(row: Record<string, any>): InstagramPost {
 export async function getActiveInstagramPosts() {
   const pool = getPool();
   try {
+    await ensureInstagramPostsTable(pool);
     const result = await pool.query(`
       select id, url, imagem, legenda, ordem, ativo, created_at
       from instagram_posts
