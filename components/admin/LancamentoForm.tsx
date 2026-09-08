@@ -54,7 +54,7 @@ type EditableImage = {
   position?: string;
 };
 
-const MAX_IMAGE_SIZE = 1 * 1024 * 1024;
+const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
 
 const imagePositions: Array<{ value: ImagePosition; label: string }> = [
   { value: "left top", label: "TL" },
@@ -264,7 +264,9 @@ export function LancamentoForm({ lancamento }: { lancamento?: LancamentoFormData
     const oversized = files.filter((file) => file.size > MAX_IMAGE_SIZE);
     if (oversized.length > 0) {
       setUploadError(
-        `A imagem "${oversized[0].name}" excedeu o tamanho limite de 1 MB.`
+        `A imagem "${oversized[0].name}" excedeu o tamanho limite de ${formatBytes(
+          MAX_IMAGE_SIZE
+        )}.`
       );
       if (fileInputRef.current) fileInputRef.current.value = "";
       return;
@@ -297,7 +299,9 @@ export function LancamentoForm({ lancamento }: { lancamento?: LancamentoFormData
     if (!file) return;
 
     if (file.size > MAX_IMAGE_SIZE) {
-      setUploadError(`A imagem "${file.name}" excedeu o tamanho limite de 1 MB.`);
+      setUploadError(
+        `A imagem "${file.name}" excedeu o tamanho limite de ${formatBytes(MAX_IMAGE_SIZE)}.`
+      );
       if (coverInputRef.current) coverInputRef.current.value = "";
       return;
     }
@@ -320,7 +324,9 @@ export function LancamentoForm({ lancamento }: { lancamento?: LancamentoFormData
     if (!file) return;
 
     if (file.size > MAX_IMAGE_SIZE) {
-      setUploadError(`A imagem "${file.name}" excedeu o tamanho limite de 1 MB.`);
+      setUploadError(
+        `A imagem "${file.name}" excedeu o tamanho limite de ${formatBytes(MAX_IMAGE_SIZE)}.`
+      );
       if (builderLogoInputRef.current) builderLogoInputRef.current.value = "";
       return;
     }
@@ -503,7 +509,7 @@ export function LancamentoForm({ lancamento }: { lancamento?: LancamentoFormData
           type="file"
         />
         <span className="mt-1.5 block text-xs text-sand">
-          Opcional. Máximo de 1 MB.
+          Opcional. Máximo de {formatBytes(MAX_IMAGE_SIZE)}.
         </span>
       </div>
 
@@ -617,7 +623,7 @@ export function LancamentoForm({ lancamento }: { lancamento?: LancamentoFormData
           type="file"
         />
         <span className="mt-1.5 block text-xs text-sand">
-          Apenas imagem. Máximo de 1 MB.
+          Apenas imagem. Máximo de {formatBytes(MAX_IMAGE_SIZE)}.
         </span>
       </div>
 
@@ -681,7 +687,7 @@ export function LancamentoForm({ lancamento }: { lancamento?: LancamentoFormData
           type="file"
         />
         <span className="mt-1.5 block text-xs text-sand">
-          Apenas imagens. Máximo de 8 arquivos por envio, 1 MB por imagem.
+          Apenas imagens. Máximo de 8 arquivos por envio, {formatBytes(MAX_IMAGE_SIZE)} por imagem.
         </span>
       </label>
 
