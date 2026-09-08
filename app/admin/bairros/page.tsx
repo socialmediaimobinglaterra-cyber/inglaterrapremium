@@ -72,9 +72,28 @@ function mapBairro(row: Record<string, any>): BairroAdmin {
   };
 }
 
+function adminErrorMessage(error: unknown) {
+  if (error instanceof Error && error.message) {
+    if (error.message.includes("DATABASE_URL")) {
+      return "DATABASE_URL não está disponível no ambiente usado por este deploy.";
+    }
+
+    if (error.message.includes("does not exist") || error.message.includes("42703")) {
+      return "O schema do banco conectado a este deploy ainda não tem todos os campos editoriais de bairros.";
+    }
+  }
+
+  return "Não foi possível carregar os dados editoriais de bairros agora.";
+}
+
 async function getBairrosData(editId?: string) {
   const pool = getPool();
-  await ensureBairroEditorialColumns(pool);
+
+  try {
+    await ensureBairroEditorialColumns(pool);
+  } catch (error) {
+    console.error("Não foi possível garantir colunas editoriais de bairros", error);
+  }
 
   const result = await pool.query(`
     select id, nome, slug, cidade, estado, imagem_capa, imagem_capa_alinhamento, descricao, faq, ativo
@@ -90,12 +109,47 @@ async function getBairrosData(editId?: string) {
   return { bairros, editar };
 }
 
+function AdminBairrosError({ message }: { message: string }) {
+  return (
+    <main className="site-container min-h-screen bg-offwhite py-24 text-navy">
+      <section className="mx-auto max-w-3xl border border-terra/20 bg-white p-6 md:p-8">
+        <Link className="mb-4 inline-block text-xs text-sand hover:text-terra" href="/admin">
+          Voltar ao painel
+        </Link>
+        <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.25em] text-terra">
+          Admin
+        </p>
+        <h1 className="text-2xl font-light">Bairros</h1>
+        <p className="mt-4 border border-terra/20 bg-terra/5 px-4 py-3 text-sm leading-relaxed text-terra">
+          {message}
+        </p>
+        <p className="mt-3 text-sm leading-relaxed text-sand">
+          A tela foi interrompida antes de carregar a lista. Recarregue em alguns instantes; se persistir, envie este aviso para conferirmos o ambiente conectado.
+        </p>
+      </section>
+    </main>
+  );
+}
+
 export default async function AdminBairrosPage({ searchParams }: PageProps) {
-  const user = await getCurrentAdminUser();
+  let user;
+  try {
+    user = await getCurrentAdminUser();
+  } catch (error) {
+    console.error("Erro ao carregar sessão admin em /admin/bairros", error);
+    return <AdminBairrosError message={adminErrorMessage(error)} />;
+  }
+
   if (!user) redirect("/admin/login");
 
   const params = await searchParams;
-  const data = await getBairrosData(params.editar);
+  let data;
+  try {
+    data = await getBairrosData(params.editar);
+  } catch (error) {
+    console.error("Erro ao carregar bairros no admin", error);
+    return <AdminBairrosError message={adminErrorMessage(error)} />;
+  }
 
   return (
     <main className="site-container min-h-screen bg-offwhite py-24 text-navy">
