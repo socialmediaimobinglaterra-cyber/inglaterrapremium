@@ -8,6 +8,7 @@ import { ensureInstagramPostsTable } from "@/lib/admin/instagram-schema";
 import { getPool } from "@/lib/db";
 
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
+const MAX_PUBLISHED_POSTS = 4;
 
 export type InstagramPostActionState = {
   error?: string;
@@ -132,6 +133,18 @@ export async function addInstagramPostAction(
     const pool = getPool();
     await ensureInstagramPostsTable(pool);
 
+    const activeCountResult = await pool.query(`
+      select count(*)::int as total
+      from instagram_posts
+      where ativo = true
+    `);
+
+    if (Number(activeCountResult.rows[0]?.total ?? 0) >= MAX_PUBLISHED_POSTS) {
+      throw new Error(
+        `A Home pode publicar no máximo ${MAX_PUBLISHED_POSTS} posts do Instagram. Desative um post antes de adicionar outro.`
+      );
+    }
+
     const orderResult = await pool.query(`
       select coalesce(max(ordem), 0) + 1 as next_order
       from instagram_posts
@@ -207,6 +220,32 @@ export async function toggleInstagramPostAction(formData: FormData) {
 
   const pool = getPool();
   await ensureInstagramPostsTable(pool);
+
+  const currentResult = await pool.query(
+    `
+      select ativo
+      from instagram_posts
+      where id = $1
+      limit 1
+    `,
+    [id]
+  );
+
+  const current = currentResult.rows[0];
+  if (!current) redirect("/admin/instagram?erro=post");
+
+  if (!current.ativo) {
+    const activeCountResult = await pool.query(`
+      select count(*)::int as total
+      from instagram_posts
+      where ativo = true
+    `);
+
+    if (Number(activeCountResult.rows[0]?.total ?? 0) >= MAX_PUBLISHED_POSTS) {
+      redirect("/admin/instagram?erro=limite");
+    }
+  }
+
   await pool.query(
     `
       update instagram_posts

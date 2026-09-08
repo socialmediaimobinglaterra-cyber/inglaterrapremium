@@ -34,6 +34,7 @@ export async function getActiveInstagramPosts() {
         and imagem is not null
         and btrim(imagem) <> ''
       order by ordem asc, created_at asc
+      limit 4
     `);
 
     return result.rows.map(mapInstagramPost);

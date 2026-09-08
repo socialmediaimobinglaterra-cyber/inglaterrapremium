@@ -87,7 +87,9 @@ export default async function AdminInstagramPage({ searchParams }: PageProps) {
 
         {params.erro ? (
           <p className="mb-5 border border-terra/20 bg-terra/5 px-4 py-3 text-sm text-terra">
-            Não foi possível concluir a ação. Tente novamente.
+            {params.erro === "limite"
+              ? "A Home pode publicar no máximo 4 posts do Instagram. Desative um post antes de ativar outro."
+              : "Não foi possível concluir a ação. Tente novamente."}
           </p>
         ) : null}
 

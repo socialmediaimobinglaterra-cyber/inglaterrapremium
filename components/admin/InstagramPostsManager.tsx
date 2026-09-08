@@ -86,6 +86,7 @@ export function InstagramPostsManager({ posts }: { posts: InstagramPost[] }) {
   const imageInputRef = useRef<HTMLInputElement>(null);
   const editImageInputRef = useRef<HTMLInputElement>(null);
   const objectUrlsRef = useRef<string[]>([]);
+  const activeCount = items.filter((post) => post.ativo).length;
 
   useEffect(() => {
     setItems(posts);
@@ -300,12 +301,17 @@ export function InstagramPostsManager({ posts }: { posts: InstagramPost[] }) {
           <div>
             <h2 className="text-sm font-semibold">Posts cadastrados</h2>
             <p className="mt-1 text-sm leading-relaxed text-navy">
-              Arraste pela alca para reordenar. Posts inativos ficam no admin, mas nao aparecem na Home.
+              Arraste pela alca para reordenar. Ate 4 posts ativos aparecem na Home.
             </p>
           </div>
-          {isPending ? (
-            <p className="text-xs uppercase tracking-[0.16em] text-terra">Salvando ordem...</p>
-          ) : null}
+          <div className="flex flex-wrap items-center gap-3">
+            <p className="text-xs uppercase tracking-[0.16em] text-navy">
+              {activeCount}/4 publicados
+            </p>
+            {isPending ? (
+              <p className="text-xs uppercase tracking-[0.16em] text-terra">Salvando ordem...</p>
+            ) : null}
+          </div>
         </div>
 
         {items.length > 0 ? (
@@ -394,8 +400,10 @@ export function InstagramPostsManager({ posts }: { posts: InstagramPost[] }) {
                     <form action={toggleInstagramPostAction}>
                       <input name="id" type="hidden" value={post.id} />
                       <button
-                        className="border border-navy/15 px-3 py-2 text-[10px] uppercase tracking-[0.14em] text-navy hover:border-terra hover:text-terra"
+                        className="border border-navy/15 px-3 py-2 text-[10px] uppercase tracking-[0.14em] text-navy hover:border-terra hover:text-terra disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-navy/15 disabled:hover:text-navy"
+                        disabled={!post.ativo && activeCount >= 4}
                         type="submit"
+                        title={!post.ativo && activeCount >= 4 ? "Limite de 4 posts publicados atingido" : undefined}
                       >
                         {post.ativo ? "Desativar" : "Ativar"}
                       </button>
