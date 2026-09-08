@@ -580,9 +580,12 @@ export default async function Home() {
   return (
     <main className="bg-offwhite text-navy">
       <section className="relative h-screen overflow-hidden bg-[#1e1e1e]">
-        <img
+        <Image
           alt="Piscina de borda infinita com vista ao pôr do sol — imóvel de alto padrão da Inglaterra Premium em Londrina"
           className="absolute inset-0 h-full w-full object-cover opacity-75"
+          fill
+          priority
+          sizes="100vw"
           src="/images/capa-hero.jpg"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-navy/30 via-navy/20 to-navy/75" />
