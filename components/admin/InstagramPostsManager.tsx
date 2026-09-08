@@ -64,7 +64,7 @@ function InstagramMark() {
 
 function ImageFallback() {
   return (
-    <div className="grid h-[72px] w-[72px] shrink-0 place-items-center bg-navy text-offwhite">
+    <div className="grid h-[72px] w-[58px] shrink-0 place-items-center bg-navy text-offwhite">
       <InstagramMark />
     </div>
   );
@@ -273,14 +273,14 @@ export function InstagramPostsManager({ posts }: { posts: InstagramPost[] }) {
 
           <div className="flex flex-col gap-3 text-xs leading-relaxed text-navy md:flex-row md:items-center md:justify-between">
             <p>
-              Imagem quadrada recomendada: 1200 x 1200 px. Tamanho máximo:{" "}
+              Proporção recomendada: 1080 x 1350 px, igual ao feed vertical do Instagram. Tamanho máximo:{" "}
               {formatBytes(MAX_IMAGE_SIZE)}.
             </p>
             {selectedImage ? (
               <div className="flex items-center gap-3">
                 <img
                   alt=""
-                  className="h-16 w-16 border border-navy/10 object-cover"
+                  className="h-20 w-16 border border-navy/10 object-cover"
                   src={selectedImage.previewUrl}
                 />
                 <p>
@@ -337,7 +337,7 @@ export function InstagramPostsManager({ posts }: { posts: InstagramPost[] }) {
                   {hasImage ? (
                     <img
                       alt=""
-                      className="h-[72px] w-[72px] shrink-0 bg-navy object-cover"
+                      className="h-[72px] w-[58px] shrink-0 bg-navy object-cover"
                       loading="lazy"
                       onError={() =>
                         setBrokenImages((current) => new Set(current).add(post.id))
@@ -449,11 +449,11 @@ export function InstagramPostsManager({ posts }: { posts: InstagramPost[] }) {
             {previewPost.imagem ? (
               <img
                 alt={previewPost.legenda ?? "Post do Instagram Inglaterra Premium"}
-                className="aspect-square w-full bg-navy object-cover"
+                className="aspect-[4/5] w-full bg-navy object-cover"
                 src={previewPost.imagem}
               />
             ) : (
-              <div className="grid aspect-square w-full place-items-center bg-navy text-offwhite">
+              <div className="grid aspect-[4/5] w-full place-items-center bg-navy text-offwhite">
                 <InstagramMark />
               </div>
             )}
@@ -542,24 +542,24 @@ export function InstagramPostsManager({ posts }: { posts: InstagramPost[] }) {
                   Imagem própria
                 </span>
                 <p className="mb-3 text-xs leading-relaxed text-navy">
-                  Para manter a imagem atual, salve sem escolher novo arquivo. Recomendado: 1200 x 1200 px. Tamanho máximo: {formatBytes(MAX_IMAGE_SIZE)}.
+                  Para manter a imagem atual, salve sem escolher novo arquivo. Recomendado: 1080 x 1350 px, igual ao feed vertical do Instagram. Tamanho máximo: {formatBytes(MAX_IMAGE_SIZE)}.
                 </p>
 
                 <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center">
                   {editSelectedImage ? (
                     <img
                       alt=""
-                      className="h-24 w-24 border border-navy/10 object-cover"
+                      className="h-[120px] w-24 border border-navy/10 object-cover"
                       src={editSelectedImage.previewUrl}
                     />
                   ) : editPost.imagem ? (
                     <img
                       alt=""
-                      className="h-24 w-24 border border-navy/10 object-cover"
+                      className="h-[120px] w-24 border border-navy/10 object-cover"
                       src={editPost.imagem}
                     />
                   ) : (
-                    <div className="grid h-24 w-24 place-items-center bg-navy text-offwhite">
+                    <div className="grid h-[120px] w-24 place-items-center bg-navy text-offwhite">
                       <InstagramMark />
                     </div>
                   )}

@@ -16,7 +16,7 @@ export function InstagramGallery({ posts }: { posts: InstagramPost[] }) {
     <div className="grid grid-cols-2 gap-1.5 md:grid-cols-4 md:gap-[5px]">
       {posts.map((post) => (
         <a
-          className="group relative aspect-square overflow-hidden bg-navy"
+          className="group relative aspect-[4/5] overflow-hidden bg-navy"
           href={post.url}
           key={post.id}
           rel="noreferrer"
