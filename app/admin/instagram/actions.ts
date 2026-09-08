@@ -1,10 +1,13 @@
 "use server";
 
+import { put } from "@vercel/blob";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getCurrentAdminUser } from "@/lib/admin/auth";
 import { ensureInstagramPostsTable } from "@/lib/admin/instagram-schema";
 import { getPool } from "@/lib/db";
+
+const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
 
 export type InstagramPostActionState = {
   error?: string;
@@ -43,6 +46,73 @@ function normalizeInstagramUrl(value: string) {
   return `https://www.instagram.com/${match[1]}/${match[2]}/`;
 }
 
+function slugify(value: string) {
+  return value
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+function publicBlobImageUrl(blobUrl: string) {
+  return `/api/blob-image?url=${encodeURIComponent(blobUrl)}`;
+}
+
+function blobErrorMessage(error: unknown) {
+  if (!(error instanceof Error) || !error.message) return "";
+
+  return ` Detalhe do Blob: ${error.message.replace(
+    /vercel_blob_rw_[A-Za-z0-9_-]+/g,
+    "[token oculto]"
+  )}`;
+}
+
+async function uploadInstagramImage(file: FormDataEntryValue | null, url: string) {
+  if (!(file instanceof File) || file.size === 0) {
+    throw new Error("Envie uma imagem própria para este post.");
+  }
+
+  const token = process.env.BLOB_READ_WRITE_TOKEN;
+  if (!token) {
+    throw new Error(
+      "BLOB_READ_WRITE_TOKEN não está disponível no ambiente de produção usado por este deploy."
+    );
+  }
+
+  if (!file.type.startsWith("image/")) {
+    throw new Error("O arquivo do post precisa ser uma imagem.");
+  }
+
+  if (file.size > MAX_IMAGE_SIZE) {
+    throw new Error(
+      `A imagem "${file.name}" excedeu o tamanho limite de ${Math.round(
+        MAX_IMAGE_SIZE / (1024 * 1024)
+      )} MB.`
+    );
+  }
+
+  const shortcode = url.split("/").filter(Boolean).pop() ?? "post";
+  const safeName = slugify(file.name.replace(/\.[^.]+$/, "")) || "imagem";
+  const extension = file.name.match(/\.[a-z0-9]+$/i)?.[0]?.toLowerCase() ?? "";
+
+  try {
+    const blob = await put(`instagram/${shortcode}/${safeName}${extension}`, file, {
+      access: "private",
+      addRandomSuffix: true,
+      token,
+    });
+
+    return publicBlobImageUrl(blob.url);
+  } catch (error) {
+    console.error("Falha no upload da imagem do Instagram para Vercel Blob", error);
+    throw new Error(
+      `Não foi possível enviar a imagem para o Vercel Blob. Confira o BLOB_READ_WRITE_TOKEN no projeto de produção correto.${blobErrorMessage(error)}`
+    );
+  }
+}
+
 function errorState(error: unknown): InstagramPostActionState {
   if (error instanceof Error && error.message) return { error: error.message };
   return { error: "Não foi possível salvar o post do Instagram agora." };
@@ -56,6 +126,8 @@ export async function addInstagramPostAction(
 
   try {
     const url = normalizeInstagramUrl(stringValue(formData, "url") ?? "");
+    const imagem = await uploadInstagramImage(formData.get("imagem"), url);
+    const legenda = stringValue(formData, "legenda");
     const pool = getPool();
     await ensureInstagramPostsTable(pool);
 
@@ -66,10 +138,10 @@ export async function addInstagramPostAction(
 
     await pool.query(
       `
-        insert into instagram_posts (url, ordem, ativo)
-        values ($1, $2, true)
+        insert into instagram_posts (url, imagem, legenda, ordem, ativo)
+        values ($1, $2, $3, $4, true)
       `,
-      [url, orderResult.rows[0]?.next_order ?? 1]
+      [url, imagem, legenda, orderResult.rows[0]?.next_order ?? 1]
     );
 
     revalidatePath("/");

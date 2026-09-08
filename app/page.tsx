@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Image from "next/image";
-import { InstagramEmbeds } from "@/components/home/InstagramEmbeds";
+import { InstagramGallery } from "@/components/home/InstagramGallery";
 import { HomeHeroSearch } from "@/components/search/HomeHeroSearch";
 import { ensureBairroEditorialColumns } from "@/lib/admin/bairros-schema";
 import { getPool } from "@/lib/db";
@@ -825,7 +825,7 @@ export default async function Home() {
             </h2>
           </div>
 
-          <InstagramEmbeds posts={instagramPosts} />
+          <InstagramGallery posts={instagramPosts} />
 
           <a
             className="mt-6 inline-block border-b border-terra pb-0.5 text-[9px] uppercase tracking-[0.3em] text-terra"

@@ -25,6 +25,8 @@ function mapPost(row: Record<string, any>): InstagramPost {
   return {
     id: row.id,
     url: row.url,
+    imagem: typeof row.imagem === "string" && row.imagem.trim() ? row.imagem.trim() : null,
+    legenda: typeof row.legenda === "string" && row.legenda.trim() ? row.legenda.trim() : null,
     ordem: Number(row.ordem ?? 0),
     ativo: Boolean(row.ativo),
     createdAt: row.created_at,
@@ -36,7 +38,7 @@ async function getInstagramPosts() {
   await ensureInstagramPostsTable(pool);
 
   const result = await pool.query(`
-    select id, url, ordem, ativo, created_at
+    select id, url, imagem, legenda, ordem, ativo, created_at
     from instagram_posts
     order by ordem asc, created_at asc
   `);
@@ -64,7 +66,7 @@ export default async function AdminInstagramPage({ searchParams }: PageProps) {
             </p>
             <h1 className="text-2xl font-light">Instagram da Home</h1>
             <p className="mt-2 max-w-2xl text-sm leading-relaxed text-sand">
-              Gerencie os embeds públicos exibidos na seção de Instagram da Home. Não há token da Meta nesta integração.
+              Gerencie a galeria própria exibida na seção de Instagram da Home. Cada imagem abre o post original em nova aba.
             </p>
           </div>
           <form action={logoutAction}>

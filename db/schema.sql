@@ -212,10 +212,15 @@ create table if not exists eventos_analytics (
 create table if not exists instagram_posts (
   id uuid primary key default gen_random_uuid(),
   url text not null,
+  imagem text,
+  legenda text,
   ordem integer not null default 0,
   ativo boolean not null default true,
   created_at timestamptz not null default now()
 );
+
+alter table instagram_posts add column if not exists imagem text;
+alter table instagram_posts add column if not exists legenda text;
 
 create index if not exists imoveis_bairro_nome_idx on imoveis (bairro_nome);
 create index if not exists imoveis_ativo_premium_idx on imoveis (ativo, is_premium);

@@ -78,7 +78,7 @@ export default async function AdminPage() {
           >
             <h2 className="mb-2 text-sm font-semibold">Instagram</h2>
             <p className="text-sm leading-relaxed text-sand">
-              Gerenciar os embeds públicos exibidos na Home.
+              Gerenciar a galeria própria de imagens exibida na Home.
             </p>
           </Link>
           {user.role === "admin" ? (
