@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import Image from "next/image";
+import { InstagramEmbeds } from "@/components/home/InstagramEmbeds";
 import { HomeHeroSearch } from "@/components/search/HomeHeroSearch";
 import { ensureBairroEditorialColumns } from "@/lib/admin/bairros-schema";
 import { getPool } from "@/lib/db";
 import { imageUrlOrFallback } from "@/lib/images";
-import { getLatestInstagramPosts } from "@/lib/instagram";
+import { getActiveInstagramPosts } from "@/lib/queries/instagram-posts";
 
 export const dynamic = "force-dynamic";
 
@@ -215,7 +216,7 @@ async function getHomeData() {
       from imoveis
       where ativo = true and ativo_no_site = true
     `),
-    getLatestInstagramPosts(3),
+    getActiveInstagramPosts(),
   ]);
 
   const featured: FeaturedProperty[] = featuredResult.rows.map((row, index) => ({
@@ -813,9 +814,9 @@ export default async function Home() {
         <CaptureForm />
       </section>
 
-      <section className="site-container border-t border-navy/10 bg-offwhite py-14">
-        <div className="mb-6 flex flex-col items-start justify-between gap-3 md:flex-row md:items-end md:gap-0">
-          <div>
+      {instagramPosts.length > 0 ? (
+        <section className="site-container border-t border-navy/10 bg-offwhite py-14">
+          <div className="mb-6">
             <p className="mb-1.5 text-[8px] uppercase tracking-[0.4em] text-navy">
               Siga no Instagram
             </p>
@@ -823,38 +824,19 @@ export default async function Home() {
               @inglaterrapremium
             </h2>
           </div>
+
+          <InstagramEmbeds posts={instagramPosts} />
+
           <a
-            className="border-b border-terra pb-0.5 text-[9px] uppercase tracking-[0.3em] text-terra"
+            className="mt-6 inline-block border-b border-terra pb-0.5 text-[9px] uppercase tracking-[0.3em] text-terra"
             href="https://www.instagram.com/inglaterrapremium/"
             rel="noreferrer"
             target="_blank"
           >
             Abrir Instagram
           </a>
-        </div>
-        {instagramPosts.length > 0 ? (
-          <div className="grid grid-cols-1 gap-2 md:grid-cols-3 md:gap-[3px]">
-            {instagramPosts.map((post) => (
-              <a
-                className="group relative aspect-square cursor-pointer overflow-hidden bg-[#c8bdb6]"
-                href={post.permalink}
-                key={post.id}
-                rel="noreferrer"
-                target="_blank"
-              >
-                <img
-                  alt={post.alt}
-                  className="h-full w-full object-cover transition duration-500 group-hover:scale-110"
-                  src={post.imageUrl}
-                />
-                <div className="absolute inset-0 hidden items-center justify-center bg-navy/45 group-hover:flex">
-                  <span className="text-lg text-white">♡</span>
-                </div>
-              </a>
-            ))}
-          </div>
-        ) : null}
-      </section>
+        </section>
+      ) : null}
 
       <NewsletterBlock />
     </main>

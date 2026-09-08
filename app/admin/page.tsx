@@ -72,6 +72,15 @@ export default async function AdminPage() {
               Editar imagem de capa, texto institucional e FAQ dos bairros.
             </p>
           </Link>
+          <Link
+            className="border border-navy/10 bg-offwhite p-5 transition hover:border-terra"
+            href="/admin/instagram"
+          >
+            <h2 className="mb-2 text-sm font-semibold">Instagram</h2>
+            <p className="text-sm leading-relaxed text-sand">
+              Gerenciar os embeds públicos exibidos na Home.
+            </p>
+          </Link>
           {user.role === "admin" ? (
             <Link
               className="border border-navy/10 bg-offwhite p-5 transition hover:border-terra"

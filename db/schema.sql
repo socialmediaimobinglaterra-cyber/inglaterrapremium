@@ -209,6 +209,14 @@ create table if not exists eventos_analytics (
   created_at timestamptz not null default now()
 );
 
+create table if not exists instagram_posts (
+  id uuid primary key default gen_random_uuid(),
+  url text not null,
+  ordem integer not null default 0,
+  ativo boolean not null default true,
+  created_at timestamptz not null default now()
+);
+
 create index if not exists imoveis_bairro_nome_idx on imoveis (bairro_nome);
 create index if not exists imoveis_ativo_premium_idx on imoveis (ativo, is_premium);
 create index if not exists imoveis_ativo_site_idx on imoveis (ativo, ativo_no_site);
@@ -220,6 +228,8 @@ create index if not exists eventos_analytics_tipo_created_at_idx
   on eventos_analytics (tipo_evento, created_at desc);
 create index if not exists eventos_analytics_imovel_created_at_idx
   on eventos_analytics (imovel_id, created_at desc);
+create index if not exists instagram_posts_ordem_idx
+  on instagram_posts (ativo, ordem, created_at);
 
 -- Fase 5.0: fundação do painel Admin (escopo novo fora do plano original).
 create table if not exists admin_users (
