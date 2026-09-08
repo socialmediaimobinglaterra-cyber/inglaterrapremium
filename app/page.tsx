@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import { HomeHeroSearch } from "@/components/search/HomeHeroSearch";
+import { ensureBairroEditorialColumns } from "@/lib/admin/bairros-schema";
 import { getPool } from "@/lib/db";
 import { imageUrlOrFallback } from "@/lib/images";
 
@@ -172,6 +173,7 @@ function getMainImage(fotos: Foto[] | null) {
 
 async function getHomeData() {
   const pool = getPool();
+  await ensureBairroEditorialColumns(pool);
   const [featuredResult, bairrosResult, statsResult] = await Promise.all([
     pool.query(`
       select kenlo_codigo, titulo, bairro_nome, cidade, area_util, area_total,
@@ -182,11 +184,13 @@ async function getHomeData() {
       limit 4
     `),
     pool.query(`
-      select b.nome, b.cidade, b.imagem_capa, b.imagem_capa_alinhamento, count(i.id)::int as imoveis
+      select b.nome, b.cidade, b.imagem_capa, b.imagem_capa_alinhamento,
+        b.imagem_home, b.imagem_home_alinhamento, count(i.id)::int as imoveis
       from bairros b
       left join imoveis i on i.bairro_id = b.id and i.ativo = true and i.ativo_no_site = true
       where b.ativo = true
-      group by b.id, b.nome, b.cidade, b.imagem_capa, b.imagem_capa_alinhamento
+      group by b.id, b.nome, b.cidade, b.imagem_capa, b.imagem_capa_alinhamento,
+        b.imagem_home, b.imagem_home_alinhamento
       order by imoveis desc, b.nome
       limit 6
     `),
@@ -215,13 +219,17 @@ async function getHomeData() {
     cidade: row.cidade ?? "Londrina",
     imoveis: row.imoveis,
     image:
-      typeof row.imagem_capa === "string" && row.imagem_capa.trim()
-        ? row.imagem_capa.trim()
-        : null,
+      typeof row.imagem_home === "string" && row.imagem_home.trim()
+        ? row.imagem_home.trim()
+        : typeof row.imagem_capa === "string" && row.imagem_capa.trim()
+          ? row.imagem_capa.trim()
+          : null,
     imagePosition:
-      typeof row.imagem_capa_alinhamento === "string" && row.imagem_capa_alinhamento.trim()
-        ? row.imagem_capa_alinhamento.trim()
-        : "center center",
+      typeof row.imagem_home_alinhamento === "string" && row.imagem_home_alinhamento.trim()
+        ? row.imagem_home_alinhamento.trim()
+        : typeof row.imagem_capa_alinhamento === "string" && row.imagem_capa_alinhamento.trim()
+          ? row.imagem_capa_alinhamento.trim()
+          : "center center",
   }));
 
   const totals = statsResult.rows[0] ?? { total_imoveis: 0, total_bairros: 0 };

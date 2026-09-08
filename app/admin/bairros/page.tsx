@@ -28,6 +28,8 @@ type BairroAdmin = {
   estado: string;
   imagemCapa: string | null;
   imagemCapaAlinhamento: string;
+  imagemHome: string | null;
+  imagemHomeAlinhamento: string;
   descricao: string | null;
   faq: Array<{ pergunta: string; resposta: string }>;
   ativo: boolean;
@@ -66,6 +68,14 @@ function mapBairro(row: Record<string, any>): BairroAdmin {
       typeof row.imagem_capa_alinhamento === "string" && row.imagem_capa_alinhamento.trim()
         ? row.imagem_capa_alinhamento.trim()
         : "center center",
+    imagemHome:
+      typeof row.imagem_home === "string" && row.imagem_home.trim()
+        ? row.imagem_home.trim()
+        : null,
+    imagemHomeAlinhamento:
+      typeof row.imagem_home_alinhamento === "string" && row.imagem_home_alinhamento.trim()
+        ? row.imagem_home_alinhamento.trim()
+        : "center center",
     descricao: typeof row.descricao === "string" && row.descricao.trim() ? row.descricao : null,
     faq: parseFaq(row.faq),
     ativo: row.ativo,
@@ -96,7 +106,8 @@ async function getBairrosData(editId?: string) {
   }
 
   const result = await pool.query(`
-    select id, nome, slug, cidade, estado, imagem_capa, imagem_capa_alinhamento, descricao, faq, ativo
+    select id, nome, slug, cidade, estado, imagem_capa, imagem_capa_alinhamento,
+      imagem_home, imagem_home_alinhamento, descricao, faq, ativo
     from bairros
     order by nome
   `);
@@ -164,7 +175,7 @@ export default async function AdminBairrosPage({ searchParams }: PageProps) {
             </p>
             <h1 className="text-2xl font-light">Bairros</h1>
             <p className="mt-2 max-w-2xl text-sm leading-relaxed text-sand">
-              Edite imagem de capa, texto institucional e FAQ das páginas públicas de bairro.
+              Edite imagem de capa, imagem da Home, texto institucional e FAQ das páginas públicas de bairro.
             </p>
           </div>
           <form action={logoutAction}>
@@ -199,12 +210,12 @@ export default async function AdminBairrosPage({ searchParams }: PageProps) {
                       </div>
                       <span
                         className={`border px-2 py-1 text-[10px] uppercase tracking-[0.12em] ${
-                          bairro.imagemCapa
+                          bairro.imagemCapa && bairro.imagemHome
                             ? "border-emerald-700/10 bg-emerald-50 text-emerald-900"
                             : "border-navy/10 bg-offwhite text-sand"
                         }`}
                       >
-                        {bairro.imagemCapa ? "Com capa" : "Sem capa"}
+                        {bairro.imagemCapa && bairro.imagemHome ? "Imagens OK" : "Pendente"}
                       </span>
                     </div>
                     <div className="flex flex-wrap gap-2">

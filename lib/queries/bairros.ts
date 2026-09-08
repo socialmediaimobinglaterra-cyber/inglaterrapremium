@@ -1,4 +1,5 @@
 import { getPool } from "@/lib/db";
+import { ensureBairroEditorialColumns } from "@/lib/admin/bairros-schema";
 import type { ImovelSearchResult } from "@/lib/queries/imoveis";
 
 type Foto = {
@@ -19,6 +20,8 @@ export type BairroDetail = {
   estado: string;
   imagemCapa: string | null;
   imagemCapaAlinhamento: string;
+  imagemHome: string | null;
+  imagemHomeAlinhamento: string;
   descricao: string | null;
   faq: BairroFaq[];
   valorMedioVenda: number | null;
@@ -90,9 +93,11 @@ function mapImovel(row: Record<string, any>, index: number): ImovelSearchResult 
 
 export async function getBairroPageData(slug: string) {
   const pool = getPool();
+  await ensureBairroEditorialColumns(pool);
   const bairroResult = await pool.query(
     `
-      select id, nome, slug, cidade, estado, imagem_capa, imagem_capa_alinhamento, descricao, faq
+      select id, nome, slug, cidade, estado, imagem_capa, imagem_capa_alinhamento,
+        imagem_home, imagem_home_alinhamento, descricao, faq
       from bairros
       where slug = $1 and ativo = true
       limit 1
@@ -138,13 +143,16 @@ export async function getBairroPageData(slug: string) {
           b.cidade,
           b.imagem_capa,
           b.imagem_capa_alinhamento,
+          b.imagem_home,
+          b.imagem_home_alinhamento,
           count(i.id)::int as imoveis_disponiveis
         from bairros b
         left join imoveis i on i.ativo = true
           and i.ativo_no_site = true
           and i.bairro_id = b.id
         where b.ativo = true and b.slug <> $1
-        group by b.id, b.nome, b.slug, b.cidade, b.imagem_capa, b.imagem_capa_alinhamento
+        group by b.id, b.nome, b.slug, b.cidade, b.imagem_capa, b.imagem_capa_alinhamento,
+          b.imagem_home, b.imagem_home_alinhamento
         order by imoveis_disponiveis desc, b.nome
         limit 3
       `,
@@ -168,6 +176,15 @@ export async function getBairroPageData(slug: string) {
       bairroRow.imagem_capa_alinhamento.trim()
         ? bairroRow.imagem_capa_alinhamento.trim()
         : "center center",
+    imagemHome:
+      typeof bairroRow.imagem_home === "string" && bairroRow.imagem_home.trim()
+        ? bairroRow.imagem_home.trim()
+        : null,
+    imagemHomeAlinhamento:
+      typeof bairroRow.imagem_home_alinhamento === "string" &&
+      bairroRow.imagem_home_alinhamento.trim()
+        ? bairroRow.imagem_home_alinhamento.trim()
+        : "center center",
     descricao: bairroRow.descricao,
     faq: parseFaq(bairroRow.faq),
     valorMedioVenda: numberOrNull(metrics.valor_medio_venda),
@@ -185,13 +202,17 @@ export async function getBairroPageData(slug: string) {
     cidade: row.cidade,
     imoveisDisponiveis: row.imoveis_disponiveis,
     image:
-      typeof row.imagem_capa === "string" && row.imagem_capa.trim()
-        ? row.imagem_capa.trim()
-        : null,
+      typeof row.imagem_home === "string" && row.imagem_home.trim()
+        ? row.imagem_home.trim()
+        : typeof row.imagem_capa === "string" && row.imagem_capa.trim()
+          ? row.imagem_capa.trim()
+          : null,
     imagePosition:
-      typeof row.imagem_capa_alinhamento === "string" && row.imagem_capa_alinhamento.trim()
-        ? row.imagem_capa_alinhamento.trim()
-        : "center center",
+      typeof row.imagem_home_alinhamento === "string" && row.imagem_home_alinhamento.trim()
+        ? row.imagem_home_alinhamento.trim()
+        : typeof row.imagem_capa_alinhamento === "string" && row.imagem_capa_alinhamento.trim()
+          ? row.imagem_capa_alinhamento.trim()
+          : "center center",
   }));
 
   return { bairro, imoveis, outrosBairros };

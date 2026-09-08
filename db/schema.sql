@@ -25,6 +25,8 @@ create table if not exists bairros (
   estado text not null default 'PR',
   imagem_capa text,
   imagem_capa_alinhamento text not null default 'center center',
+  imagem_home text,
+  imagem_home_alinhamento text not null default 'center center',
   descricao text,
   faq jsonb,
   imoveis_xml_bruto integer not null default 0,
@@ -38,6 +40,8 @@ alter table bairros add column if not exists descricao text;
 alter table bairros add column if not exists faq jsonb;
 alter table bairros add column if not exists imagem_capa text;
 alter table bairros add column if not exists imagem_capa_alinhamento text not null default 'center center';
+alter table bairros add column if not exists imagem_home text;
+alter table bairros add column if not exists imagem_home_alinhamento text not null default 'center center';
 
 create table if not exists configuracoes_premium (
   id uuid primary key default gen_random_uuid(),

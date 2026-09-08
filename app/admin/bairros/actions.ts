@@ -7,7 +7,8 @@ import { getCurrentAdminUser } from "@/lib/admin/auth";
 import { ensureBairroEditorialColumns } from "@/lib/admin/bairros-schema";
 import { getPool } from "@/lib/db";
 
-const MAX_IMAGE_SIZE = 1 * 1024 * 1024;
+const MAX_COVER_IMAGE_SIZE = 5 * 1024 * 1024;
+const MAX_HOME_IMAGE_SIZE = 3 * 1024 * 1024;
 
 export type SaveBairroState = {
   error?: string;
@@ -63,7 +64,19 @@ async function requireEditor() {
   return user;
 }
 
-async function uploadCover(file: FormDataEntryValue | null, bairroNome: string) {
+async function uploadBairroImage({
+  file,
+  bairroNome,
+  folder,
+  label,
+  maxSize,
+}: {
+  file: FormDataEntryValue | null;
+  bairroNome: string;
+  folder: string;
+  label: string;
+  maxSize: number;
+}) {
   if (!(file instanceof File) || file.size === 0) return null;
 
   const token = process.env.BLOB_READ_WRITE_TOKEN;
@@ -74,28 +87,36 @@ async function uploadCover(file: FormDataEntryValue | null, bairroNome: string) 
   }
 
   if (!file.type.startsWith("image/")) {
-    throw new Error("O arquivo da capa precisa ser uma imagem.");
+    throw new Error(`O arquivo de ${label} precisa ser uma imagem.`);
   }
 
-  if (file.size > MAX_IMAGE_SIZE) {
-    throw new Error("A imagem de capa excedeu o tamanho limite de 1 MB.");
+  if (file.size > maxSize) {
+    throw new Error(
+      `A imagem de ${label} excedeu o tamanho limite de ${Math.round(
+        maxSize / (1024 * 1024)
+      )} MB.`
+    );
   }
 
-  const safeName = slugify(file.name.replace(/\.[^.]+$/, "")) || "capa";
+  const safeName = slugify(file.name.replace(/\.[^.]+$/, "")) || folder;
   const extension = file.name.match(/\.[a-z0-9]+$/i)?.[0]?.toLowerCase() ?? "";
 
   try {
-    const blob = await put(`bairros/${slugify(bairroNome)}/${safeName}${extension}`, file, {
-      access: "private",
-      addRandomSuffix: true,
-      token,
-    });
+    const blob = await put(
+      `bairros/${slugify(bairroNome)}/${folder}/${safeName}${extension}`,
+      file,
+      {
+        access: "private",
+        addRandomSuffix: true,
+        token,
+      }
+    );
 
     return publicBlobImageUrl(blob.url);
   } catch (error) {
-    console.error("Falha no upload da imagem de capa do bairro", error);
+    console.error(`Falha no upload da imagem de ${label} do bairro`, error);
     throw new Error(
-      `Não foi possível enviar a imagem para o Vercel Blob. Confira o BLOB_READ_WRITE_TOKEN no projeto de produção correto.${blobErrorMessage(error)}`
+      `Não foi possível enviar a imagem de ${label} para o Vercel Blob. Confira o BLOB_READ_WRITE_TOKEN no projeto de produção correto.${blobErrorMessage(error)}`
     );
   }
 }
@@ -148,10 +169,28 @@ export async function saveBairroAction(
     if (!current) return { error: "Bairro não encontrado." };
 
     const existingCover = stringValue(formData, "imagem_capa_existente");
-    const uploadedCover = await uploadCover(formData.get("imagem_capa"), current.nome);
+    const existingHomeImage = stringValue(formData, "imagem_home_existente");
+    const uploadedCover = await uploadBairroImage({
+      file: formData.get("imagem_capa"),
+      bairroNome: current.nome,
+      folder: "capa",
+      label: "capa da página",
+      maxSize: MAX_COVER_IMAGE_SIZE,
+    });
+    const uploadedHomeImage = await uploadBairroImage({
+      file: formData.get("imagem_home"),
+      bairroNome: current.nome,
+      folder: "home",
+      label: "Home",
+      maxSize: MAX_HOME_IMAGE_SIZE,
+    });
     const imagemCapa = uploadedCover ?? existingCover;
+    const imagemHome = uploadedHomeImage ?? existingHomeImage;
     const imagemCapaAlinhamento = normalizePosition(
       stringValue(formData, "imagem_capa_alinhamento")
+    );
+    const imagemHomeAlinhamento = normalizePosition(
+      stringValue(formData, "imagem_home_alinhamento")
     );
     const descricao = stringValue(formData, "descricao");
     const faq = parseFaq(formData);
@@ -161,12 +200,22 @@ export async function saveBairroAction(
         update bairros
         set imagem_capa = $1,
           imagem_capa_alinhamento = $2,
-          descricao = $3,
-          faq = $4::jsonb,
+          imagem_home = $3,
+          imagem_home_alinhamento = $4,
+          descricao = $5,
+          faq = $6::jsonb,
           updated_at = now()
-        where id = $5
+        where id = $7
       `,
-      [imagemCapa, imagemCapaAlinhamento, descricao, JSON.stringify(faq), id]
+      [
+        imagemCapa,
+        imagemCapaAlinhamento,
+        imagemHome,
+        imagemHomeAlinhamento,
+        descricao,
+        JSON.stringify(faq),
+        id,
+      ]
     );
 
     revalidatePath("/");
