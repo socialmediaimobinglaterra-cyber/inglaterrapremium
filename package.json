@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "db:migrate": "tsx scripts/migrate.ts",
-    "sync:kenlo": "tsx scripts/sync-kenlo.ts"
+    "sync:kenlo": "tsx scripts/sync-kenlo.ts",
+    "mark:premium-condominios": "tsx scripts/mark-premium-condominios.ts"
   },
   "dependencies": {
     "@vercel/analytics": "^2.0.1",

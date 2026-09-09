@@ -152,11 +152,14 @@ create table if not exists condominios (
   estado text not null default 'PR',
   imoveis_count integer not null default 0,
   raw jsonb not null default '{}'::jsonb,
+  premium boolean not null default false,
   ativo boolean not null default true,
   last_seen_at timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+alter table condominios add column if not exists premium boolean not null default false;
 
 create table if not exists lancamentos (
   id uuid primary key default gen_random_uuid(),
@@ -228,6 +231,7 @@ create index if not exists imoveis_ativo_site_idx on imoveis (ativo, ativo_no_si
 create index if not exists imoveis_elegivel_filtro_automatico_idx on imoveis (elegivel_filtro_automatico);
 create index if not exists imoveis_preco_venda_idx on imoveis (preco_venda);
 create index if not exists imoveis_preco_locacao_idx on imoveis (preco_locacao);
+create index if not exists condominios_premium_idx on condominios (premium, ativo);
 create index if not exists sincronizacoes_log_started_at_idx on sincronizacoes_log (started_at desc);
 create index if not exists eventos_analytics_tipo_created_at_idx
   on eventos_analytics (tipo_evento, created_at desc);

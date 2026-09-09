@@ -278,12 +278,19 @@ function parseImovel(raw: RawRecord): ParsedImovel | null {
   };
 }
 
-function shouldInclude(imovel: ParsedImovel, config: PremiumConfig) {
+function shouldInclude(
+  imovel: ParsedImovel,
+  config: PremiumConfig,
+  premiumCondominios: Set<string>
+) {
   const bairroAllowed = config.bairrosPermitidos
     .map(normalize)
     .includes(normalize(imovel.bairroNome ?? ""));
+  const condominioPremium = imovel.nomeCondominio
+    ? premiumCondominios.has(normalize(imovel.nomeCondominio))
+    : false;
 
-  if (!bairroAllowed) return false;
+  if (!bairroAllowed && !condominioPremium) return false;
   if (config.valorMinimoPendente) return true;
 
   const vendaOk =
@@ -296,6 +303,36 @@ function shouldInclude(imovel: ParsedImovel, config: PremiumConfig) {
     imovel.precoLocacao >= config.valorMinimoLocacao;
 
   return vendaOk || locacaoOk;
+}
+
+async function getPremiumCondominios(client: PoolClient) {
+  const { rows } = await client.query<{ nome: string }>(
+    "select nome from condominios where premium = true and ativo = true"
+  );
+  return new Set(rows.map((row) => normalize(row.nome)));
+}
+
+function getPremiumReason(
+  imovel: ParsedImovel,
+  config: PremiumConfig,
+  premiumCondominios: Set<string>
+) {
+  const bairroAllowed = config.bairrosPermitidos
+    .map(normalize)
+    .includes(normalize(imovel.bairroNome ?? ""));
+  const condominioPremium = imovel.nomeCondominio
+    ? premiumCondominios.has(normalize(imovel.nomeCondominio))
+    : false;
+  const criterioLocalizacao =
+    bairroAllowed && condominioPremium
+      ? "bairro permitido e condominio premium"
+      : condominioPremium
+        ? "condominio premium"
+        : "bairro permitido";
+
+  return config.valorMinimoPendente
+    ? `${criterioLocalizacao}; valor minimo pendente em configuracoes_premium.`
+    : `${criterioLocalizacao} e valor minimo atendido.`;
 }
 
 async function getPremiumConfig(client: PoolClient): Promise<PremiumConfig> {
@@ -613,8 +650,6 @@ export async function syncKenlo(pool: Pool, xmlUrl = DEFAULT_KENLO_XML_URL) {
     const byAllowedNeighborhood = parsed.filter((imovel) =>
       allowedNormalized.has(normalize(imovel.bairroNome ?? ""))
     );
-    const filtered = byAllowedNeighborhood.filter((imovel) => shouldInclude(imovel, config));
-    const automaticCodes = new Set(filtered.map((imovel) => imovel.kenloCodigo));
 
     const bairrosContagem: Record<string, number> = {};
     for (const bairro of config.bairrosPermitidos) bairrosContagem[bairro] = 0;
@@ -624,6 +659,17 @@ export async function syncKenlo(pool: Pool, xmlUrl = DEFAULT_KENLO_XML_URL) {
       );
       if (configuredName) bairrosContagem[configuredName] += 1;
     }
+
+    const bairroIds = new Map<string, string>();
+    for (const bairro of config.bairrosPermitidos) {
+      const id = await upsertBairro(client, bairro, bairrosContagem[bairro] ?? 0, seenAt);
+      bairroIds.set(normalize(bairro), id);
+    }
+
+    await refreshCondominios(client, parsed, bairroIds, seenAt);
+    const premiumCondominios = await getPremiumCondominios(client);
+    const filtered = parsed.filter((imovel) => shouldInclude(imovel, config, premiumCondominios));
+    const automaticCodes = new Set(filtered.map((imovel) => imovel.kenloCodigo));
 
     const before = await client.query(
       "select kenlo_codigo from imoveis where origem = 'kenlo' and ativo = true and elegivel_filtro_automatico = true"
@@ -638,20 +684,12 @@ export async function syncKenlo(pool: Pool, xmlUrl = DEFAULT_KENLO_XML_URL) {
       (codigo) => !currentCodes.has(codigo)
     ).length;
 
-    const bairroIds = new Map<string, string>();
-    for (const bairro of config.bairrosPermitidos) {
-      const id = await upsertBairro(client, bairro, bairrosContagem[bairro] ?? 0, seenAt);
-      bairroIds.set(normalize(bairro), id);
-    }
-
     for (const imovel of parsed) {
       const bairroId = imovel.bairroNome
         ? bairroIds.get(normalize(imovel.bairroNome)) ?? null
         : null;
       const elegivelFiltroAutomatico = automaticCodes.has(imovel.kenloCodigo);
-      const premiumReason = config.valorMinimoPendente
-        ? "Bairro permitido; valor mínimo pendente em configuracoes_premium."
-        : "Bairro permitido e valor mínimo atendido.";
+      const premiumReason = getPremiumReason(imovel, config, premiumCondominios);
       const syncReason = elegivelFiltroAutomatico
         ? premiumReason
         : "Fora do filtro premium automatico; disponivel para curadoria manual.";
@@ -679,7 +717,6 @@ export async function syncKenlo(pool: Pool, xmlUrl = DEFAULT_KENLO_XML_URL) {
       [parsed.map((imovel) => imovel.kenloCodigo)]
     );
 
-    await refreshCondominios(client, filtered, bairroIds, seenAt);
     const condominiosExistentesNormalizados = await normalizeExistingCondominios(client);
     const imoveisExistentesNormalizados = await normalizeExistingKenloImoveis(client);
 
