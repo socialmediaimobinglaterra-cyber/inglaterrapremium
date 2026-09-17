@@ -1,11 +1,15 @@
 import type { Metadata } from "next";
 import Image from "next/image";
+import Link from "next/link";
 import { InstagramGallery } from "@/components/home/InstagramGallery";
 import { HomeHeroSearch } from "@/components/search/HomeHeroSearch";
 import { ensureBairroEditorialColumns } from "@/lib/admin/bairros-schema";
 import { getPool } from "@/lib/db";
 import { imageUrlOrFallback } from "@/lib/images";
 import { getActiveInstagramPosts } from "@/lib/queries/instagram-posts";
+import { getHeaderLancamentos } from "@/lib/queries/lancamentos";
+import { getHeaderCondominios } from "@/lib/queries/condominios";
+import type { NavDropdownItem } from "@/components/layout/HeaderClient";
 
 export const dynamic = "force-dynamic";
 
@@ -22,6 +26,7 @@ type Foto = {
 
 type FeaturedProperty = {
   id: string;
+  slug: string;
   title: string;
   location: string;
   area: string;
@@ -32,6 +37,7 @@ type FeaturedProperty = {
 };
 
 type Bairro = {
+  slug: string;
   name: string;
   cidade: string;
   imoveis: number;
@@ -46,6 +52,7 @@ const PRODUCTS = [
     cta: "Ver Condomínios",
     label: "CONDOMÍNIOS",
     image: "/images/produtos/condominios.png",
+    href: null,
   },
   {
     title: "Inglaterra BTS",
@@ -53,6 +60,7 @@ const PRODUCTS = [
     cta: "Conheça o BTS",
     label: "BTS",
     image: "/images/produtos/bts.png",
+    href: "/bts",
   },
   {
     title: "Lançamentos",
@@ -60,6 +68,7 @@ const PRODUCTS = [
     cta: "Ver Lançamentos",
     label: "LANÇAMENTOS",
     image: "/images/produtos/lancamentos.png",
+    href: null,
   },
 ];
 
@@ -181,7 +190,7 @@ async function getHomeData() {
   await ensureBairroEditorialColumns(pool);
   const [featuredResult, bairrosResult, statsResult, instagramPosts] = await Promise.all([
     pool.query(`
-      select kenlo_codigo, titulo, bairro_nome, cidade, area_util, area_total,
+      select slug, kenlo_codigo, titulo, bairro_nome, cidade, area_util, area_total,
         dormitorios, preco_venda, preco_locacao, tipo, fotos
       from imoveis
       where ativo = true and ativo_no_site = true
@@ -196,7 +205,7 @@ async function getHomeData() {
           where chave = 'criterios_premium'
         ) as bairros_normalizados
       )
-      select b.nome, b.cidade, b.imagem_capa, b.imagem_capa_alinhamento,
+      select b.slug, b.nome, b.cidade, b.imagem_capa, b.imagem_capa_alinhamento,
         b.imagem_home, b.imagem_home_alinhamento, count(i.id)::int as imoveis
       from bairros b
       cross join premium_config
@@ -221,6 +230,7 @@ async function getHomeData() {
 
   const featured: FeaturedProperty[] = featuredResult.rows.map((row, index) => ({
     id: String(index + 1).padStart(2, "0"),
+    slug: row.slug,
     title: row.titulo,
     location: `${row.bairro_nome}, ${row.cidade ?? "Londrina"}`,
     area: area(row.area_util ?? row.area_total),
@@ -231,6 +241,7 @@ async function getHomeData() {
   }));
 
   const bairros: Bairro[] = bairrosResult.rows.map((row) => ({
+    slug: row.slug,
     name: row.nome,
     cidade: row.cidade ?? "Londrina",
     imoveis: row.imoveis,
@@ -286,8 +297,9 @@ function Anchor({ label }: { label: string }) {
 
 function PropCard({ p, h }: { p: FeaturedProperty; h: string }) {
   return (
-    <article
-      className={`group relative h-[340px] cursor-pointer overflow-hidden bg-[#1e1e1e] ${h}`}
+    <Link
+      href={`/imoveis/${p.slug}`}
+      className={`group relative block h-[340px] cursor-pointer overflow-hidden bg-[#1e1e1e] focus-visible:outline focus-visible:outline-2 focus-visible:outline-terra ${h}`}
     >
       <Image
         alt={`${p.title} — ${p.location}`}
@@ -326,13 +338,13 @@ function PropCard({ p, h }: { p: FeaturedProperty; h: string }) {
           </div>
         </div>
       </div>
-    </article>
+    </Link>
   );
 }
 
 function BairroCard({ b }: { b: Bairro }) {
   return (
-    <article className="group relative h-[168px] cursor-pointer overflow-hidden bg-navy md:h-80">
+    <Link href={`/bairros/${b.slug}`} className="group relative block h-[168px] cursor-pointer overflow-hidden bg-navy focus-visible:outline focus-visible:outline-2 focus-visible:outline-terra md:h-80">
       {b.image ? (
         <Image
           alt={`Bairro ${b.name}, ${b.cidade}`}
@@ -357,13 +369,26 @@ function BairroCard({ b }: { b: Bairro }) {
           </p>
         </div>
       </div>
-    </article>
+    </Link>
   );
 }
 
-function ProdCard({ p }: { p: (typeof PRODUCTS)[0] }) {
+function ProdCard({ p, items = [] }: { p: (typeof PRODUCTS)[0]; items?: NavDropdownItem[] }) {
   return (
     <article className="group relative h-[420px] cursor-pointer overflow-hidden bg-[#0a0d10] md:h-[540px]">
+      {p.href ? <Link href={p.href} aria-label={p.cta} className="absolute inset-0 z-10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-terra-light" /> : null}
+      {!p.href ? (
+        <details className="absolute inset-0 z-10">
+          <summary aria-label={p.cta} className="absolute inset-0 cursor-pointer list-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-terra-light [&::-webkit-details-marker]:hidden" />
+          <nav aria-label={p.title} className="absolute inset-x-4 bottom-4 top-16 overflow-y-auto overscroll-contain border border-navy/15 bg-offwhite text-navy shadow-lg">
+            {items.length ? items.map((item) => (
+              <Link key={item.href} href={item.href} className="block border-b border-navy/10 px-5 py-4 text-sm transition hover:bg-navy/5 focus-visible:bg-navy/5">
+                {item.label}
+              </Link>
+            )) : <p className="px-5 py-4 text-sm">Nenhum empreendimento cadastrado.</p>}
+          </nav>
+        </details>
+      ) : null}
       <img
         alt={`${p.title} — Inglaterra Premium`}
         className="absolute inset-0 h-full w-full object-cover opacity-35 transition duration-700 group-hover:scale-105 group-hover:opacity-50"
@@ -554,6 +579,10 @@ function NewsletterBlock() {
 
 export default async function Home() {
   const { featured, bairros, totals, instagramPosts } = await getHomeData();
+  const [lancamentos, condominios] = await Promise.all([
+    getHeaderLancamentos(),
+    getHeaderCondominios(),
+  ]);
   const stats = [
     {
       value: "25",
@@ -684,7 +713,7 @@ export default async function Home() {
         </div>
         <div className="grid grid-cols-1 gap-[5px] md:grid-cols-3">
           {PRODUCTS.map((product) => (
-            <ProdCard key={product.title} p={product} />
+            <ProdCard key={product.title} p={product} items={product.label === "LANÇAMENTOS" ? lancamentos : condominios} />
           ))}
         </div>
       </section>
