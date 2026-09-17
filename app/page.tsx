@@ -45,21 +45,21 @@ const PRODUCTS = [
     desc: "Casas e apartamentos à venda em condomínios fechados de alto padrão em Londrina, com segurança 24h e localização privilegiada nos bairros mais valorizados da cidade.",
     cta: "Ver Condomínios",
     label: "CONDOMÍNIOS",
-    image: "/images/capa-hero.jpg",
+    image: "/images/produtos/condominios.png",
   },
   {
     title: "Inglaterra BTS",
     desc: "Built to Suit corporativo em Londrina — imóveis projetados e construídos sob medida para a operação da sua empresa, com contrato de locação de longo prazo.",
     cta: "Conheça o BTS",
     label: "BTS",
-    image: "/images/capa-hero.jpg",
+    image: "/images/produtos/bts.png",
   },
   {
     title: "Lançamentos",
     desc: "Acesso antecipado a lançamentos imobiliários de alto padrão em Londrina, antes da divulgação ao mercado, com condições exclusivas de pré-lançamento.",
     cta: "Ver Lançamentos",
     label: "LANÇAMENTOS",
-    image: "/images/capa-hero.jpg",
+    image: "/images/produtos/lancamentos.png",
   },
 ];
 
