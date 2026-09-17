@@ -213,7 +213,8 @@ function buildSearchQuery(rawFilters: ImovelSearchFilters) {
           ? "updated_at desc nulls last"
           : "is_premium_override desc, updated_at desc nulls last";
 
-  return { filters, values, where, orderBy };
+  // Sync timestamps and prices can tie; keep page boundaries deterministic.
+  return { filters, values, where, orderBy: `${orderBy}, id asc` };
 }
 
 function mapSearchRow(row: Record<string, any>, index: number): ImovelSearchResult {
@@ -221,7 +222,7 @@ function mapSearchRow(row: Record<string, any>, index: number): ImovelSearchResu
   const precoLocacao = numberOrNull(row.preco_locacao);
 
   return {
-    id: String(index + 1).padStart(2, "0"),
+    id: row.id,
     codigo: row.kenlo_codigo,
     slug: row.slug,
     titulo: row.titulo,

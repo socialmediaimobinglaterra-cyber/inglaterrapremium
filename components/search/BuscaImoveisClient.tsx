@@ -238,7 +238,10 @@ export function BuscaImoveisClient({
     const data = await response.json();
     const nextImoveis = Array.isArray(data.imoveis) ? data.imoveis : [];
 
-    setImoveis((current) => (options.append ? [...current, ...nextImoveis] : nextImoveis));
+    setImoveis((current) => {
+      const combined: ImovelSearchResult[] = options.append ? [...current, ...nextImoveis] : nextImoveis;
+      return Array.from(new Map(combined.map((imovel) => [imovel.slug, imovel])).values());
+    });
     setTotal(Number.isFinite(Number(data.total)) ? Number(data.total) : nextImoveis.length);
     setPage(Number.isFinite(Number(data.page)) ? Number(data.page) : nextPage);
     setHasMore(Boolean(data.hasMore));
@@ -585,7 +588,7 @@ export function BuscaImoveisClient({
         {imoveis.length > 0 ? (
           <div className="grid grid-cols-1 gap-9 md:grid-cols-3 md:gap-10">
             {imoveis.map((imovel) => (
-              <ListingCard imovel={imovel} key={imovel.codigo} />
+              <ListingCard imovel={imovel} key={imovel.slug} />
             ))}
           </div>
         ) : (
