@@ -162,6 +162,8 @@ const ACCENTED_CHARS =
 const UNACCENTED_CHARS =
   "AAAAAaaaaaEEEEeeeeIIIIiiiiOOOOOoooooUUUUuuuuCc";
 
+const FEATURED_ROTATION_INTERVAL_MS = 6 * 60 * 60 * 1000;
+
 function currency(value: string | number | null) {
   if (value === null) return "Sob consulta";
   return Number(value).toLocaleString("pt-BR", {
@@ -188,6 +190,7 @@ function getMainImage(fotos: Foto[] | null) {
 
 async function getHomeData() {
   const pool = getPool();
+  const featuredPeriod = String(Math.floor(Date.now() / FEATURED_ROTATION_INTERVAL_MS));
   await ensureBairroEditorialColumns(pool);
   const [featuredResult, bairrosResult, statsResult, instagramPosts] = await Promise.all([
     pool.query(`
@@ -195,9 +198,9 @@ async function getHomeData() {
         dormitorios, preco_venda, preco_locacao, tipo, fotos
       from imoveis
       where ativo = true and ativo_no_site = true
-      order by coalesce(preco_venda, preco_locacao) desc nulls last
+      order by md5(id::text || ':' || $1), id
       limit 4
-    `),
+    `, [featuredPeriod]),
     pool.query(`
       with premium_config as (
         select array(
