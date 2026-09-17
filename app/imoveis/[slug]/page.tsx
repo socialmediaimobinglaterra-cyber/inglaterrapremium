@@ -168,6 +168,7 @@ function SimilarCard({ imovel }: { imovel: ImovelSearchResult }) {
         <h3 className="mb-2 text-[15px] font-normal leading-[1.3] text-navy">
           {imovel.titulo}
         </h3>
+        {imovel.codigo ? <p className="mb-2 text-xs text-navy">Ref. {imovel.codigo}</p> : null}
         <p className="text-base font-medium text-navy">{currency(price)}</p>
       </div>
     </Link>
@@ -345,6 +346,7 @@ export default async function ImovelPage({ params }: PageProps) {
             <h1 className="mb-3 max-w-[620px] text-[clamp(24px,7vw,30px)] font-light leading-[1.15] tracking-[0.01em] md:text-[clamp(28px,3vw,40px)]">
               {imovel.titulo}
             </h1>
+            {imovel.codigo ? <p className="mb-3 text-sm text-navy">Referência: {imovel.codigo}</p> : null}
             <p className="mb-5 text-[13px] text-navy">{getAddress(imovel)}</p>
             <p className="text-2xl font-medium text-navy md:text-3xl">
               {currency(getPrice(imovel))}

@@ -14,7 +14,7 @@ export const metadata: Metadata = {
       "Imóveis corporativos projetados e construídos sob medida para empresas em Londrina.",
     type: "website",
     url: absoluteUrl("/bts"),
-    images: [{ url: absoluteUrl("/images/capa-hero.jpg"), alt: "Inglaterra BTS em Londrina" }],
+    images: [{ url: absoluteUrl("/images/produtos/bts-capa.png"), alt: "Inglaterra BTS em Londrina" }],
   },
 };
 
@@ -196,7 +196,7 @@ export default function BtsPage() {
           <img
             alt="Imóvel corporativo sob medida — Inglaterra BTS, Londrina"
             className="h-full w-full object-cover"
-            src="/images/capa-hero.jpg"
+            src="/images/produtos/bts-capa.png"
           />
         </div>
       </div>

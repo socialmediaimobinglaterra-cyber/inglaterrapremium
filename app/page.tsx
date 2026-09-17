@@ -26,6 +26,7 @@ type Foto = {
 
 type FeaturedProperty = {
   id: string;
+  codigo: string | null;
   slug: string;
   title: string;
   location: string;
@@ -230,6 +231,7 @@ async function getHomeData() {
 
   const featured: FeaturedProperty[] = featuredResult.rows.map((row, index) => ({
     id: String(index + 1).padStart(2, "0"),
+    codigo: row.kenlo_codigo,
     slug: row.slug,
     title: row.titulo,
     location: `${row.bairro_nome}, ${row.cidade ?? "Londrina"}`,
@@ -324,6 +326,7 @@ function PropCard({ p, h }: { p: FeaturedProperty; h: string }) {
         <h3 className="text-xl leading-tight tracking-[0.03em] text-white">
           {p.title}
         </h3>
+        {p.codigo ? <p className="mt-2 text-xs text-white">Ref. {p.codigo}</p> : null}
         <div className="max-h-14 overflow-hidden opacity-100 transition duration-500 md:max-h-0 md:opacity-0 md:group-hover:max-h-14 md:group-hover:opacity-100">
           <div className="flex flex-wrap gap-x-3.5 gap-y-1 pt-2.5 text-[10px] text-white/75">
             <span>{p.area}</span>

@@ -113,6 +113,7 @@ function ImovelCard({ imovel }: { imovel: ImovelSearchResult }) {
         </span>
       </div>
       <div className="pt-3.5">
+        {imovel.codigo ? <p className="mb-1.5 text-xs text-navy">Ref. {imovel.codigo}</p> : null}
         <p className="mb-1 text-[11px] tracking-[0.06em] text-navy">
           {imovel.bairro}, Londrina
         </p>
