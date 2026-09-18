@@ -8,7 +8,7 @@ const EXAMPLES = [
   "Casa com 4 suítes no Terra Bonita",
 ];
 
-export function HomeHeroSearch() {
+export function HomeHeroSearch({ searchPath = "/imoveis" }: { searchPath?: string }) {
   const router = useRouter();
   const [query, setQuery] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -21,7 +21,7 @@ export function HomeHeroSearch() {
 
     setIsSubmitting(true);
     startTransition(() => {
-      router.push(`/imoveis?q=${encodeURIComponent(trimmed)}`);
+      router.push(`${searchPath}?q=${encodeURIComponent(trimmed)}`);
     });
   }
 

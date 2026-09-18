@@ -9,6 +9,7 @@ import type {
   ImovelSearchResult,
 } from "@/lib/queries/imoveis";
 import { imageUrlOrFallback } from "@/lib/images";
+import type { CrmConversationListing } from "@/lib/crm-conversation";
 
 type Props = {
   initialSearchPage: ImovelSearchPage;
@@ -16,6 +17,7 @@ type Props = {
   initialNaturalQuery?: string;
   bairros: string[];
   tipos: string[];
+  crmPreview?: boolean;
 };
 
 type ValorOption = {
@@ -143,39 +145,39 @@ function PillSelect({
   );
 }
 
-function ListingCard({ imovel }: { imovel: ImovelSearchResult }) {
+function ListingCard({ imovel }: { imovel: CrmConversationListing }) {
   const price = imovel.precoVenda ?? imovel.precoLocacao;
   const image = imageUrlOrFallback(imovel.image);
 
   return (
-    <Link className="group block text-inherit no-underline" href={`/imoveis/${imovel.slug}`}>
+    <Link className="group block text-inherit no-underline" aria-disabled={imovel.crmDisplay && !imovel.crmDisplay.href ? true : undefined} onClick={event => { if (imovel.crmDisplay && !imovel.crmDisplay.href) event.preventDefault(); }} href={imovel.crmDisplay ? imovel.crmDisplay.href ?? "#" : `/imoveis/${imovel.slug}`}>
       <div className="relative aspect-[4/3] cursor-pointer overflow-hidden bg-[#1e1e1e] md:aspect-[5/4]">
-        <Image
+        {imovel.crmDisplay ? (imovel.image ? <img alt={imovel.titulo} className="h-full w-full object-cover transition duration-700 group-hover:scale-105" src={imovel.image} /> : <span className="flex h-full items-center justify-center text-sm text-white">Foto indisponível</span>) : <Image
           alt={`${imovel.titulo} — ${imovel.bairro}, Londrina`}
           className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
           fill
           sizes="(min-width: 768px) 33vw, 100vw"
           src={image}
-        />
-        <span className="absolute left-3.5 top-3.5 border border-white/40 px-2.5 py-[5px] text-[8px] uppercase tracking-[0.3em] text-white">
+        />}
+        {imovel.tag ? <span className="absolute left-3.5 top-3.5 border border-white/40 px-2.5 py-[5px] text-[8px] uppercase tracking-[0.3em] text-white">
           {imovel.tag}
-        </span>
+        </span> : null}
       </div>
       <div className="pt-4">
         {imovel.codigo ? <p className="mb-1.5 text-xs text-navy">Ref. {imovel.codigo}</p> : null}
         <p className="mb-1.5 text-[11px] tracking-[0.06em] text-navy">
-          {imovel.bairro}, Londrina
+          {imovel.bairro}, {imovel.crmDisplay ? imovel.cidade : "Londrina"}
         </p>
         <h3 className="mb-2.5 text-base font-normal leading-[1.3] tracking-[0.01em] text-navy">
           {imovel.titulo}
         </h3>
-        <div className="flex items-baseline justify-between gap-4 border-t border-navy/10 pt-2.5">
+        <div className={`flex items-baseline justify-between gap-4 border-t border-navy/10 pt-2.5 ${imovel.crmDisplay ? "flex-wrap" : ""}`}>
           <span className="text-[11px] text-navy">
-            {area(imovel.area)}
+            {imovel.crmDisplay?.area ?? area(imovel.area)}
             {imovel.suites && imovel.suites > 0 ? ` · ${imovel.suites} suítes` : ""}
             {imovel.vagas && imovel.vagas > 0 ? ` · ${imovel.vagas} vagas` : ""}
           </span>
-          <span className="shrink-0 text-[17px] text-navy">{currency(price)}</span>
+          <span className="shrink-0 text-[17px] text-navy">{imovel.crmDisplay?.price ?? currency(price)}</span>
         </div>
       </div>
     </Link>
@@ -188,6 +190,7 @@ export function BuscaImoveisClient({
   initialNaturalQuery,
   bairros,
   tipos,
+  crmPreview = false,
 }: Props) {
   const [imoveis, setImoveis] = useState(initialSearchPage.imoveis);
   const [total, setTotal] = useState(initialSearchPage.total);
@@ -236,7 +239,7 @@ export function BuscaImoveisClient({
   async function runSearch(filters: ImovelSearchFilters, options: {page?: number; append?: boolean} = {}) {
     const sequence = ++requestSequence.current;
     const nextPage = options.page ?? 1;
-    const response = await fetch("/api/imoveis/search", {
+    const response = await fetch(crmPreview ? "/preview/crm/api/search" : "/api/imoveis/search", {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ...filters, page: nextPage, perPage: SEARCH_PER_PAGE }),
     });
@@ -288,7 +291,7 @@ export function BuscaImoveisClient({
     setAiNote("");
     const previous = filtersRef.current;
     try {
-      const response = await fetch("/api/imoveis/ai", {
+      const response = await fetch(crmPreview ? "/preview/crm/api/ai" : "/api/imoveis/ai", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ query: trimmed, state: previous }),
       });

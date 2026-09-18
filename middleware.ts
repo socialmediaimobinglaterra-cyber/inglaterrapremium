@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { isLocalCrmPreview } from "@/lib/crm-preview";
 
 const ADMIN_SESSION_COOKIE = "inglaterra_admin_session";
 
@@ -69,6 +70,21 @@ async function verifySession(token: string | undefined) {
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  if (pathname.startsWith("/preview/crm")) {
+    const headers = { "Cache-Control": "no-store", "X-Robots-Tag": "noindex, nofollow", "Referrer-Policy": "no-referrer" };
+    if (!isLocalCrmPreview()) {
+      const secret = process.env.ADMIN_SESSION_SECRET?.trim() || process.env.KENLO_SYNC_SECRET?.trim();
+      if (!secret || secret === "dev-admin-session-secret-change-me") return new NextResponse(null, { status: 404, headers });
+      const session = await verifySession(request.cookies.get(ADMIN_SESSION_COOKIE)?.value);
+      if (!session || session.role !== "admin") {
+        if (pathname.startsWith("/preview/crm/api/")) return new NextResponse(null, { status: 404, headers });
+        return NextResponse.redirect(new URL("/admin/login", request.url), { headers });
+      }
+    }
+    const previewHeaders = new Headers(request.headers);
+    previewHeaders.set("x-inglaterra-crm-preview", "1");
+    return NextResponse.next({ request: { headers: previewHeaders }, headers });
+  }
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-inglaterra-admin-path", "1");
 
@@ -100,5 +116,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*"],
+  matcher: ["/admin/:path*", "/preview/crm/:path*"],
 };

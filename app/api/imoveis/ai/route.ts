@@ -2,6 +2,9 @@ import { after, NextResponse } from "next/server";
 import { recordAnalyticsEvent } from "@/lib/analytics";
 import { applyChanges, filterFields, QUERY_MAX_LENGTH, sanitizeState } from "@/lib/search-state";
 import { consumeAiQuota, getSearchVocabulary, recordOpenAiUsage, vocabularyHints } from "@/lib/ai-search-support";
+import { conversationVocabulary, consumePreviewAiQuota } from "@/lib/crm-conversation";
+import { isLocalCrmPreview } from "@/lib/crm-preview";
+import { canAccessCrmPreview } from "@/lib/crm-preview-access";
 
 export const dynamic = "force-dynamic";
 const MODEL = "gpt-4o-mini";
@@ -28,6 +31,8 @@ function failure(message: string, status = 200, retryAfter?: number) {
 }
 
 export async function POST(request: Request) {
+  const preview = new URL(request.url).pathname === "/preview/crm/api/ai";
+  if (preview && !await canAccessCrmPreview(request)) return new Response(null, { status: 404 });
   let attempted = false;
   let success = false;
   let errorCode: string | null = null;
@@ -53,9 +58,9 @@ export async function POST(request: Request) {
     if (typeof body?.query !== "string" || !body.query.trim()) return failure("Digite o que procura.", 400);
     if (body.query.length > QUERY_MAX_LENGTH) return failure("Use até 500 caracteres para descrever sua busca.", 400);
     if (!process.env.OPENAI_API_KEY) return failure("Busca inteligente indisponível. Use os filtros rápidos.");
-    const retry = await consumeAiQuota(request);
+    const retry = preview && isLocalCrmPreview() ? consumePreviewAiQuota() : await consumeAiQuota(request);
     if (retry) return failure("Você fez várias buscas em sequência. Aguarde um pouco ou use os filtros rápidos.", 429, retry);
-    const vocabulary = await getSearchVocabulary();
+    const vocabulary = preview ? await conversationVocabulary() : await getSearchVocabulary();
     const state = sanitizeState(body.state, vocabulary);
     const controller = new AbortController();
     timeout = setTimeout(() => controller.abort(), 8000);
@@ -79,13 +84,13 @@ export async function POST(request: Request) {
     if (data.choices?.[0]?.finish_reason !== "stop" || !data.choices?.[0]?.message?.content) throw new Error("invalid_output");
     const result = applyChanges(state, JSON.parse(data.choices[0].message.content), vocabulary);
     success = true;
-    after(() => recordAnalyticsEvent({ tipoEvento: "busca_ia_usada", payload: { termo_livre: null } }));
+    if (!preview) after(() => recordAnalyticsEvent({ tipoEvento: "busca_ia_usada", payload: { termo_livre: null } }));
     return NextResponse.json({ ok: true, ...result });
   } catch (error) {
     errorCode = error instanceof Error && error.name === "AbortError" ? "timeout" : error instanceof Error && error.message === "invalid_range" ? "invalid_range" : "request_failed";
     return failure(errorCode === "invalid_range" ? "O mínimo ficou maior que o máximo. Ajuste o intervalo; seus filtros foram mantidos." : "Busca inteligente indisponível. Seus filtros foram mantidos; use os filtros rápidos.");
   } finally {
     if (timeout) clearTimeout(timeout);
-    if (attempted) after(() => recordOpenAiUsage(model, usage, success, errorCode));
+    if (attempted && (!preview || !isLocalCrmPreview())) after(() => recordOpenAiUsage(model, usage, success, errorCode));
   }
 }

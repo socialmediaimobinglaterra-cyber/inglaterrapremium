@@ -65,6 +65,7 @@ export default async function RootLayout({
 }>) {
   const requestHeaders = await headers();
   const isAdmin = requestHeaders.get("x-inglaterra-admin-path") === "1";
+  const isCrmPreview = requestHeaders.get("x-inglaterra-crm-preview") === "1";
 
   return (
     <html lang="pt-BR" className={dmSans.variable}>
@@ -73,10 +74,10 @@ export default async function RootLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd()) }}
           type="application/ld+json"
         />
-        {isAdmin ? null : <Header />}
+        {isAdmin || isCrmPreview ? null : <Header />}
         {children}
-        {isAdmin ? null : <Footer />}
-        <Analytics />
+        {isAdmin || isCrmPreview ? null : <Footer />}
+        {isCrmPreview ? null : <Analytics />}
       </body>
     </html>
   );
