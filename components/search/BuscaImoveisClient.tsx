@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import type {
   ImovelSearchFilters,
   ImovelSearchPage,
@@ -64,16 +64,17 @@ function describeAiFilters(filters: ImovelSearchFilters) {
   const labels = [
     filters.tipo,
     filters.bairro,
+    filters.condominio,
     filters.negocio === "Alugar" ? "Locação" : filters.negocio === "Comprar" ? "Venda" : null,
     filters.suitesMinimas ? `${filters.suitesMinimas}+ suítes` : null,
     filters.vagasMinimas ? `${filters.vagasMinimas}+ vagas` : null,
     filters.quartosMinimos ? `${filters.quartosMinimos}+ quartos` : null,
     filters.areaMinima ? `a partir de ${area(filters.areaMinima)}` : null,
-    filters.valorMinimo
+    filters.areaMaxima != null ? `até ${area(filters.areaMaxima)}` : null,
+    filters.valorMinimo != null
       ? `acima de ${currency(filters.valorMinimo)}`
-      : filters.valorMaximo
-        ? `até ${currency(filters.valorMaximo)}`
-        : null,
+      : null,
+    filters.valorMaximo != null ? `até ${currency(filters.valorMaximo)}` : null,
   ];
 
   return labels.filter((label): label is string => Boolean(label));
@@ -192,239 +193,119 @@ export function BuscaImoveisClient({
   const [total, setTotal] = useState(initialSearchPage.total);
   const [page, setPage] = useState(initialSearchPage.page);
   const [hasMore, setHasMore] = useState(initialSearchPage.hasMore);
-  const [negocio, setNegocio] = useState<(typeof NEGOCIO_OPTIONS)[number]>(initialNegocio);
-  const [bairro, setBairro] = useState("Todos os bairros");
-  const [tipo, setTipo] = useState("Todos os tipos");
-  const [valor, setValor] = useState("Não definido");
-  const [suites, setSuites] = useState("Não definido");
-  const [order, setOrder] = useState<NonNullable<ImovelSearchFilters["order"]>>("relevancia");
+  const [currentFilters, setCurrentFilters] = useState<ImovelSearchFilters>({ negocio: initialNegocio, order: "relevancia" });
+  const filtersRef = useRef(currentFilters);
+  const requestSequence = useRef(0);
+  const aiBusyRef = useRef(false);
+  const loadingMoreRef = useRef(false);
   const [naturalQuery, setNaturalQuery] = useState(initialNaturalQuery ?? "");
   const [aiNote, setAiNote] = useState("");
-  const [aiOnlyFilters, setAiOnlyFilters] = useState<
-    Pick<ImovelSearchFilters, "vagasMinimas" | "quartosMinimos" | "areaMinima">
-  >({});
-  const [aiInterpretationNotice, setAiInterpretationNotice] =
-    useState<AiInterpretationNotice | null>(null);
+  const [aiInterpretationNotice, setAiInterpretationNotice] = useState<AiInterpretationNotice | null>(null);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [isAiSearching, setIsAiSearching] = useState(false);
   const [isPending, startTransition] = useTransition();
   const initialNaturalQueryHandled = useRef(false);
+  const negocio = currentFilters.negocio ?? initialNegocio;
+  const bairro = currentFilters.bairro ?? "Todos os bairros";
+  const tipo = currentFilters.tipo ?? "Todos os tipos";
+  const order = currentFilters.order ?? "relevancia";
+  const bairroOptions = [...new Set(["Todos os bairros", ...bairros, ...(currentFilters.bairro ? [currentFilters.bairro] : [])])];
+  const tipoOptions = [...new Set(["Todos os tipos", ...tipos, ...(currentFilters.tipo ? [currentFilters.tipo] : [])])];
+  const valorOptions = [...VALOR_OPTIONS];
+  let valorOption = valorOptions.find(v => v.valorMinimo === (currentFilters.valorMinimo ?? null) && v.valorMaximo === (currentFilters.valorMaximo ?? null));
+  if (!valorOption) {
+    valorOption = {
+      label: [currentFilters.valorMinimo != null ? `De ${currency(currentFilters.valorMinimo)}` : "", currentFilters.valorMaximo != null ? `até ${currency(currentFilters.valorMaximo)}` : ""].filter(Boolean).join(" "),
+      valorMinimo: currentFilters.valorMinimo ?? null, valorMaximo: currentFilters.valorMaximo ?? null,
+    };
+    valorOptions.push(valorOption);
+  }
+  const valor = valorOption.label;
+  const suitesOptions: {label: string; value: number | null}[] = [...SUITES_OPTIONS];
+  let suitesOption = suitesOptions.find(v => v.value === (currentFilters.suitesMinimas ?? null));
+  if (!suitesOption) {
+    suitesOption = { label: `${currentFilters.suitesMinimas}+ suítes`, value: currentFilters.suitesMinimas ?? null };
+    suitesOptions.push(suitesOption);
+  }
+  const suites = suitesOption.label;
 
-  const bairroOptions = useMemo(() => ["Todos os bairros", ...bairros], [bairros]);
-  const tipoOptions = useMemo(() => ["Todos os tipos", ...tipos], [tipos]);
-  const valorOption = VALOR_OPTIONS.find((item) => item.label === valor) ?? VALOR_OPTIONS[0];
-  const suitesOption = SUITES_OPTIONS.find((item) => item.label === suites) ?? SUITES_OPTIONS[0];
-
-  const currentFilters: ImovelSearchFilters = {
-    bairro,
-    tipo,
-    negocio,
-    valorMinimo: valorOption.valorMinimo,
-    valorMaximo: valorOption.valorMaximo,
-    suitesMinimas: suitesOption.value,
-    ...aiOnlyFilters,
-    order,
-  };
-
-  async function runSearch(
-    filters: ImovelSearchFilters,
-    options: { page?: number; append?: boolean } = {}
-  ) {
+  function saveFilters(filters: ImovelSearchFilters) {
+    filtersRef.current = filters;
+    setCurrentFilters(filters);
+  }
+  async function runSearch(filters: ImovelSearchFilters, options: {page?: number; append?: boolean} = {}) {
+    const sequence = ++requestSequence.current;
     const nextPage = options.page ?? 1;
     const response = await fetch("/api/imoveis/search", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+      method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ...filters, page: nextPage, perPage: SEARCH_PER_PAGE }),
     });
     const data = await response.json();
-    const nextImoveis = Array.isArray(data.imoveis) ? data.imoveis : [];
-
-    setImoveis((current) => {
-      const combined: ImovelSearchResult[] = options.append ? [...current, ...nextImoveis] : nextImoveis;
-      return Array.from(new Map(combined.map((imovel) => [imovel.slug, imovel])).values());
-    });
-    setTotal(Number.isFinite(Number(data.total)) ? Number(data.total) : nextImoveis.length);
-    setPage(Number.isFinite(Number(data.page)) ? Number(data.page) : nextPage);
+    if (sequence !== requestSequence.current) return;
+    if (!response.ok || !data.ok) throw new Error("search_failed");
+    const nextImoveis: ImovelSearchResult[] = Array.isArray(data.imoveis) ? data.imoveis : [];
+    setImoveis(current => Array.from(new Map((options.append ? [...current, ...nextImoveis] : nextImoveis).map(item => [item.slug, item])).values()));
+    setTotal(data.total);
+    setPage(data.page);
     setHasMore(Boolean(data.hasMore));
   }
-
   function updateFilters(nextFilters: ImovelSearchFilters) {
-    startTransition(() => {
-      void runSearch(nextFilters);
-    });
-  }
-
-  function clearAiOnlyState() {
-    setAiOnlyFilters({});
+    if (aiBusyRef.current) return;
+    saveFilters(nextFilters);
     setAiInterpretationNotice(null);
-  }
-
-  function onBairroChange(value: string) {
-    clearAiOnlyState();
-    setBairro(value);
-    updateFilters({
-      ...currentFilters,
-      bairro: value,
-      vagasMinimas: null,
-      quartosMinimos: null,
-      areaMinima: null,
-    });
-  }
-
-  function onTipoChange(value: string) {
-    clearAiOnlyState();
-    setTipo(value);
-    updateFilters({
-      ...currentFilters,
-      tipo: value,
-      vagasMinimas: null,
-      quartosMinimos: null,
-      areaMinima: null,
-    });
-  }
-
-  function onNegocioChange(value: string) {
-    clearAiOnlyState();
-    const next = value === "Alugar" ? "Alugar" : "Comprar";
-    setNegocio(next);
-    updateFilters({
-      ...currentFilters,
-      negocio: next,
-      vagasMinimas: null,
-      quartosMinimos: null,
-      areaMinima: null,
-    });
-  }
-
-  function onValorChange(value: string) {
-    clearAiOnlyState();
-    const option = VALOR_OPTIONS.find((item) => item.label === value) ?? VALOR_OPTIONS[0];
-    setValor(value);
-    updateFilters({
-      ...currentFilters,
-      valorMinimo: option.valorMinimo,
-      valorMaximo: option.valorMaximo,
-      vagasMinimas: null,
-      quartosMinimos: null,
-      areaMinima: null,
-    });
-  }
-
-  function onSuitesChange(value: string) {
-    clearAiOnlyState();
-    const option = SUITES_OPTIONS.find((item) => item.label === value) ?? SUITES_OPTIONS[0];
-    setSuites(value);
-    updateFilters({
-      ...currentFilters,
-      suitesMinimas: option.value,
-      vagasMinimas: null,
-      quartosMinimos: null,
-      areaMinima: null,
-    });
-  }
-
-  function onOrderChange(value: string) {
-    const next = value as NonNullable<ImovelSearchFilters["order"]>;
-    setOrder(next);
-    updateFilters({ ...currentFilters, order: next });
-  }
-
-  function limparBusca() {
-    setBairro("Todos os bairros");
-    setTipo("Todos os tipos");
-    setValor("Não definido");
-    setSuites("Não definido");
-    setNegocio("Comprar");
-    setOrder("relevancia");
     setAiNote("");
-    clearAiOnlyState();
-    updateFilters({ negocio: "Comprar", order: "relevancia" });
+    startTransition(async () => {
+      try { await runSearch(nextFilters); }
+      catch { setAiNote("Não foi possível atualizar os resultados. Tente novamente."); }
+    });
   }
+  function onBairroChange(value: string) { updateFilters({ ...filtersRef.current, bairro: value === "Todos os bairros" ? null : value }); }
+  function onTipoChange(value: string) { updateFilters({ ...filtersRef.current, tipo: value === "Todos os tipos" ? null : value }); }
+  function onNegocioChange(value: string) { updateFilters({ ...filtersRef.current, negocio: value === "Alugar" ? "Alugar" : "Comprar" }); }
+  function onValorChange(value: string) {
+    const option = valorOptions.find(v => v.label === value)!;
+    updateFilters({ ...filtersRef.current, valorMinimo: option.valorMinimo, valorMaximo: option.valorMaximo });
+  }
+  function onSuitesChange(value: string) { updateFilters({ ...filtersRef.current, suitesMinimas: suitesOptions.find(v => v.label === value)!.value }); }
+  function onOrderChange(value: string) { updateFilters({ ...filtersRef.current, order: value as ImovelSearchFilters["order"] }); }
+  function limparBusca() { updateFilters({ negocio: "Comprar", order: "relevancia" }); }
 
   async function carregarMais() {
-    if (!hasMore || isLoadingMore) return;
+    if (!hasMore || loadingMoreRef.current || aiBusyRef.current || isPending) return;
+    loadingMoreRef.current = true;
     setIsLoadingMore(true);
-    try {
-      await runSearch(currentFilters, { page: page + 1, append: true });
-    } finally {
-      setIsLoadingMore(false);
-    }
+    try { await runSearch(filtersRef.current, { page: page + 1, append: true }); }
+    catch { setAiNote("Não foi possível carregar mais imóveis. Tente novamente."); }
+    finally { loadingMoreRef.current = false; setIsLoadingMore(false); }
   }
-
   async function runNaturalSearch(query = naturalQuery) {
     const trimmed = query.trim();
-    if (!trimmed || isAiSearching) return;
-    setAiNote("");
-    setAiInterpretationNotice(null);
+    if (!trimmed || aiBusyRef.current) return;
+    if (trimmed.length > 500) { setAiNote("Use até 500 caracteres para descrever sua busca."); return; }
+    aiBusyRef.current = true;
+    ++requestSequence.current;
     setIsAiSearching(true);
-
+    setAiNote("");
+    const previous = filtersRef.current;
     try {
       const response = await fetch("/api/imoveis/ai", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: trimmed }),
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query: trimmed, state: previous }),
       });
       const data = await response.json();
-
-      if (!data.ok || !data.filters) {
-        setAiNote("Busca inteligente indisponível no momento. Use os filtros rápidos.");
-        await runSearch(currentFilters);
+      if (!response.ok || !data.ok || !data.filters) {
+        setAiNote(data.message ?? "Busca inteligente indisponível. Seus filtros foram mantidos.");
         return;
       }
-
-      const rawFilters = data.filters as ImovelSearchFilters & {
-        naoInterpretado?: unknown;
-      };
-      const filters: ImovelSearchFilters = {
-        bairro: rawFilters.bairro,
-        tipo: rawFilters.tipo,
-        negocio: rawFilters.negocio,
-        suitesMinimas: rawFilters.suitesMinimas,
-        vagasMinimas: rawFilters.vagasMinimas,
-        quartosMinimos: rawFilters.quartosMinimos,
-        areaMinima: rawFilters.areaMinima,
-        valorMinimo: rawFilters.valorMinimo,
-        valorMaximo: rawFilters.valorMaximo,
-      };
-      const naoInterpretado = Array.isArray(data.naoInterpretado)
-        ? data.naoInterpretado.filter((item: unknown): item is string => typeof item === "string")
-        : Array.isArray(rawFilters.naoInterpretado)
-          ? rawFilters.naoInterpretado.filter(
-              (item: unknown): item is string => typeof item === "string"
-            )
-          : [];
-      const nextBairro = filters.bairro ?? "Todos os bairros";
-      const nextTipo = filters.tipo ?? "Todos os tipos";
-      const nextNegocio = filters.negocio ?? negocio;
-      const nextAiOnlyFilters = {
-        vagasMinimas: filters.vagasMinimas ?? null,
-        quartosMinimos: filters.quartosMinimos ?? null,
-        areaMinima: filters.areaMinima ?? null,
-      };
-
-      setBairro(nextBairro);
-      setTipo(nextTipo);
-      setNegocio(nextNegocio === "Alugar" ? "Alugar" : "Comprar");
-      setAiOnlyFilters(nextAiOnlyFilters);
-      setAiInterpretationNotice(
-        naoInterpretado.length > 0
-          ? {
-              interpreted: describeAiFilters(filters),
-              naoInterpretado,
-            }
-          : null
-      );
-      setSuites(
-        SUITES_OPTIONS.find((item) => item.value === filters.suitesMinimas)?.label ??
-          "Não definido"
-      );
-      setValor("Não definido");
-      await runSearch({ ...filters, order });
+      const filters: ImovelSearchFilters = { ...data.filters, order: previous.order };
+      await runSearch(filters);
+      saveFilters(filters);
+      const naoInterpretado = Array.isArray(data.naoInterpretado) ? data.naoInterpretado.filter((v: unknown): v is string => typeof v === "string") : [];
+      setAiInterpretationNotice(naoInterpretado.length ? { interpreted: describeAiFilters(filters), naoInterpretado } : null);
     } catch {
-      setAiNote("Busca inteligente indisponível no momento. Use os filtros rápidos.");
-      setAiInterpretationNotice(null);
-      await runSearch(currentFilters);
+      setAiNote("Não foi possível concluir a busca. Seus filtros foram mantidos; tente novamente.");
     } finally {
+      aiBusyRef.current = false;
       setIsAiSearching(false);
     }
   }
@@ -467,8 +348,8 @@ export function BuscaImoveisClient({
           <PillSelect label="Tipo" onChange={onTipoChange} options={tipoOptions} value={tipo} />
           <PillSelect label="Negócio" onChange={onNegocioChange} options={[...NEGOCIO_OPTIONS]} value={negocio} />
           <PillSelect label="Localização" onChange={onBairroChange} options={bairroOptions} value={bairro} />
-          <PillSelect label="Valor" onChange={onValorChange} options={VALOR_OPTIONS.map((item) => item.label)} value={valor} />
-          <PillSelect label="Suítes" onChange={onSuitesChange} options={SUITES_OPTIONS.map((item) => item.label)} value={suites} />
+          <PillSelect label="Valor" onChange={onValorChange} options={valorOptions.map((item) => item.label)} value={valor} />
+          <PillSelect label="Suítes" onChange={onSuitesChange} options={suitesOptions.map((item) => item.label)} value={suites} />
 
           <button
             className="shrink-0 rounded-[24px] border-0 bg-navy px-[26px] py-[13px] text-xs font-medium text-white"
@@ -508,6 +389,7 @@ export function BuscaImoveisClient({
             >
               <input
                 aria-label="Busca inteligente de imóveis"
+                maxLength={500}
                 className="flex-1 border-0 bg-transparent py-1 text-[15px] italic text-navy outline-none placeholder:text-navy/45 md:py-2.5 md:text-[19px]"
                 onChange={(event) => setNaturalQuery(event.target.value)}
                 placeholder="Descreva o imóvel que você procura..."
@@ -546,6 +428,8 @@ export function BuscaImoveisClient({
       </section>
 
       <section className="site-container py-7 md:py-10">
+        <p aria-live="polite" className="mb-4 text-xs text-navy">{describeAiFilters(currentFilters).join(" · ")}</p>
+        <button type="button" onClick={limparBusca} disabled={isAiSearching} className="mb-4 text-xs text-terra underline disabled:opacity-60">Limpar filtros</button>
         {aiInterpretationNotice ? (
           <div className="mb-5 border border-navy/10 bg-white px-4 py-3 text-[13px] leading-relaxed text-navy">
             Filtramos por:{" "}
@@ -611,7 +495,7 @@ export function BuscaImoveisClient({
           <div className="mt-10 flex justify-center md:mt-16">
             <button
               className="border border-navy bg-transparent px-9 py-3.5 text-[10px] uppercase tracking-[0.2em] text-navy transition hover:bg-navy hover:text-white disabled:cursor-wait disabled:opacity-60"
-              disabled={isLoadingMore}
+              disabled={isLoadingMore || isAiSearching || isPending}
               onClick={carregarMais}
               type="button"
             >

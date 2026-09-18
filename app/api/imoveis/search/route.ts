@@ -23,6 +23,8 @@ export async function POST(request: Request) {
       vagas_min: filters.vagasMinimas,
       quartos_min: filters.quartosMinimos,
       area_min: filters.areaMinima,
+      area_max: filters.areaMaxima,
+      condominio: filters.condominio,
       termo_livre: null,
     };
 

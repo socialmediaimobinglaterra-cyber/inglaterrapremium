@@ -3,6 +3,7 @@ import { imageUrlOrFallback } from "@/lib/images";
 
 export type ImovelSearchFilters = {
   bairro?: string | null;
+  condominio?: string | null;
   tipo?: string | null;
   negocio?: "Comprar" | "Alugar" | null;
   valorMinimo?: number | null;
@@ -11,6 +12,7 @@ export type ImovelSearchFilters = {
   vagasMinimas?: number | null;
   quartosMinimos?: number | null;
   areaMinima?: number | null;
+  areaMaxima?: number | null;
   order?: "relevancia" | "maior_valor" | "menor_valor" | "mais_recentes";
 };
 
@@ -116,6 +118,7 @@ function mapFotos(fotos: Array<Foto & { FotoDescricao?: string; FotoTitulo?: str
 export function normalizeSearchFilters(filters: ImovelSearchFilters) {
   return {
     bairro: filters.bairro && filters.bairro !== "Todos os bairros" ? filters.bairro : null,
+    condominio: filters.condominio ?? null,
     tipo: filters.tipo && filters.tipo !== "Todos os tipos" ? filters.tipo : null,
     negocio: filters.negocio === "Alugar" ? "Alugar" : "Comprar",
     valorMinimo: numberOrNull(filters.valorMinimo),
@@ -124,6 +127,7 @@ export function normalizeSearchFilters(filters: ImovelSearchFilters) {
     vagasMinimas: numberOrNull(filters.vagasMinimas),
     quartosMinimos: numberOrNull(filters.quartosMinimos),
     areaMinima: numberOrNull(filters.areaMinima),
+    areaMaxima: numberOrNull(filters.areaMaxima),
     order: filters.order ?? "relevancia",
   } satisfies ImovelSearchFilters;
 }
@@ -172,6 +176,11 @@ function buildSearchQuery(rawFilters: ImovelSearchFilters) {
     where.push(`tipo = $${values.length}`);
   }
 
+  if (filters.condominio) {
+    values.push(filters.condominio);
+    where.push(`coalesce(nullif(nome_condominio, ''), nome_edificio) = $${values.length}`);
+  }
+
   const priceColumn = filters.negocio === "Alugar" ? "preco_locacao" : "preco_venda";
 
   if (filters.valorMinimo !== null && filters.valorMinimo !== undefined) {
@@ -202,6 +211,11 @@ function buildSearchQuery(rawFilters: ImovelSearchFilters) {
   if (filters.areaMinima !== null && filters.areaMinima !== undefined) {
     values.push(filters.areaMinima);
     where.push("coalesce(area_util, area_total, 0) >= $" + values.length);
+  }
+
+  if (filters.areaMaxima !== null && filters.areaMaxima !== undefined) {
+    values.push(filters.areaMaxima);
+    where.push("coalesce(area_util, area_total, 0) <= $" + values.length);
   }
 
   const orderBy =

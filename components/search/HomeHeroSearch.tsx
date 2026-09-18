@@ -43,6 +43,7 @@ export function HomeHeroSearch() {
       >
         <input
           aria-label="Busca inteligente de imóveis"
+          maxLength={500}
           className="flex-1 border-0 bg-transparent py-1 text-[15px] italic text-navy outline-none placeholder:text-navy/45 md:py-2.5 md:text-[19px]"
           onChange={(event) => setQuery(event.target.value)}
           placeholder="Descreva o imóvel que você procura..."
