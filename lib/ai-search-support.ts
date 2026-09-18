@@ -37,7 +37,7 @@ export const getSearchVocabulary = unstable_cache(async (): Promise<Vocabulary> 
 export function vocabularyHints(query: string, vocabulary: Vocabulary) {
   const words = normalizeName(query).split(/\W+/).filter(w => w.length >= 4 && !["quero", "apartamento", "condominio", "residencial", "agora"].includes(w));
   return Object.fromEntries(Object.entries(vocabulary).map(([field, names]) => [field,
-    names.filter(name => words.some(word => normalizeName(name).includes(word))).slice(0, 12),
+    (field === "tipo" ? names : names.filter(name => words.some(word => normalizeName(name).includes(word)))).slice(0, 12),
   ]));
 }
 
