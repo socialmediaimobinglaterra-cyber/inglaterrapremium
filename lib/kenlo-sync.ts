@@ -361,7 +361,7 @@ async function getPremiumConfig(client: PoolClient): Promise<PremiumConfig> {
 }
 
 async function fetchXml(xmlUrl: string) {
-  const response = await fetch(xmlUrl);
+  const response = await fetch(xmlUrl, { signal: AbortSignal.timeout(60_000), cache: "no-store" });
   if (!response.ok) throw new Error(`Kenlo respondeu HTTP ${response.status}.`);
   return response.text();
 }
@@ -401,14 +401,36 @@ async function upsertBairro(client: PoolClient, nome: string, count: number, see
   return rows[0].id as string;
 }
 
-async function upsertImovel(
-  client: PoolClient,
+function imovelValues(
   imovel: ParsedImovel,
   bairroId: string | null,
   seenAt: Date,
   premiumReason: string,
   elegivelFiltroAutomatico: boolean
 ) {
+  return [
+    imovel.kenloCodigo, imovel.codigoAuxiliar, imovel.slug, imovel.titulo,
+    imovel.tipo, imovel.subtipo, imovel.finalidade, imovel.categoria,
+    imovel.cidade, imovel.estado, bairroId, imovel.bairroNome,
+    imovel.bairroOficial, imovel.endereco, imovel.numero, imovel.cep,
+    imovel.latitude, imovel.longitude, imovel.nomeCondominio, imovel.nomeEdificio,
+    imovel.statusComercial, imovel.tipoOferta, imovel.precoVenda, imovel.precoLocacao,
+    imovel.precoCondominio, imovel.precoIptu, imovel.areaUtil, imovel.areaTotal,
+    imovel.dormitorios, imovel.suites, imovel.banheiros, imovel.vagas,
+    imovel.descricao, imovel.urlKenlo, imovel.videoUrl,
+    JSON.stringify(imovel.corretor), JSON.stringify(imovel.fotos), JSON.stringify(imovel.raw),
+    elegivelFiltroAutomatico, premiumReason, seenAt, imovel.kenloUpdatedAt,
+  ];
+}
+
+async function upsertImoveis(client: PoolClient, rows: ReturnType<typeof imovelValues>[]) {
+  if (!rows.length) return;
+  const placeholders = rows.map((row, index) => {
+    const p = row.map((_, column) => `$${index * 42 + column + 1}`);
+    return `('kenlo', ${p[0]}, ${p.slice(0, 35).join(", ")},
+      ${p[35]}::jsonb, ${p[36]}::jsonb, ${p[37]}::jsonb,
+      ${p[38]}, ${p[38]}, ${p[39]}, true, ${p[40]}, ${p[41]}, now())`;
+  });
   await client.query(
     `
       insert into imoveis (
@@ -421,16 +443,7 @@ async function upsertImovel(
         corretor, fotos, raw, elegivel_filtro_automatico, is_premium,
         premium_reason, ativo, last_seen_at,
         kenlo_updated_at, updated_at
-      ) values (
-        'kenlo', $1, $1, $2, $3, $4, $5, $6, $7,
-        $8, $9, $10, $11, $12, $13,
-        $14, $15, $16, $17, $18, $19,
-        $20, $21, $22, $23,
-        $24, $25, $26, $27, $28,
-        $29, $30, $31, $32, $33, $34, $35,
-        $36::jsonb, $37::jsonb, $38::jsonb, $39, $39, $40, true, $41,
-        $42, now()
-      )
+      ) values ${placeholders.join(", ")}
       on conflict (kenlo_codigo) do update set
         origem = 'kenlo',
         kenlo_id = excluded.kenlo_id,
@@ -480,50 +493,7 @@ async function upsertImovel(
         updated_at = now()
       where imoveis.origem = 'kenlo'
     `,
-    [
-      imovel.kenloCodigo,
-      imovel.codigoAuxiliar,
-      imovel.slug,
-      imovel.titulo,
-      imovel.tipo,
-      imovel.subtipo,
-      imovel.finalidade,
-      imovel.categoria,
-      imovel.cidade,
-      imovel.estado,
-      bairroId,
-      imovel.bairroNome,
-      imovel.bairroOficial,
-      imovel.endereco,
-      imovel.numero,
-      imovel.cep,
-      imovel.latitude,
-      imovel.longitude,
-      imovel.nomeCondominio,
-      imovel.nomeEdificio,
-      imovel.statusComercial,
-      imovel.tipoOferta,
-      imovel.precoVenda,
-      imovel.precoLocacao,
-      imovel.precoCondominio,
-      imovel.precoIptu,
-      imovel.areaUtil,
-      imovel.areaTotal,
-      imovel.dormitorios,
-      imovel.suites,
-      imovel.banheiros,
-      imovel.vagas,
-      imovel.descricao,
-      imovel.urlKenlo,
-      imovel.videoUrl,
-      JSON.stringify(imovel.corretor),
-      JSON.stringify(imovel.fotos),
-      JSON.stringify(imovel.raw),
-      elegivelFiltroAutomatico,
-      premiumReason,
-      seenAt,
-      imovel.kenloUpdatedAt,
-    ]
+    rows.flat()
   );
 }
 
@@ -546,15 +516,22 @@ async function refreshCondominios(
     });
   }
 
-  for (const [slug, condominio] of counts) {
-    const bairroId = condominio.bairroNome
-      ? bairroIds.get(normalize(condominio.bairroNome)) ?? null
-      : null;
+  const entries = [...counts];
+  for (let offset = 0; offset < entries.length; offset += 100) {
+    const values = entries.slice(offset, offset + 100).flatMap(([slug, condominio]) => {
+      const bairroId = condominio.bairroNome
+        ? bairroIds.get(normalize(condominio.bairroNome)) ?? null
+        : null;
+      return [condominio.nome, slug, bairroId, condominio.bairroNome, condominio.count, seenAt];
+    });
+    const placeholders = Array.from({ length: values.length / 6 }, (_, index) =>
+      `(${Array.from({ length: 6 }, (_, column) => `$${index * 6 + column + 1}`).join(", ")}, now())`
+    );
     await client.query(
       `
         insert into condominios (
           nome, slug, bairro_id, bairro_nome, imoveis_count, last_seen_at, updated_at
-        ) values ($1, $2, $3, $4, $5, $6, now())
+        ) values ${placeholders.join(", ")}
         on conflict (slug) do update set
           nome = excluded.nome,
           bairro_id = excluded.bairro_id,
@@ -564,7 +541,7 @@ async function refreshCondominios(
           last_seen_at = excluded.last_seen_at,
           updated_at = now()
       `,
-      [condominio.nome, slug, bairroId, condominio.bairroNome, condominio.count, seenAt]
+      values
     );
   }
 
@@ -579,18 +556,21 @@ async function normalizeExistingCondominios(client: PoolClient) {
     "select id, nome from condominios"
   );
   const changed: Array<{ de: string; para: string }> = [];
+  const updates: Array<{ id: string; nome: string }> = [];
 
   for (const row of rows) {
     const normalized = normalizeCondominioName(row.nome);
     if (!normalized || normalized === row.nome) continue;
 
-    await client.query(
-      "update condominios set nome = $2, updated_at = now() where id = $1",
-      [row.id, normalized]
-    );
+    updates.push({ id: row.id, nome: normalized });
     changed.push({ de: row.nome, para: normalized });
   }
 
+  if (updates.length) {
+    await client.query(`update condominios c set nome = u.nome, updated_at = now()
+      from jsonb_to_recordset($1::jsonb) as u(id uuid, nome text) where c.id = u.id`,
+      [JSON.stringify(updates)]);
+  }
   return changed.sort((a, b) => a.de.localeCompare(b.de, "pt-BR"));
 }
 
@@ -604,15 +584,13 @@ async function normalizeExistingKenloImoveis(client: PoolClient) {
     `
   );
   const changed = new Map<string, { de: string; para: string; ocorrencias: number }>();
+  const updates: Array<{ id: string; nome: string }> = [];
 
   for (const row of rows) {
     const normalized = normalizeCondominioName(row.nome_condominio);
     if (!normalized || normalized === row.nome_condominio) continue;
 
-    await client.query(
-      "update imoveis set nome_condominio = $2, updated_at = now() where id = $1",
-      [row.id, normalized]
-    );
+    updates.push({ id: row.id, nome: normalized });
 
     const key = `${row.nome_condominio}\n${normalized}`;
     const current = changed.get(key);
@@ -623,6 +601,11 @@ async function normalizeExistingKenloImoveis(client: PoolClient) {
     });
   }
 
+  if (updates.length) {
+    await client.query(`update imoveis i set nome_condominio = u.nome, updated_at = now()
+      from jsonb_to_recordset($1::jsonb) as u(id uuid, nome text)
+      where i.id = u.id and i.origem = 'kenlo'`, [JSON.stringify(updates)]);
+  }
   return [...changed.values()].sort((a, b) => a.de.localeCompare(b.de, "pt-BR"));
 }
 
@@ -630,6 +613,16 @@ export async function syncKenlo(pool: Pool, xmlUrl = DEFAULT_KENLO_XML_URL) {
   const client = await pool.connect();
   const seenAt = new Date();
   let logId: string | null = null;
+  const started = Date.now();
+  const timings: Record<string, number> = {};
+  let stage = "download";
+  let stageStarted = started;
+  function nextStage(next: string) {
+    timings[stage] = Date.now() - stageStarted;
+    console.info("[xml-sync]", { logId, stage, durationMs: timings[stage] });
+    stage = next;
+    stageStarted = Date.now();
+  }
 
   try {
     await client.query("begin");
@@ -641,10 +634,20 @@ export async function syncKenlo(pool: Pool, xmlUrl = DEFAULT_KENLO_XML_URL) {
     await client.query("commit");
 
     const xml = await fetchXml(xmlUrl);
+    nextStage("parse");
     const parsed = parseXml(xml);
+    if (!parsed.length) throw new Error("XML sem imoveis validos; catalogo preservado.");
     const condominiosNormalizados = getCondominioNormalizationReport(parsed);
+    nextStage("catalogos");
 
     await client.query("begin");
+    await client.query("set local statement_timeout = '30s'");
+    await client.query("set local lock_timeout = '5s'");
+    await client.query("set local idle_in_transaction_session_timeout = '60s'");
+    const lock = await client.query<{ acquired: boolean }>(
+      "select pg_try_advisory_xact_lock(79260322) as acquired"
+    );
+    if (!lock.rows[0].acquired) throw new Error("Outra sincronizacao XML esta em andamento.");
     const config = await getPremiumConfig(client);
     const allowedNormalized = new Set(config.bairrosPermitidos.map(normalize));
     const byAllowedNeighborhood = parsed.filter((imovel) =>
@@ -684,24 +687,28 @@ export async function syncKenlo(pool: Pool, xmlUrl = DEFAULT_KENLO_XML_URL) {
       (codigo) => !currentCodes.has(codigo)
     ).length;
 
-    for (const imovel of parsed) {
-      const bairroId = imovel.bairroNome
-        ? bairroIds.get(normalize(imovel.bairroNome)) ?? null
-        : null;
-      const elegivelFiltroAutomatico = automaticCodes.has(imovel.kenloCodigo);
-      const premiumReason = getPremiumReason(imovel, config, premiumCondominios);
-      const syncReason = elegivelFiltroAutomatico
-        ? premiumReason
-        : "Fora do filtro premium automatico; disponivel para curadoria manual.";
-      await upsertImovel(
-        client,
-        imovel,
-        bairroId,
-        seenAt,
-        syncReason,
-        elegivelFiltroAutomatico
-      );
+    nextStage("imoveis");
+    // Preserve the previous last-occurrence-wins behavior for repeated source codes.
+    const uniqueImoveis = [...new Map(parsed.map((imovel) => [imovel.kenloCodigo, imovel])).values()];
+    for (let offset = 0; offset < uniqueImoveis.length; offset += 100) {
+      if (Date.now() - started > 240_000) {
+        throw new Error("Sincronizacao excedeu o prazo seguro; alteracoes revertidas.");
+      }
+      const rows = uniqueImoveis.slice(offset, offset + 100).map((imovel) => {
+        const bairroId = imovel.bairroNome
+          ? bairroIds.get(normalize(imovel.bairroNome)) ?? null
+          : null;
+        const elegivelFiltroAutomatico = automaticCodes.has(imovel.kenloCodigo);
+        const premiumReason = getPremiumReason(imovel, config, premiumCondominios);
+        const syncReason = elegivelFiltroAutomatico
+          ? premiumReason
+          : "Fora do filtro premium automatico; disponivel para curadoria manual.";
+        return imovelValues(imovel, bairroId, seenAt, syncReason, elegivelFiltroAutomatico);
+      });
+      await upsertImoveis(client, rows);
+      console.info("[xml-sync]", { logId, stage, processed: Math.min(offset + 100, uniqueImoveis.length), total: uniqueImoveis.length });
     }
+    nextStage("finalizacao");
 
     await client.query(
       `
@@ -719,6 +726,7 @@ export async function syncKenlo(pool: Pool, xmlUrl = DEFAULT_KENLO_XML_URL) {
 
     const condominiosExistentesNormalizados = await normalizeExistingCondominios(client);
     const imoveisExistentesNormalizados = await normalizeExistingKenloImoveis(client);
+    nextStage("conclusao");
 
     await client.query(
       `
@@ -748,6 +756,7 @@ export async function syncKenlo(pool: Pool, xmlUrl = DEFAULT_KENLO_XML_URL) {
         JSON.stringify({
           valor_minimo_venda: config.valorMinimoVenda,
           valor_minimo_locacao: config.valorMinimoLocacao,
+          timings_ms: timings,
         }),
       ]
     );
@@ -768,6 +777,8 @@ export async function syncKenlo(pool: Pool, xmlUrl = DEFAULT_KENLO_XML_URL) {
     );
 
     await client.query("commit");
+    nextStage("success");
+    console.info("[xml-sync]", { logId, stage, totalMs: Date.now() - started });
 
     if (!logId) {
       throw new Error("Log de sincronização não foi criado.");
@@ -788,15 +799,16 @@ export async function syncKenlo(pool: Pool, xmlUrl = DEFAULT_KENLO_XML_URL) {
       sample: sample.rows,
     } satisfies SyncResult;
   } catch (error) {
+    console.error("[xml-sync]", { logId, stage, totalMs: Date.now() - started, error: error instanceof Error ? error.message : String(error) });
     await client.query("rollback").catch(() => undefined);
     if (logId) {
       await client.query(
         `
           update sincronizacoes_log
-          set finished_at = now(), status = 'error', error_message = $2
+          set finished_at = now(), status = 'error', error_message = $2, metadata = $3::jsonb
           where id = $1
         `,
-        [logId, error instanceof Error ? error.message : String(error)]
+        [logId, error instanceof Error ? error.message : String(error), JSON.stringify({ stage, timings_ms: timings, total_ms: Date.now() - started })]
       );
     }
     throw error;
