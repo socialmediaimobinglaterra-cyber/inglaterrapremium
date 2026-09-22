@@ -246,7 +246,7 @@ function parseImovel(raw: RawRecord): ParsedImovel | null {
     categoria: text(raw.CategoriaImovel),
     cidade: text(raw.Cidade),
     estado: text(raw.Estado),
-    bairroNome: text(raw.BairroOficial) ?? text(raw.Bairro),
+    bairroNome: text(raw.Bairro),
     bairroOficial: text(raw.BairroOficial),
     endereco: text(raw.Endereco),
     numero: text(raw.Numero),

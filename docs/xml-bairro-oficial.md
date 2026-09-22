@@ -1,7 +1,8 @@
 # Bairro usado na importacao XML
 
-Decisao confirmada em 22/09/2026: priorizar `BairroOficial` da fonte XML.
-Quando ausente, vazio ou contendo apenas espacos, usar `Bairro` original.
+Decisao final corrigida em 22/09/2026: usar exclusivamente `Bairro` da fonte
+XML, nao `BairroOficial`. Esta decisao substitui a prioridade anterior.
+Quando `Bairro` estiver vazio, nao preencher com `BairroOficial`.
 
 O adaptador aplica a escolha em `ParsedImovel.bairroNome`, antes do filtro
 premium e da persistencia. Esse valor alimenta `imoveis.bairro_nome`, o
@@ -20,5 +21,5 @@ com recalculo da elegibilidade automatica. A implementacao nao precisa de
 migracao de schema nem de uma atualizacao SQL separada.
 
 Teste: `npx tsx --test tests/kenlo-sync.test.ts`. Inclui entrada e saida do
-filtro conforme o bairro oficial, fallback vazio/ausente, piso de valor,
+filtro conforme `Bairro`, independencia de `BairroOficial`, piso de valor,
 condominio premium, vinculos e contagens.
