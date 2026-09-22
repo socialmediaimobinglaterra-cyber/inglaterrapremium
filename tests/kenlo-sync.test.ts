@@ -87,6 +87,32 @@ test("duplicate source codes keep the last occurrence without a batch conflict",
   assert.equal(write.values[3], "Ultima versao");
 });
 
+test("official neighborhood drives display, relationships and premium eligibility with original fallback", async (t) => {
+  source(t, [
+    property("A", "<BairroOficial> Gleba Palhano </BairroOficial><NomeCondominio>Condominio Teste</NomeCondominio>")
+      .replace("<Bairro>Gleba Palhano</Bairro>", "<Bairro>Outro</Bairro>"),
+    property("B", "<BairroOficial>Centro</BairroOficial>"),
+    property("C", "<BairroOficial></BairroOficial>"),
+    property("D", "<BairroOficial>   </BairroOficial>"),
+    property("E"),
+    property("F", "<BairroOficial>Gleba Palhano</BairroOficial>").replace("1500000", "900000"),
+    property("G", "<BairroOficial>Centro</BairroOficial><NomeCondominio>Sun Lake</NomeCondominio>"),
+  ].join(""));
+  const db = database();
+  const result = await syncKenlo(db.pool, "https://example.test/feed");
+  const values = db.calls.find(({ sql }) => sql.includes("insert into imoveis"))!.values;
+  const column = (index: number) => Array.from({ length: 7 }, (_, i) => values[i * 42 + index]);
+  assert.deepEqual(column(11), ["Gleba Palhano", "Centro", "Gleba Palhano", "Gleba Palhano", "Gleba Palhano", "Gleba Palhano", "Centro"]);
+  assert.deepEqual(column(10), ["bairro-test", null, "bairro-test", "bairro-test", "bairro-test", "bairro-test", null]);
+  assert.deepEqual(column(38), [true, false, true, true, true, false, true]);
+  assert.equal(JSON.parse(values[37] as string).Bairro, "Outro");
+  assert.equal(result.bairrosContagem["Gleba Palhano"], 5);
+  assert.equal(result.totalPremium, 5);
+  const condos = db.calls.find(({ sql }) => sql.includes("insert into condominios"))!.values;
+  assert.equal(condos[2], "bairro-test");
+  assert.equal(condos[3], "Gleba Palhano");
+});
+
 test("failed batch rolls back the catalog and records the failed stage", async (t) => {
   source(t, property("A"));
   const db = database({ failBatch: true });
