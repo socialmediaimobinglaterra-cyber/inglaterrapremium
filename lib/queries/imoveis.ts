@@ -1,7 +1,10 @@
 import { getPool } from "@/lib/db";
 import { imageUrlOrFallback } from "@/lib/images";
+import { resolveMapSelection, validMapSelection } from "@/lib/property-map";
+import { getPropertyMapData } from "@/lib/queries/property-map";
 
 export type ImovelSearchFilters = {
+  mapSelection?: string | null;
   bairro?: string | null;
   condominio?: string | null;
   tipo?: string | null;
@@ -117,6 +120,7 @@ function mapFotos(fotos: Array<Foto & { FotoDescricao?: string; FotoTitulo?: str
 
 export function normalizeSearchFilters(filters: ImovelSearchFilters) {
   return {
+    mapSelection: filters.mapSelection == null ? null : validMapSelection(filters.mapSelection) ? filters.mapSelection : "invalid",
     bairro: filters.bairro && filters.bairro !== "Todos os bairros" ? filters.bairro : null,
     condominio: filters.condominio ?? null,
     tipo: filters.tipo && filters.tipo !== "Todos os tipos" ? filters.tipo : null,
@@ -155,10 +159,18 @@ export async function getImoveisFilterOptions() {
   };
 }
 
-function buildSearchQuery(rawFilters: ImovelSearchFilters) {
+async function buildSearchQuery(rawFilters: ImovelSearchFilters) {
   const filters = normalizeSearchFilters(rawFilters);
   const values: unknown[] = [];
   const where = ["ativo = true", "ativo_no_site = true"];
+
+  if (filters.mapSelection) {
+    const ids = validMapSelection(filters.mapSelection)
+      ? resolveMapSelection(await getPropertyMapData(filters.negocio === "Alugar" ? "Alugar" : "Comprar"), filters.mapSelection)
+      : [];
+    values.push(ids);
+    where.push(`id = any($${values.length}::uuid[])`);
+  }
 
   if (filters.negocio === "Alugar") {
     where.push("preco_locacao is not null");
@@ -258,7 +270,7 @@ export async function searchImoveis(
   rawFilters: ImovelSearchFilters,
   options: { page?: number; perPage?: number } = {}
 ): Promise<ImovelSearchPage> {
-  const { values, where, orderBy } = buildSearchQuery(rawFilters);
+  const { values, where, orderBy } = await buildSearchQuery(rawFilters);
   const page = Math.max(1, Math.trunc(options.page ?? 1));
   const perPage = Math.min(48, Math.max(1, Math.trunc(options.perPage ?? 24)));
   const offset = (page - 1) * perPage;

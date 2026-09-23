@@ -13,20 +13,27 @@ export const metadata: Metadata = {
 type PageProps = {
   searchParams: Promise<{
     q?: string;
+    mapa?: string;
+    negocio?: string;
   }>;
 };
 
 export default async function ImoveisPage({ searchParams }: PageProps) {
   const params = await searchParams;
+  const negocio = params.negocio === "Alugar" ? "Alugar" : "Comprar";
+  const mapSelection = typeof params.mapa === "string" ? params.mapa.slice(0, 120) : undefined;
   const [options, initialSearchPage] = await Promise.all([
     getImoveisFilterOptions(),
-    searchImoveis({ negocio: "Comprar", order: "relevancia" }),
+    searchImoveis({ negocio, order: "relevancia", mapSelection }),
   ]);
 
   return (
     <BuscaImoveisClient
       bairros={options.bairros}
       initialSearchPage={initialSearchPage}
+      key={`${negocio}:${mapSelection ?? ""}`}
+      initialNegocio={negocio}
+      initialMapSelection={mapSelection}
       initialNaturalQuery={params.q}
       tipos={options.tipos}
     />

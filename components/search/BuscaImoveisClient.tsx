@@ -15,6 +15,7 @@ type Props = {
   initialSearchPage: ImovelSearchPage;
   initialNegocio?: (typeof NEGOCIO_OPTIONS)[number];
   initialNaturalQuery?: string;
+  initialMapSelection?: string;
   bairros: string[];
   tipos: string[];
   crmPreview?: boolean;
@@ -64,6 +65,7 @@ function area(value: number | null) {
 
 function describeAiFilters(filters: ImovelSearchFilters) {
   const labels = [
+    filters.mapSelection ? "Localização selecionada no mapa" : null,
     filters.tipo,
     filters.bairro,
     filters.condominio,
@@ -188,6 +190,7 @@ export function BuscaImoveisClient({
   initialSearchPage,
   initialNegocio = "Comprar",
   initialNaturalQuery,
+  initialMapSelection,
   bairros,
   tipos,
   crmPreview = false,
@@ -196,7 +199,7 @@ export function BuscaImoveisClient({
   const [total, setTotal] = useState(initialSearchPage.total);
   const [page, setPage] = useState(initialSearchPage.page);
   const [hasMore, setHasMore] = useState(initialSearchPage.hasMore);
-  const [currentFilters, setCurrentFilters] = useState<ImovelSearchFilters>({ negocio: initialNegocio, order: "relevancia" });
+  const [currentFilters, setCurrentFilters] = useState<ImovelSearchFilters>({ negocio: initialNegocio, order: "relevancia", mapSelection: initialMapSelection });
   const filtersRef = useRef(currentFilters);
   const requestSequence = useRef(0);
   const aiBusyRef = useRef(false);
@@ -293,14 +296,14 @@ export function BuscaImoveisClient({
     try {
       const response = await fetch(crmPreview ? "/preview/crm/api/ai" : "/api/imoveis/ai", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: trimmed, state: previous }),
+        body: JSON.stringify({ query: trimmed, state: { ...previous, mapSelection: undefined } }),
       });
       const data = await response.json();
       if (!response.ok || !data.ok || !data.filters) {
         setAiNote(data.message ?? "Busca inteligente indisponível. Seus filtros foram mantidos.");
         return;
       }
-      const filters: ImovelSearchFilters = { ...data.filters, order: previous.order };
+      const filters: ImovelSearchFilters = { ...data.filters, order: previous.order, mapSelection: previous.mapSelection };
       await runSearch(filters);
       saveFilters(filters);
       const naoInterpretado = Array.isArray(data.naoInterpretado) ? data.naoInterpretado.filter((v: unknown): v is string => typeof v === "string") : [];
@@ -324,9 +327,9 @@ export function BuscaImoveisClient({
     <main className="bg-offwhite text-navy">
       <section className="pt-24 md:pt-32">
         <div className="site-container mb-7 md:mb-10">
-          <p className="mb-4 text-[11px] text-navy">Início / Imóveis / Comprar</p>
+          <p className="mb-4 text-[11px] text-navy">Início / Imóveis / {currentFilters.negocio === "Alugar" ? "Alugar" : "Comprar"}</p>
           <h1 className="mb-3.5 max-w-[720px] text-[clamp(26px,8vw,34px)] font-light leading-[1.1] tracking-[0.02em] text-navy md:text-[clamp(34px,4vw,52px)]">
-            Imóveis de Alto Padrão à Venda em Londrina
+            Imóveis de Alto Padrão {currentFilters.negocio === "Alugar" ? "para Alugar" : "à Venda"} em Londrina
           </h1>
           <p className="max-w-[520px] text-sm leading-[1.7] text-navy">
             Seleção curada de casas, apartamentos e coberturas nos bairros mais valorizados da cidade — Gleba Palhano, Bela Suíça, Aurora, Nova Prochet, Jardim Higienópolis e Terra Bonita.
@@ -431,6 +434,7 @@ export function BuscaImoveisClient({
       </section>
 
       <section className="site-container py-7 md:py-10">
+        {currentFilters.mapSelection && total === 0 && <p role="status" className="mb-4 text-sm text-navy">Nenhum imóvel disponível nesta seleção. O catálogo pode ter sido atualizado. <Link className="underline" href="/#property-map-title">Selecionar novamente no mapa</Link></p>}
         <p aria-live="polite" className="mb-4 text-xs text-navy">{describeAiFilters(currentFilters).join(" · ")}</p>
         <button type="button" onClick={limparBusca} disabled={isAiSearching} className="mb-4 text-xs text-terra underline disabled:opacity-60">Limpar filtros</button>
         {aiInterpretationNotice ? (

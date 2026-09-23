@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { InstagramGallery } from "@/components/home/InstagramGallery";
 import { HomeHeroSearch } from "@/components/search/HomeHeroSearch";
+import { PropertyMap } from "@/components/home/PropertyMap";
 import { ensureBairroEditorialColumns } from "@/lib/admin/bairros-schema";
 import { getPool } from "@/lib/db";
 import { imageUrlOrFallback } from "@/lib/images";
@@ -696,6 +697,8 @@ export default async function Home() {
           ))}
         </div>
       </section>
+
+      <PropertyMap />
 
       <section className="site-container bg-navy py-12 md:py-20">
         <div className="mb-10 flex flex-col items-start justify-between gap-5 border-b border-white/10 pb-8 md:flex-row md:items-end md:gap-0">
