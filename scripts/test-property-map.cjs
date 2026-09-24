@@ -50,6 +50,14 @@ async function main() {
       await page.getByText('6 imóveis no mapa',{exact:true}).waitFor();
       assert.equal(await page.locator('.property-map-pin').count(),1);
       assert.equal(await page.locator('.property-map-pin').innerText(),'6');
+      const pinStyle = await page.locator('.property-map-pin').evaluate(el => ({
+        color: getComputedStyle(el, '::before').backgroundColor,
+        corner: getComputedStyle(el, '::before').borderBottomRightRadius,
+        labelBackground: getComputedStyle(el.querySelector('span')).backgroundColor,
+      }));
+      assert.equal(pinStyle.color, 'rgb(81, 33, 13)');
+      assert.equal(pinStyle.corner, '0px');
+      assert.equal(pinStyle.labelBackground, 'rgba(0, 0, 0, 0)');
       await page.locator('.property-map-pin').click();
       const url = new URL(await page.evaluate(()=>window.mapDestination),'http://localhost');
       assert.equal(url.pathname,'/imoveis');assert.equal(url.searchParams.get('negocio'),'Comprar');

@@ -70,7 +70,7 @@ export function PropertyMap() {
             const label = `Ver ${count} ${count === 1 ? "imóvel" : "imóveis"} nesta localização`;
             const marker = L.marker([lat, lng], {
               keyboard: true, title: label, alt: label, autoPanOnFocus: false,
-              icon: L.divIcon({ className: "property-map-pin", html: `<span>${count}</span>`, iconSize: [48, 48], iconAnchor: [24, 24] }),
+              icon: L.divIcon({ className: "property-map-pin", html: `<span>${count}</span>`, iconSize: [48, 54], iconAnchor: [24, 52] }),
             }).addTo(markers);
             const openSelection = () => {
               const params = new URLSearchParams({ mapa: `${data.version}:${zoom}:${key}`, negocio });
