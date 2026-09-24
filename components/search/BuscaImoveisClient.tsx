@@ -121,7 +121,7 @@ function PillSelect({
     .replace(/[^a-z0-9]+/g, "-")}`;
 
   return (
-    <div className="relative min-w-[148px] shrink-0 rounded-[24px] border border-navy/10 py-2 pl-4 pr-[30px]">
+    <div className="relative w-[148px] shrink-0 rounded-[24px] border border-navy/10 py-2 pl-4 pr-[30px] xl:w-0 xl:min-w-[100px] xl:flex-1">
       <label className="sr-only" htmlFor={selectId}>
         {label}
       </label>
@@ -129,7 +129,8 @@ function PillSelect({
         {label}
       </span>
       <select
-        className="w-full cursor-pointer appearance-none border-0 bg-transparent text-[13px] font-medium text-navy outline-none"
+        className="w-full min-w-0 cursor-pointer appearance-none truncate border-0 bg-transparent text-[13px] font-medium text-navy outline-none disabled:cursor-wait disabled:opacity-60"
+        title={value}
         id={selectId}
         onChange={(event) => onChange(event.target.value)}
         value={value}
@@ -203,6 +204,7 @@ export function BuscaImoveisClient({
   const filtersRef = useRef(currentFilters);
   const requestSequence = useRef(0);
   const aiBusyRef = useRef(false);
+  const manualBusyRef = useRef(false);
   const loadingMoreRef = useRef(false);
   const [naturalQuery, setNaturalQuery] = useState(initialNaturalQuery ?? "");
   const [aiNote, setAiNote] = useState("");
@@ -210,6 +212,7 @@ export function BuscaImoveisClient({
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [isAiSearching, setIsAiSearching] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const busy = isAiSearching || isPending || isLoadingMore;
   const initialNaturalQueryHandled = useRef(false);
   const negocio = currentFilters.negocio ?? initialNegocio;
   const bairro = currentFilters.bairro ?? "Todos os bairros";
@@ -247,22 +250,28 @@ export function BuscaImoveisClient({
       body: JSON.stringify({ ...filters, page: nextPage, perPage: SEARCH_PER_PAGE }),
     });
     const data = await response.json();
-    if (sequence !== requestSequence.current) return;
+    if (sequence !== requestSequence.current) return false;
     if (!response.ok || !data.ok) throw new Error("search_failed");
     const nextImoveis: ImovelSearchResult[] = Array.isArray(data.imoveis) ? data.imoveis : [];
     setImoveis(current => Array.from(new Map((options.append ? [...current, ...nextImoveis] : nextImoveis).map(item => [item.slug, item])).values()));
     setTotal(data.total);
     setPage(data.page);
     setHasMore(Boolean(data.hasMore));
+    return true;
   }
   function updateFilters(nextFilters: ImovelSearchFilters) {
-    if (aiBusyRef.current) return;
-    saveFilters(nextFilters);
-    setAiInterpretationNotice(null);
+    if (aiBusyRef.current || manualBusyRef.current || loadingMoreRef.current) return;
+    manualBusyRef.current = true;
     setAiNote("");
     startTransition(async () => {
-      try { await runSearch(nextFilters); }
+      try {
+        if (await runSearch(nextFilters)) {
+          saveFilters(nextFilters);
+          setAiInterpretationNotice(current => current ? { ...current, interpreted: describeAiFilters(nextFilters) } : null);
+        }
+      }
       catch { setAiNote("Não foi possível atualizar os resultados. Tente novamente."); }
+      finally { manualBusyRef.current = false; }
     });
   }
   function onBairroChange(value: string) { updateFilters({ ...filtersRef.current, bairro: value === "Todos os bairros" ? null : value }); }
@@ -277,7 +286,7 @@ export function BuscaImoveisClient({
   function limparBusca() { updateFilters({ negocio: "Comprar", order: "relevancia" }); }
 
   async function carregarMais() {
-    if (!hasMore || loadingMoreRef.current || aiBusyRef.current || isPending) return;
+    if (!hasMore || loadingMoreRef.current || aiBusyRef.current || manualBusyRef.current) return;
     loadingMoreRef.current = true;
     setIsLoadingMore(true);
     try { await runSearch(filtersRef.current, { page: page + 1, append: true }); }
@@ -286,7 +295,7 @@ export function BuscaImoveisClient({
   }
   async function runNaturalSearch(query = naturalQuery) {
     const trimmed = query.trim();
-    if (!trimmed || aiBusyRef.current) return;
+    if (!trimmed || aiBusyRef.current || manualBusyRef.current || loadingMoreRef.current) return;
     if (trimmed.length > 500) { setAiNote("Use até 500 caracteres para descrever sua busca."); return; }
     aiBusyRef.current = true;
     ++requestSequence.current;
@@ -304,7 +313,7 @@ export function BuscaImoveisClient({
         return;
       }
       const filters: ImovelSearchFilters = { ...data.filters, order: previous.order, mapSelection: previous.mapSelection };
-      await runSearch(filters);
+      if (!await runSearch(filters)) return;
       saveFilters(filters);
       const naoInterpretado = Array.isArray(data.naoInterpretado) ? data.naoInterpretado.filter((v: unknown): v is string => typeof v === "string") : [];
       setAiInterpretationNotice(naoInterpretado.length ? { interpreted: describeAiFilters(filters), naoInterpretado } : null);
@@ -338,7 +347,7 @@ export function BuscaImoveisClient({
       </section>
 
       <div className="border-y border-navy/10">
-        <div className="site-container flex items-center gap-3 overflow-x-auto py-4 md:flex-wrap md:gap-3.5 md:overflow-visible md:py-3.5">
+        <fieldset disabled={busy} aria-label="Filtros rápidos" aria-busy={busy} className="site-container flex min-w-0 flex-nowrap items-center gap-3 overflow-x-auto py-4 md:py-3.5">
           <div className="flex shrink-0 items-center gap-2 pr-1.5">
             <IconFiltros />
             <div>
@@ -359,13 +368,13 @@ export function BuscaImoveisClient({
 
           <button
             className="shrink-0 rounded-[24px] border-0 bg-navy px-[26px] py-[13px] text-xs font-medium text-white"
-            onClick={() => updateFilters(currentFilters)}
+            onClick={() => updateFilters(filtersRef.current)}
             type="button"
           >
-            {isPending ? "Buscando" : "Buscar"}
+            {busy ? "Buscando..." : "Buscar"}
           </button>
 
-          <div className="hidden shrink-0 gap-2 md:ml-auto md:flex">
+          <div className="flex shrink-0 gap-2">
             <button aria-label="Filtros avançados" className="flex h-[38px] w-[38px] items-center justify-center rounded-full border border-navy/10 bg-transparent" type="button">
               <IconFiltros />
             </button>
@@ -373,7 +382,7 @@ export function BuscaImoveisClient({
               <IconSalvar />
             </button>
           </div>
-        </div>
+        </fieldset>
       </div>
 
       <section className="site-container border-b border-navy/10 py-5">
@@ -395,6 +404,7 @@ export function BuscaImoveisClient({
             >
               <input
                 aria-label="Busca inteligente de imóveis"
+                disabled={busy}
                 maxLength={500}
                 className="flex-1 border-0 bg-transparent py-1 text-[15px] italic text-navy outline-none placeholder:text-navy/45 md:py-2.5 md:text-[19px]"
                 onChange={(event) => setNaturalQuery(event.target.value)}
@@ -403,7 +413,7 @@ export function BuscaImoveisClient({
               />
               <button
                 className="py-1 text-left text-[10px] font-semibold uppercase tracking-[0.2em] text-terra disabled:cursor-wait disabled:opacity-70 md:py-2.5 md:pl-5 md:text-right"
-                disabled={isAiSearching}
+                disabled={busy}
                 type="submit"
               >
                 {isAiSearching ? "Interpretando..." : "Perguntar →"}
@@ -418,7 +428,7 @@ export function BuscaImoveisClient({
             ].map((example) => (
               <button
                 className="rounded-full border border-navy/10 px-3 py-1.5 text-[10.5px] text-navy disabled:cursor-wait disabled:opacity-70"
-                disabled={isAiSearching}
+                disabled={busy}
                 key={example}
                 onClick={() => {
                   setNaturalQuery(example);
@@ -436,7 +446,7 @@ export function BuscaImoveisClient({
       <section className="site-container py-7 md:py-10">
         {currentFilters.mapSelection && total === 0 && <p role="status" className="mb-4 text-sm text-navy">Nenhum imóvel disponível nesta seleção. O catálogo pode ter sido atualizado. <Link className="underline" href="/#property-map-title">Selecionar novamente no mapa</Link></p>}
         <p aria-live="polite" className="mb-4 text-xs text-navy">{describeAiFilters(currentFilters).join(" · ")}</p>
-        <button type="button" onClick={limparBusca} disabled={isAiSearching} className="mb-4 text-xs text-terra underline disabled:opacity-60">Limpar filtros</button>
+        <button type="button" onClick={limparBusca} disabled={busy} className="mb-4 text-xs text-terra underline disabled:opacity-60">Limpar filtros</button>
         {aiInterpretationNotice ? (
           <div className="mb-5 border border-navy/10 bg-white px-4 py-3 text-[13px] leading-relaxed text-navy">
             Filtramos por:{" "}
@@ -466,6 +476,7 @@ export function BuscaImoveisClient({
             <select
               className="cursor-pointer border-0 bg-transparent text-xs font-medium text-navy outline-none"
               id="ordenar-imoveis"
+              disabled={busy}
               onChange={(event) => onOrderChange(event.target.value)}
               value={order}
             >
@@ -491,6 +502,7 @@ export function BuscaImoveisClient({
             <button
               className="border border-navy bg-transparent px-7 py-3 text-[10px] uppercase tracking-[0.2em] text-navy transition hover:bg-navy hover:text-white"
               onClick={limparBusca}
+              disabled={busy}
               type="button"
             >
               Ver todos os imóveis
