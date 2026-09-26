@@ -13,6 +13,7 @@
     "mark:premium-condominios": "tsx scripts/mark-premium-condominios.ts"
   },
   "dependencies": {
+    "@sanity/client": "^8.7.0",
     "@vercel/analytics": "^2.0.1",
     "@vercel/blob": "^2.8.0",
     "dotenv": "^17.4.2",
@@ -22,6 +23,7 @@
     "pg": "^8.23.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
+    "sharp": "^0.35.4",
     "supercluster": "^9.1.0"
   },
   "devDependencies": {
