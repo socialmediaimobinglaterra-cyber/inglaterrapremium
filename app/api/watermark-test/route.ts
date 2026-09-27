@@ -34,6 +34,8 @@ const sanity = createClient({
   useCdn: false,
 });
 
+type AspectRatioCrop = "none" | "4:3" | "3:4";
+
 interface WatermarkSettings {
   position: "top-left" | "top-right" | "bottom-left" | "bottom-right" | "bottom-center" | "center";
   sizePercent: number;
@@ -41,7 +43,7 @@ interface WatermarkSettings {
   padding: number;
   paddingBottom: number;
   showShadow: boolean;
-  forceAspectRatio: boolean;
+  aspectRatioCrop: AspectRatioCrop;
 }
 
 const DEFAULT_SETTINGS: WatermarkSettings = {
@@ -51,7 +53,7 @@ const DEFAULT_SETTINGS: WatermarkSettings = {
   padding: 3.5,
   paddingBottom: 3.5,
   showShadow: false,
-  forceAspectRatio: false,
+  aspectRatioCrop: "none",
 };
 
 let logoBuffer: Buffer | null = null;
@@ -64,14 +66,28 @@ async function getLogo(): Promise<Buffer> {
   return logoBuffer;
 }
 
+interface WatermarkSettingsDoc extends Partial<Omit<WatermarkSettings, "aspectRatioCrop">> {
+  aspectRatioCrop?: AspectRatioCrop;
+  // Campo legado (pré-migração): true = "4:3", false = "none". Só é lido
+  // quando `aspectRatioCrop` ainda não existe no documento — nunca escrito
+  // de novo por este endpoint.
+  forceAspectRatio?: boolean;
+}
+
 async function getSettings(): Promise<WatermarkSettings> {
   try {
-    const s = await sanity.fetch<Partial<WatermarkSettings> | null>(
-      `*[_id == "watermarkSettings" || _id == "drafts.watermarkSettings"] | order(_updatedAt desc) [0] { position, sizePercent, opacity, padding, paddingBottom, showShadow, forceAspectRatio }`
+    const s = await sanity.fetch<WatermarkSettingsDoc | null>(
+      `*[_id == "watermarkSettings" || _id == "drafts.watermarkSettings"] | order(_updatedAt desc) [0] { position, sizePercent, opacity, padding, paddingBottom, showShadow, aspectRatioCrop, forceAspectRatio }`
     );
     if (!s) return DEFAULT_SETTINGS;
-    const nonNull = Object.fromEntries(Object.entries(s).filter(([, v]) => v != null));
-    return { ...DEFAULT_SETTINGS, ...nonNull };
+
+    const aspectRatioCrop: AspectRatioCrop =
+      s.aspectRatioCrop ?? (s.forceAspectRatio ? "4:3" : "none");
+
+    const nonNull = Object.fromEntries(
+      Object.entries(s).filter(([k, v]) => v != null && k !== "forceAspectRatio" && k !== "aspectRatioCrop")
+    );
+    return { ...DEFAULT_SETTINGS, ...nonNull, aspectRatioCrop };
   } catch {
     return DEFAULT_SETTINGS;
   }
@@ -106,11 +122,11 @@ async function applyWatermark(imageBuffer: Buffer): Promise<Buffer> {
   const settings = await getSettings();
 
   let processedBuffer = imageBuffer;
-  if (settings.forceAspectRatio) {
+  if (settings.aspectRatioCrop !== "none") {
     const meta = await sharp(imageBuffer).metadata();
     const origW = meta.width || 1600;
     const origH = meta.height || 1200;
-    const TARGET_RATIO = 4 / 3;
+    const TARGET_RATIO = settings.aspectRatioCrop === "3:4" ? 3 / 4 : 4 / 3;
     const origRatio = origW / origH;
     if (Math.abs(origRatio - TARGET_RATIO) > 0.01) {
       let newW = origW;
