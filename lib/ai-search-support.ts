@@ -1,6 +1,7 @@
 import { createHmac } from "node:crypto";
 import { unstable_cache } from "next/cache";
 import { getPool } from "./db";
+import { sanity } from "./sanity";
 import { normalizeName, type Vocabulary } from "./search-state";
 
 let schemaReady: Promise<unknown> | undefined;
@@ -21,16 +22,18 @@ function ensureAiSchema() {
 }
 
 export const getSearchVocabulary = unstable_cache(async (): Promise<Vocabulary> => {
-  const result = await getPool().query(`
-    select distinct 'bairro' as campo, bairro_nome as nome from imoveis where ativo and bairro_nome is not null
-    union select distinct 'tipo', tipo from imoveis where ativo and tipo is not null
-    union select distinct 'condominio', coalesce(nullif(nome_condominio, ''), nome_edificio)
-      from imoveis where ativo
-    order by campo, nome
-  `);
-  const vocabulary: Vocabulary = { bairro: [], tipo: [], condominio: [] };
-  for (const row of result.rows) if (row.nome?.trim()) vocabulary[row.campo as keyof Vocabulary].push(row.nome);
-  return vocabulary;
+  const [bairro, tipo, condominio] = await Promise.all([
+    sanity.fetch<string[]>(
+      `array::unique(*[_type == "property" && status == "ativo" && defined(neighborhood)].neighborhood)`
+    ),
+    sanity.fetch<string[]>(
+      `array::unique(*[_type == "property" && status == "ativo" && defined(type)].type)`
+    ),
+    sanity.fetch<string[]>(
+      `array::unique(*[_type == "property" && status == "ativo" && defined(coalesce(condominioNome, condominioRef->nome))].coalesce(condominioNome, condominioRef->nome))`
+    ),
+  ]);
+  return { bairro, tipo, condominio };
 }, ["ai-search-vocabulary"], { revalidate: 600 });
 
 // Only short, relevant names are sent, never property records or the entire vocabulary.

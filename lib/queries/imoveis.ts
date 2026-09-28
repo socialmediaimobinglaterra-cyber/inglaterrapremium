@@ -1,4 +1,4 @@
-import { getPool } from "@/lib/db";
+import { sanity } from "@/lib/sanity";
 import { imageUrlOrFallback } from "@/lib/images";
 import { resolveMapSelection, validMapSelection } from "@/lib/property-map";
 import { getPropertyMapData } from "@/lib/queries/property-map";
@@ -88,34 +88,33 @@ export type ImovelDetail = {
   }>;
 };
 
-type Foto = {
-  URLArquivo?: string;
-  Principal?: string | number;
-};
-
 function numberOrNull(value: unknown) {
   if (value === null || value === undefined) return null;
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : null;
 }
 
-function getMainImage(fotos: Foto[] | null) {
-  const all = Array.isArray(fotos) ? fotos : [];
-  return imageUrlOrFallback(
-    all.find((foto) => String(foto.Principal) === "1")?.URLArquivo ??
-      all[0]?.URLArquivo
-  );
+// GROQ projection shared by list rows and the detail query: `mainImage`
+// resolves to its CDN url directly, `images[]` to an array of urls in
+// gallery order (mainImage is NOT repeated inside `images`, same as the
+// Sanity property schema).
+const IMAGE_PROJECTION = `"mainImageUrl": mainImage.asset->url, "imageUrls": images[].asset->url`;
+
+type SanityImageRow = { mainImageUrl?: string | null; imageUrls?: (string | null)[] | null };
+
+function getMainImage(row: SanityImageRow) {
+  return imageUrlOrFallback(row.mainImageUrl ?? row.imageUrls?.[0] ?? null);
 }
 
-function mapFotos(fotos: Array<Foto & { FotoDescricao?: string; FotoTitulo?: string }> | null) {
-  const all = Array.isArray(fotos) ? fotos : [];
-  return all
-    .filter((foto) => Boolean(foto.URLArquivo))
-    .map((foto) => ({
-      url: imageUrlOrFallback(foto.URLArquivo),
-      alt: foto.FotoDescricao ?? foto.FotoTitulo,
-      principal: String(foto.Principal) === "1",
-    }));
+function mapFotos(row: SanityImageRow) {
+  const fotos: Array<{ url: string; alt?: string; principal: boolean }> = [];
+  if (row.mainImageUrl) {
+    fotos.push({ url: imageUrlOrFallback(row.mainImageUrl), principal: true });
+  }
+  for (const url of row.imageUrls ?? []) {
+    if (url) fotos.push({ url: imageUrlOrFallback(url), principal: false });
+  }
+  return fotos;
 }
 
 export function normalizeSearchFilters(filters: ImovelSearchFilters) {
@@ -136,174 +135,145 @@ export function normalizeSearchFilters(filters: ImovelSearchFilters) {
   } satisfies ImovelSearchFilters;
 }
 
+const ACTIVE_FILTER = `status == "ativo" && publicarSite == true`;
+
 export async function getImoveisFilterOptions() {
-  const pool = getPool();
-  const [bairrosResult, tiposResult] = await Promise.all([
-    pool.query(`
-      select distinct bairro_nome
-      from imoveis
-      where ativo = true and ativo_no_site = true and bairro_nome is not null
-      order by bairro_nome
-    `),
-    pool.query(`
-      select distinct tipo
-      from imoveis
-      where ativo = true and ativo_no_site = true and tipo is not null
-      order by tipo
-    `),
+  const [bairros, tipos] = await Promise.all([
+    sanity.fetch<string[]>(
+      `array::unique(*[_type == "property" && ${ACTIVE_FILTER} && defined(neighborhood)].neighborhood) | order(@ asc)`
+    ),
+    sanity.fetch<string[]>(
+      `array::unique(*[_type == "property" && ${ACTIVE_FILTER} && defined(type)].type) | order(@ asc)`
+    ),
   ]);
 
-  return {
-    bairros: bairrosResult.rows.map((row) => row.bairro_nome as string),
-    tipos: tiposResult.rows.map((row) => row.tipo as string),
-  };
+  return { bairros, tipos };
 }
 
 async function buildSearchQuery(rawFilters: ImovelSearchFilters) {
   const filters = normalizeSearchFilters(rawFilters);
-  const values: unknown[] = [];
-  const where = ["ativo = true", "ativo_no_site = true"];
+  const params: Record<string, unknown> = {};
+  const where = [`_type == "property"`, ACTIVE_FILTER];
 
   if (filters.mapSelection) {
     const ids = validMapSelection(filters.mapSelection)
       ? resolveMapSelection(await getPropertyMapData(filters.negocio === "Alugar" ? "Alugar" : "Comprar"), filters.mapSelection)
       : [];
-    values.push(ids);
-    where.push(`id = any($${values.length}::uuid[])`);
+    params.ids = ids;
+    where.push(`_id in $ids`);
   }
 
-  if (filters.negocio === "Alugar") {
-    where.push("preco_locacao is not null");
-  } else {
-    where.push("preco_venda is not null");
-  }
+  const priceField = filters.negocio === "Alugar" ? "rentPrice" : "price";
+  where.push(`defined(${priceField})`);
 
   if (filters.bairro) {
-    values.push(filters.bairro);
-    where.push(`bairro_nome = $${values.length}`);
+    params.bairro = filters.bairro;
+    where.push(`neighborhood == $bairro`);
   }
 
   if (filters.tipo) {
-    values.push(filters.tipo);
-    where.push(`tipo = $${values.length}`);
+    params.tipo = filters.tipo;
+    where.push(`type == $tipo`);
   }
 
   if (filters.condominio) {
-    values.push(filters.condominio);
-    where.push(`coalesce(nullif(nome_condominio, ''), nome_edificio) = $${values.length}`);
+    params.condominio = filters.condominio;
+    where.push(`coalesce(condominioRef->nome, condominioNome) == $condominio`);
   }
 
-  const priceColumn = filters.negocio === "Alugar" ? "preco_locacao" : "preco_venda";
-
   if (filters.valorMinimo !== null && filters.valorMinimo !== undefined) {
-    values.push(filters.valorMinimo);
-    where.push(`${priceColumn} >= $${values.length}`);
+    params.valorMinimo = filters.valorMinimo;
+    where.push(`${priceField} >= $valorMinimo`);
   }
 
   if (filters.valorMaximo !== null && filters.valorMaximo !== undefined) {
-    values.push(filters.valorMaximo);
-    where.push(`${priceColumn} <= $${values.length}`);
+    params.valorMaximo = filters.valorMaximo;
+    where.push(`${priceField} <= $valorMaximo`);
   }
 
   if (filters.suitesMinimas !== null && filters.suitesMinimas !== undefined) {
-    values.push(filters.suitesMinimas);
-    where.push("coalesce(suites, 0) >= $" + values.length);
+    params.suitesMinimas = filters.suitesMinimas;
+    where.push(`coalesce(suites, 0) >= $suitesMinimas`);
   }
 
   if (filters.vagasMinimas !== null && filters.vagasMinimas !== undefined) {
-    values.push(filters.vagasMinimas);
-    where.push("coalesce(vagas, 0) >= $" + values.length);
+    params.vagasMinimas = filters.vagasMinimas;
+    where.push(`coalesce(garage, 0) >= $vagasMinimas`);
   }
 
   if (filters.quartosMinimos !== null && filters.quartosMinimos !== undefined) {
-    values.push(filters.quartosMinimos);
-    where.push("coalesce(dormitorios, 0) >= $" + values.length);
+    params.quartosMinimos = filters.quartosMinimos;
+    where.push(`coalesce(bedrooms, 0) >= $quartosMinimos`);
   }
 
   if (filters.areaMinima !== null && filters.areaMinima !== undefined) {
-    values.push(filters.areaMinima);
-    where.push("coalesce(area_util, area_total, 0) >= $" + values.length);
+    params.areaMinima = filters.areaMinima;
+    where.push(`coalesce(area, areaTotal, 0) >= $areaMinima`);
   }
 
   if (filters.areaMaxima !== null && filters.areaMaxima !== undefined) {
-    values.push(filters.areaMaxima);
-    where.push("coalesce(area_util, area_total, 0) <= $" + values.length);
+    params.areaMaxima = filters.areaMaxima;
+    where.push(`coalesce(area, areaTotal, 0) <= $areaMaxima`);
   }
 
   const orderBy =
     filters.order === "maior_valor"
-      ? `${priceColumn} desc nulls last`
+      ? `${priceField} desc`
       : filters.order === "menor_valor"
-        ? `${priceColumn} asc nulls last`
+        ? `${priceField} asc`
         : filters.order === "mais_recentes"
-          ? "updated_at desc nulls last"
-          : "is_premium_override desc, updated_at desc nulls last";
+          ? "dataAtualizacaoCRM desc"
+          : "featured desc, dataAtualizacaoCRM desc";
 
   // Sync timestamps and prices can tie; keep page boundaries deterministic.
-  return { filters, values, where, orderBy: `${orderBy}, id asc` };
+  return { filters, params, where, orderBy: `${orderBy}, _id asc` };
 }
 
 function mapSearchRow(row: Record<string, any>, index: number): ImovelSearchResult {
-  const precoVenda = numberOrNull(row.preco_venda);
-  const precoLocacao = numberOrNull(row.preco_locacao);
-
   return {
-    id: row.id,
-    codigo: row.kenlo_codigo,
+    id: row._id,
+    codigo: row.codigoImovel,
     slug: row.slug,
-    titulo: row.titulo,
-    bairro: row.bairro_nome ?? "Londrina",
+    titulo: row.title,
+    bairro: row.neighborhood ?? "Londrina",
     cidade: row.cidade ?? "Londrina",
-    tipo: row.tipo ?? "Imovel",
-    area: numberOrNull(row.area_util ?? row.area_total),
+    tipo: row.type ?? "Imovel",
+    area: numberOrNull(row.area ?? row.areaTotal),
     suites: row.suites,
-    dormitorios: row.dormitorios,
-    vagas: row.vagas,
-    precoVenda,
-    precoLocacao,
-    image: getMainImage(row.fotos),
-    tag: row.is_premium_override ? "EXCLUSIVO" : index < 3 ? "DESTAQUE" : "PREMIUM",
+    dormitorios: row.bedrooms,
+    vagas: row.garage,
+    precoVenda: numberOrNull(row.price),
+    precoLocacao: numberOrNull(row.rentPrice),
+    image: getMainImage(row),
+    tag: row.featured ? "EXCLUSIVO" : index < 3 ? "DESTAQUE" : "PREMIUM",
   };
 }
+
+const SEARCH_ROW_PROJECTION = `
+  _id, codigoImovel, "slug": slug.current, title, neighborhood, cidade, type,
+  area, areaTotal, suites, bedrooms, garage, price, rentPrice, featured,
+  ${IMAGE_PROJECTION}
+`;
 
 export async function searchImoveis(
   rawFilters: ImovelSearchFilters,
   options: { page?: number; perPage?: number } = {}
 ): Promise<ImovelSearchPage> {
-  const { values, where, orderBy } = await buildSearchQuery(rawFilters);
+  const { params, where, orderBy } = await buildSearchQuery(rawFilters);
   const page = Math.max(1, Math.trunc(options.page ?? 1));
   const perPage = Math.min(48, Math.max(1, Math.trunc(options.perPage ?? 24)));
   const offset = (page - 1) * perPage;
-  const pool = getPool();
+  const filter = where.join(" && ");
 
-  const countResult = await pool.query(
-    `
-      select count(*)::int as total
-      from imoveis
-      where ${where.join(" and ")}
-    `,
-    values
-  );
+  const [total, rows] = await Promise.all([
+    sanity.fetch<number>(`count(*[${filter}])`, params),
+    sanity.fetch<Record<string, any>[]>(
+      `*[${filter}] | order(${orderBy}) [${offset}...${offset + perPage}] { ${SEARCH_ROW_PROJECTION} }`,
+      params
+    ),
+  ]);
 
-  const listValues = [...values, perPage, offset];
-  const result = await pool.query(
-    `
-      select id, kenlo_codigo, slug, titulo, bairro_nome, cidade, tipo,
-        area_util, area_total, suites, dormitorios, vagas, preco_venda,
-        preco_locacao, fotos, is_premium_override
-      from imoveis
-      where ${where.join(" and ")}
-      order by ${orderBy}
-      limit $${listValues.length - 1}
-      offset $${listValues.length}
-    `,
-    listValues
-  );
-
-  const total = Number(countResult.rows[0]?.total ?? 0);
-  const imoveis = result.rows.map((row, index): ImovelSearchResult =>
-    mapSearchRow(row, offset + index)
-  );
+  const imoveis = rows.map((row, index): ImovelSearchResult => mapSearchRow(row, offset + index));
 
   return {
     imoveis,
@@ -316,94 +286,88 @@ export async function searchImoveis(
 
 function mapDetailRow(row: Record<string, any>): ImovelDetail {
   return {
-    id: row.id,
-    codigo: row.kenlo_codigo,
+    id: row._id,
+    codigo: row.codigoImovel,
     slug: row.slug,
-    titulo: row.titulo,
-    tipo: row.tipo,
+    titulo: row.title,
+    tipo: row.type,
     finalidade: row.finalidade,
-    bairro: row.bairro_nome ?? "Londrina",
+    bairro: row.neighborhood ?? "Londrina",
     cidade: row.cidade ?? "Londrina",
     estado: row.estado ?? "PR",
-    endereco: row.endereco,
-    numero: row.numero,
-    nomeCondominio: row.nome_condominio,
-    nomeEdificio: row.nome_edificio,
-    precoVenda: numberOrNull(row.preco_venda),
-    precoLocacao: numberOrNull(row.preco_locacao),
-    precoCondominio: numberOrNull(row.preco_condominio),
-    precoIptu: numberOrNull(row.preco_iptu),
-    area: numberOrNull(row.area_util),
-    areaTotal: numberOrNull(row.area_total),
+    endereco: row.address,
+    numero: row.addressNumber,
+    nomeCondominio: row.condominioNome,
+    nomeEdificio: row.condominioRefNome,
+    precoVenda: numberOrNull(row.price),
+    precoLocacao: numberOrNull(row.rentPrice),
+    precoCondominio: numberOrNull(row.condominio),
+    precoIptu: numberOrNull(row.iptu),
+    area: numberOrNull(row.area),
+    areaTotal: numberOrNull(row.areaTotal),
     suites: row.suites,
-    dormitorios: row.dormitorios,
-    banheiros: row.banheiros,
-    vagas: row.vagas,
-    descricao: row.descricao,
+    dormitorios: row.bedrooms,
+    banheiros: row.bathrooms,
+    vagas: row.garage,
+    descricao: row.description,
     latitude: numberOrNull(row.latitude),
     longitude: numberOrNull(row.longitude),
-    urlKenlo: row.url_kenlo,
-    videoUrl: row.video_url,
-    corretor: row.corretor ?? {},
-    fotos: mapFotos(row.fotos),
+    urlKenlo: row.urlSiteAntigo,
+    videoUrl: row.videoUrl,
+    corretor: {
+      nome: row.captador ?? undefined,
+      email: row.captadorEmail ?? undefined,
+      celular: row.captadorCelular ?? undefined,
+    },
+    fotos: mapFotos(row),
   };
 }
 
+const DETAIL_PROJECTION = `
+  _id, codigoImovel, "slug": slug.current, title, type, finalidade, cidade, estado,
+  neighborhood, address, addressNumber, condominioNome, "condominioRefNome": condominioRef->nome,
+  price, rentPrice, condominio, iptu,
+  area, areaTotal, bedrooms, suites, bathrooms, garage,
+  description, latitude, longitude, urlSiteAntigo, videoUrl,
+  captador, captadorEmail, captadorCelular,
+  ${IMAGE_PROJECTION}
+`;
+
 export async function getImovelBySlug(slug: string) {
-  const result = await getPool().query(
-    `
-      select id, kenlo_codigo, slug, titulo, tipo, finalidade, cidade, estado,
-        bairro_nome, endereco, numero, nome_condominio, nome_edificio,
-        preco_venda, preco_locacao, preco_condominio, preco_iptu,
-        area_util, area_total, dormitorios, suites, banheiros, vagas,
-        descricao, latitude, longitude, url_kenlo, video_url, corretor, fotos
-      from imoveis
-      where slug = $1 and ativo = true and ativo_no_site = true
-      limit 1
-    `,
-    [slug]
+  const row = await sanity.fetch<Record<string, any> | null>(
+    `*[_type == "property" && slug.current == $slug && ${ACTIVE_FILTER}][0] { ${DETAIL_PROJECTION} }`,
+    { slug }
   );
 
-  return result.rows[0] ? mapDetailRow(result.rows[0]) : null;
+  return row ? mapDetailRow(row) : null;
 }
 
 export async function getSimilarImoveis(imovel: ImovelDetail, limit = 3) {
-  const result = await getPool().query(
-    `
-      select id, kenlo_codigo, slug, titulo, bairro_nome, cidade, tipo,
-        area_util, area_total, suites, dormitorios, vagas, preco_venda,
-        preco_locacao, fotos, is_premium_override
-      from imoveis
-      where ativo = true
-        and ativo_no_site = true
-        and slug <> $1
-        and (bairro_nome = $2 or tipo = $3)
-      order by
-        case when bairro_nome = $2 and tipo = $3 then 0
-             when bairro_nome = $2 then 1
-             else 2
-        end,
-        coalesce(preco_venda, preco_locacao) desc nulls last
-      limit $4
-    `,
-    [imovel.slug, imovel.bairro, imovel.tipo, limit]
+  const rows = await sanity.fetch<Record<string, any>[]>(
+    `*[_type == "property" && ${ACTIVE_FILTER} && slug.current != $slug
+        && (neighborhood == $bairro || type == $tipo)
+      ] {
+        ${SEARCH_ROW_PROJECTION},
+        "_rank": select(neighborhood == $bairro && type == $tipo => 0, neighborhood == $bairro => 1, true => 2)
+      } | order(_rank asc, coalesce(price, rentPrice) desc) [0...$limit]`,
+    { slug: imovel.slug, bairro: imovel.bairro, tipo: imovel.tipo, limit }
   );
 
-  return result.rows.map((row, index): ImovelSearchResult => ({
+  return rows.map((row, index): ImovelSearchResult => ({
     id: String(index + 1).padStart(2, "0"),
-    codigo: row.kenlo_codigo,
+    codigo: row.codigoImovel,
     slug: row.slug,
-    titulo: row.titulo,
-    bairro: row.bairro_nome ?? "Londrina",
+    titulo: row.title,
+    bairro: row.neighborhood ?? "Londrina",
     cidade: row.cidade ?? "Londrina",
-    tipo: row.tipo ?? "Imovel",
-    area: numberOrNull(row.area_util ?? row.area_total),
+    tipo: row.type ?? "Imovel",
+    area: numberOrNull(row.area ?? row.areaTotal),
     suites: row.suites,
-    dormitorios: row.dormitorios,
-    vagas: row.vagas,
-    precoVenda: numberOrNull(row.preco_venda),
-    precoLocacao: numberOrNull(row.preco_locacao),
-    image: getMainImage(row.fotos),
-    tag: row.is_premium_override ? "EXCLUSIVO" : index === 0 ? "DESTAQUE" : "PREMIUM",
+    dormitorios: row.bedrooms,
+    vagas: row.garage,
+    precoVenda: numberOrNull(row.price),
+    precoLocacao: numberOrNull(row.rentPrice),
+    image: getMainImage(row),
+    tag: row.featured ? "EXCLUSIVO" : index === 0 ? "DESTAQUE" : "PREMIUM",
   }));
 }

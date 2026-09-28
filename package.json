@@ -9,7 +9,6 @@
     "lint": "next lint",
     "test:crm-catalog": "tsx scripts/test-crm-catalog.ts",
     "db:migrate": "tsx scripts/migrate.ts",
-    "sync:kenlo": "tsx scripts/sync-kenlo.ts",
     "mark:premium-condominios": "tsx scripts/mark-premium-condominios.ts"
   },
   "dependencies": {

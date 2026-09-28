@@ -4,8 +4,7 @@ import Link from "next/link";
 import { InstagramGallery } from "@/components/home/InstagramGallery";
 import { HomeHeroSearch } from "@/components/search/HomeHeroSearch";
 import { PropertyMap } from "@/components/home/PropertyMap";
-import { ensureBairroEditorialColumns } from "@/lib/admin/bairros-schema";
-import { getPool } from "@/lib/db";
+import { sanity } from "@/lib/sanity";
 import { imageUrlOrFallback } from "@/lib/images";
 import { getActiveInstagramPosts } from "@/lib/queries/instagram-posts";
 import { getHeaderLancamentos } from "@/lib/queries/lancamentos";
@@ -181,91 +180,94 @@ function area(value: string | number | null) {
   })} m²`;
 }
 
-function getMainImage(fotos: Foto[] | null) {
-  const all = Array.isArray(fotos) ? fotos : [];
-  return imageUrlOrFallback(
-    all.find((foto) => String(foto.Principal) === "1")?.URLArquivo ??
-      all[0]?.URLArquivo
-  );
+function getMainImageFromSanity(row: { mainImageUrl?: string | null }) {
+  return imageUrlOrFallback(row.mainImageUrl ?? null);
 }
 
+const HOME_ACTIVE_FILTER = `status == "ativo" && publicarSite == true`;
+
+type SanityBairroRow = {
+  slug: string;
+  nome: string;
+  cidade: string | null;
+  imagemCapaUrl: string | null;
+  imagemHomeUrl: string | null;
+};
+
 async function getHomeData() {
-  const pool = getPool();
   const featuredPeriod = String(Math.floor(Date.now() / FEATURED_ROTATION_INTERVAL_MS));
-  await ensureBairroEditorialColumns(pool);
-  const [featuredResult, bairrosResult, statsResult, instagramPosts] = await Promise.all([
-    pool.query(`
-      select slug, kenlo_codigo, titulo, bairro_nome, cidade, area_util, area_total,
-        dormitorios, preco_venda, preco_locacao, tipo, fotos
-      from imoveis
-      where ativo = true and ativo_no_site = true
-      order by md5(id::text || ':' || $1), id
-      limit 4
-    `, [featuredPeriod]),
-    pool.query(`
-      with premium_config as (
-        select array(
-          select lower(translate(unnest(bairros_permitidos), '${ACCENTED_CHARS}', '${UNACCENTED_CHARS}'))
-          from configuracoes_premium
-          where chave = 'criterios_premium'
-        ) as bairros_normalizados
-      )
-      select b.slug, b.nome, b.cidade, b.imagem_capa, b.imagem_capa_alinhamento,
-        b.imagem_home, b.imagem_home_alinhamento, count(i.id)::int as imoveis
-      from bairros b
-      cross join premium_config
-      left join imoveis i on i.bairro_id = b.id and i.ativo = true and i.ativo_no_site = true
-      where b.ativo = true
-        and lower(translate(b.nome, '${ACCENTED_CHARS}', '${UNACCENTED_CHARS}')) =
-          any(premium_config.bairros_normalizados)
-      group by b.id, b.nome, b.cidade, b.imagem_capa, b.imagem_capa_alinhamento,
-        b.imagem_home, b.imagem_home_alinhamento
-      order by imoveis desc, b.nome
-      limit 6
-    `),
-    pool.query(`
-      select
-        count(*)::int as total_imoveis,
-        count(distinct bairro_id)::int as total_bairros
-      from imoveis
-      where ativo = true and ativo_no_site = true
-    `),
+
+  const [featuredRows, bairroCounts, bairrosMeta, totalImoveis, instagramPosts] = await Promise.all([
+    // Pseudo-random rotation keyed by a time bucket, same trick as the old
+    // `md5(id::text || ':' || period)` ordering — deterministic per window,
+    // reshuffles every FEATURED_ROTATION_INTERVAL_MS.
+    sanity.fetch<Record<string, any>[]>(
+      `*[_type == "property" && ${HOME_ACTIVE_FILTER}] {
+        _id, "slug": slug.current, codigoImovel, title, neighborhood, cidade,
+        area, areaTotal, bedrooms, price, rentPrice,
+        "mainImageUrl": mainImage.asset->url,
+        "_rand": _id + $period
+      } | order(_rand asc) [0...4]`,
+      { period: featuredPeriod }
+    ),
+    // Count of active properties per neighborhood, to pick which bairros
+    // show on the home and in what order.
+    sanity.fetch<string[]>(
+      `*[_type == "property" && ${HOME_ACTIVE_FILTER} && defined(neighborhood)].neighborhood`
+    ).then((names) => {
+      const counts = new Map<string, number>();
+      for (const name of names) counts.set(name, (counts.get(name) ?? 0) + 1);
+      return [...counts.entries()].map(([neighborhood, count]) => ({ neighborhood, count }));
+    }),
+    // Bairro editorial content (name, slug, cover images) — site-managed
+    // content in Sanity, unrelated to the CRM-fed property catalog.
+    sanity.fetch<SanityBairroRow[]>(
+      `*[_type == "bairro" && ativo == true] {
+        "slug": slug.current, nome, cidade,
+        "imagemCapaUrl": imagemCapa.asset->url, "imagemHomeUrl": imagemHome.asset->url
+      }`
+    ),
+    sanity.fetch<number>(`count(*[_type == "property" && ${HOME_ACTIVE_FILTER}])`),
     getActiveInstagramPosts(),
   ]);
 
-  const featured: FeaturedProperty[] = featuredResult.rows.map((row, index) => ({
+  const featured: FeaturedProperty[] = featuredRows.map((row, index) => ({
     id: String(index + 1).padStart(2, "0"),
-    codigo: row.kenlo_codigo,
+    codigo: row.codigoImovel,
     slug: row.slug,
-    title: row.titulo,
-    location: `${row.bairro_nome}, ${row.cidade ?? "Londrina"}`,
-    area: area(row.area_util ?? row.area_total),
-    bedrooms: row.dormitorios ?? 0,
-    price: currency(row.preco_venda ?? row.preco_locacao),
+    title: row.title,
+    location: `${row.neighborhood}, ${row.cidade ?? "Londrina"}`,
+    area: area(row.area ?? row.areaTotal),
+    bedrooms: row.bedrooms ?? 0,
+    price: currency(row.price ?? row.rentPrice),
     tag: index === 0 ? "EXCLUSIVO" : index === 1 ? "DESTAQUE" : "PREMIUM",
-    image: getMainImage(row.fotos),
+    image: getMainImageFromSanity(row),
   }));
 
-  const bairros: Bairro[] = bairrosResult.rows.map((row) => ({
-    slug: row.slug,
-    name: row.nome,
-    cidade: row.cidade ?? "Londrina",
-    imoveis: row.imoveis,
-    image:
-      typeof row.imagem_home === "string" && row.imagem_home.trim()
-        ? row.imagem_home.trim()
-        : typeof row.imagem_capa === "string" && row.imagem_capa.trim()
-          ? row.imagem_capa.trim()
-          : null,
-    imagePosition:
-      typeof row.imagem_home_alinhamento === "string" && row.imagem_home_alinhamento.trim()
-        ? row.imagem_home_alinhamento.trim()
-        : typeof row.imagem_capa_alinhamento === "string" && row.imagem_capa_alinhamento.trim()
-          ? row.imagem_capa_alinhamento.trim()
-          : "center center",
-  }));
+  const countByNormalizedName = new Map(
+    bairroCounts.map(({ neighborhood, count }) => [
+      neighborhood.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, ""),
+      count,
+    ])
+  );
 
-  const totals = statsResult.rows[0] ?? { total_imoveis: 0, total_bairros: 0 };
+  const bairros: Bairro[] = bairrosMeta
+    .map((row) => {
+      const key = row.nome.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+      return {
+        slug: row.slug,
+        name: row.nome,
+        cidade: row.cidade ?? "Londrina",
+        imoveis: countByNormalizedName.get(key) ?? 0,
+        image: row.imagemHomeUrl ?? row.imagemCapaUrl ?? null,
+        imagePosition: "center center",
+      };
+    })
+    .filter((bairro) => bairro.imoveis > 0)
+    .sort((a, b) => b.imoveis - a.imoveis || a.name.localeCompare(b.name))
+    .slice(0, 6);
+
+  const totals = { total_imoveis: totalImoveis, total_bairros: bairrosMeta.length };
 
   return { featured, bairros, totals, instagramPosts };
 }

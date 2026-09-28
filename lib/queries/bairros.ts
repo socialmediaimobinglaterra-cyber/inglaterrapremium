@@ -1,11 +1,6 @@
-import { getPool } from "@/lib/db";
-import { ensureBairroEditorialColumns } from "@/lib/admin/bairros-schema";
+import { sanity } from "@/lib/sanity";
+import { imageUrlOrFallback } from "@/lib/images";
 import type { ImovelSearchResult } from "@/lib/queries/imoveis";
-
-type Foto = {
-  URLArquivo?: string;
-  Principal?: string | number;
-};
 
 export type BairroFaq = {
   question: string;
@@ -44,200 +39,114 @@ function numberOrNull(value: unknown) {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
-function getMainImage(fotos: Foto[] | null) {
-  const all = Array.isArray(fotos) ? fotos : [];
-  return (
-    all.find((foto) => String(foto.Principal) === "1")?.URLArquivo ??
-    all[0]?.URLArquivo ??
-    "/images/capa-hero.jpg"
-  );
-}
+const ACTIVE_FILTER = `status == "ativo" && publicarSite == true`;
 
-function parseFaq(value: unknown): BairroFaq[] {
+type SanityBairroRow = {
+  _id: string;
+  nome: string;
+  slug: string;
+  cidade: string;
+  estado: string;
+  imagemCapaUrl: string | null;
+  imagemHomeUrl: string | null;
+  descricao: string | null;
+  faq: Array<{ pergunta?: string; resposta?: string }> | null;
+};
+
+const BAIRRO_PROJECTION = `
+  _id, nome, "slug": slug.current, cidade, estado,
+  "imagemCapaUrl": imagemCapa.asset->url, "imagemHomeUrl": imagemHome.asset->url,
+  descricao, faq
+`;
+
+function mapFaq(value: Array<{ pergunta?: string; resposta?: string }> | null): BairroFaq[] {
   if (!Array.isArray(value)) return [];
-
   return value
-    .map((item) => {
-      if (!item || typeof item !== "object") return null;
-      const record = item as Record<string, unknown>;
-      const question = record.question ?? record.pergunta;
-      const answer = record.answer ?? record.resposta;
-
-      if (typeof question !== "string" || typeof answer !== "string") return null;
-      if (!question.trim() || !answer.trim()) return null;
-
-      return { question: question.trim(), answer: answer.trim() };
-    })
-    .filter((item): item is BairroFaq => item !== null);
+    .filter((item) => item?.pergunta?.trim() && item?.resposta?.trim())
+    .map((item) => ({ question: item.pergunta!.trim(), answer: item.resposta!.trim() }));
 }
-
-const ACCENTED_CHARS =
-  "ÁÀÂÃÄáàâãäÉÈÊËéèêëÍÌÎÏíìîïÓÒÔÕÖóòôõöÚÙÛÜúùûüÇç";
-const UNACCENTED_CHARS =
-  "AAAAAaaaaaEEEEeeeeIIIIiiiiOOOOOoooooUUUUuuuuCc";
 
 function mapImovel(row: Record<string, any>, index: number): ImovelSearchResult {
   return {
     id: String(index + 1).padStart(2, "0"),
-    codigo: row.kenlo_codigo,
+    codigo: row.codigoImovel,
     slug: row.slug,
-    titulo: row.titulo,
-    bairro: row.bairro_nome ?? "Londrina",
+    titulo: row.title,
+    bairro: row.neighborhood ?? "Londrina",
     cidade: row.cidade ?? "Londrina",
-    tipo: row.tipo ?? "Imovel",
-    area: numberOrNull(row.area_util ?? row.area_total),
+    tipo: row.type ?? "Imovel",
+    area: numberOrNull(row.area ?? row.areaTotal),
     suites: row.suites,
-    dormitorios: row.dormitorios,
-    vagas: row.vagas,
-    precoVenda: numberOrNull(row.preco_venda),
-    precoLocacao: numberOrNull(row.preco_locacao),
-    image: getMainImage(row.fotos),
-    tag: row.is_premium_override ? "EXCLUSIVO" : index === 0 ? "DESTAQUE" : "PREMIUM",
+    dormitorios: row.bedrooms,
+    vagas: row.garage,
+    precoVenda: numberOrNull(row.price),
+    precoLocacao: numberOrNull(row.rentPrice),
+    image: imageUrlOrFallback(row.mainImageUrl),
+    tag: row.featured ? "EXCLUSIVO" : index === 0 ? "DESTAQUE" : "PREMIUM",
   };
 }
 
+const IMOVEL_ROW_PROJECTION = `
+  codigoImovel, "slug": slug.current, title, neighborhood, cidade, type,
+  area, areaTotal, suites, bedrooms, garage, price, rentPrice, featured,
+  "mainImageUrl": mainImage.asset->url
+`;
+
 export async function getBairroPageData(slug: string) {
-  const pool = getPool();
-  await ensureBairroEditorialColumns(pool);
-  const bairroResult = await pool.query(
-    `
-      with premium_config as (
-        select array(
-          select lower(translate(unnest(bairros_permitidos), $2, $3))
-          from configuracoes_premium
-          where chave = 'criterios_premium'
-        ) as bairros_normalizados
-      )
-      select id, nome, slug, cidade, estado, imagem_capa, imagem_capa_alinhamento,
-        imagem_home, imagem_home_alinhamento, descricao, faq
-      from bairros
-      cross join premium_config
-      where slug = $1
-        and ativo = true
-        and lower(translate(nome, $2, $3)) = any(premium_config.bairros_normalizados)
-      limit 1
-    `,
-    [slug, ACCENTED_CHARS, UNACCENTED_CHARS]
+  const bairroRow = await sanity.fetch<SanityBairroRow | null>(
+    `*[_type == "bairro" && slug.current == $slug && ativo == true][0] { ${BAIRRO_PROJECTION} }`,
+    { slug }
   );
 
-  const bairroRow = bairroResult.rows[0];
   if (!bairroRow) return null;
 
-  const [metricsResult, imoveisResult, outrosResult] = await Promise.all([
-    pool.query(
-      `
-        select
-          avg(preco_venda)::numeric(14,2) as valor_medio_venda,
-          count(*)::int as imoveis_disponiveis
-        from imoveis
-        where ativo = true
-          and ativo_no_site = true
-          and bairro_id = $1
-      `,
-      [bairroRow.id]
+  const [metrics, imoveisRows, outrosRows] = await Promise.all([
+    sanity.fetch<{ valorMedioVenda: number | null; imoveisDisponiveis: number }>(
+      `{
+        "valorMedioVenda": math::avg(*[_type == "property" && ${ACTIVE_FILTER} && neighborhood == $nome && defined(price)].price),
+        "imoveisDisponiveis": count(*[_type == "property" && ${ACTIVE_FILTER} && neighborhood == $nome])
+      }`,
+      { nome: bairroRow.nome }
     ),
-    pool.query(
-      `
-        select id, kenlo_codigo, slug, titulo, bairro_nome, cidade, tipo,
-          area_util, area_total, suites, dormitorios, vagas, preco_venda,
-          preco_locacao, fotos, is_premium_override
-        from imoveis
-        where ativo = true
-          and ativo_no_site = true
-          and bairro_id = $1
-        order by coalesce(preco_venda, preco_locacao) desc nulls last
-        limit 6
-      `,
-      [bairroRow.id]
+    sanity.fetch<Record<string, any>[]>(
+      `*[_type == "property" && ${ACTIVE_FILTER} && neighborhood == $nome
+        ] | order(coalesce(price, rentPrice) desc) [0...6] { ${IMOVEL_ROW_PROJECTION} }`,
+      { nome: bairroRow.nome }
     ),
-    pool.query(
-      `
-        with premium_config as (
-          select array(
-            select lower(translate(unnest(bairros_permitidos), $2, $3))
-            from configuracoes_premium
-            where chave = 'criterios_premium'
-          ) as bairros_normalizados
-        )
-        select
-          b.nome,
-          b.slug,
-          b.cidade,
-          b.imagem_capa,
-          b.imagem_capa_alinhamento,
-          b.imagem_home,
-          b.imagem_home_alinhamento,
-          count(i.id)::int as imoveis_disponiveis
-        from bairros b
-        left join imoveis i on i.ativo = true
-          and i.ativo_no_site = true
-          and i.bairro_id = b.id
-        cross join premium_config
-        where b.ativo = true
-          and b.slug <> $1
-          and lower(translate(b.nome, $2, $3)) = any(premium_config.bairros_normalizados)
-        group by b.id, b.nome, b.slug, b.cidade, b.imagem_capa, b.imagem_capa_alinhamento,
-          b.imagem_home, b.imagem_home_alinhamento
-        order by imoveis_disponiveis desc, b.nome
-        limit 3
-      `,
-      [slug, ACCENTED_CHARS, UNACCENTED_CHARS]
+    sanity.fetch<Array<SanityBairroRow & { imoveisDisponiveis: number }>>(
+      `*[_type == "bairro" && ativo == true && slug.current != $slug] {
+        ${BAIRRO_PROJECTION},
+        "imoveisDisponiveis": count(*[_type == "property" && ${ACTIVE_FILTER} && neighborhood == ^.nome])
+      } | order(imoveisDisponiveis desc, nome asc) [0...3]`,
+      { slug }
     ),
   ]);
 
-  const metrics = metricsResult.rows[0] ?? {};
   const bairro: BairroDetail = {
-    id: bairroRow.id,
+    id: bairroRow._id,
     nome: bairroRow.nome,
     slug: bairroRow.slug,
     cidade: bairroRow.cidade,
     estado: bairroRow.estado,
-    imagemCapa:
-      typeof bairroRow.imagem_capa === "string" && bairroRow.imagem_capa.trim()
-        ? bairroRow.imagem_capa.trim()
-        : null,
-    imagemCapaAlinhamento:
-      typeof bairroRow.imagem_capa_alinhamento === "string" &&
-      bairroRow.imagem_capa_alinhamento.trim()
-        ? bairroRow.imagem_capa_alinhamento.trim()
-        : "center center",
-    imagemHome:
-      typeof bairroRow.imagem_home === "string" && bairroRow.imagem_home.trim()
-        ? bairroRow.imagem_home.trim()
-        : null,
-    imagemHomeAlinhamento:
-      typeof bairroRow.imagem_home_alinhamento === "string" &&
-      bairroRow.imagem_home_alinhamento.trim()
-        ? bairroRow.imagem_home_alinhamento.trim()
-        : "center center",
+    imagemCapa: bairroRow.imagemCapaUrl,
+    imagemCapaAlinhamento: "center center",
+    imagemHome: bairroRow.imagemHomeUrl,
+    imagemHomeAlinhamento: "center center",
     descricao: bairroRow.descricao,
-    faq: parseFaq(bairroRow.faq),
-    valorMedioVenda: numberOrNull(metrics.valor_medio_venda),
-    imoveisDisponiveis: metrics.imoveis_disponiveis ?? 0,
-    heroImage:
-      typeof bairroRow.imagem_capa === "string" && bairroRow.imagem_capa.trim()
-        ? bairroRow.imagem_capa.trim()
-        : null,
+    faq: mapFaq(bairroRow.faq),
+    valorMedioVenda: numberOrNull(metrics.valorMedioVenda),
+    imoveisDisponiveis: metrics.imoveisDisponiveis ?? 0,
+    heroImage: bairroRow.imagemCapaUrl,
   };
 
-  const imoveis = imoveisResult.rows.map(mapImovel);
-  const outrosBairros: BairroSummary[] = outrosResult.rows.map((row) => ({
+  const imoveis = imoveisRows.map(mapImovel);
+  const outrosBairros: BairroSummary[] = outrosRows.map((row) => ({
     nome: row.nome,
     slug: row.slug,
     cidade: row.cidade,
-    imoveisDisponiveis: row.imoveis_disponiveis,
-    image:
-      typeof row.imagem_home === "string" && row.imagem_home.trim()
-        ? row.imagem_home.trim()
-        : typeof row.imagem_capa === "string" && row.imagem_capa.trim()
-          ? row.imagem_capa.trim()
-          : null,
-    imagePosition:
-      typeof row.imagem_home_alinhamento === "string" && row.imagem_home_alinhamento.trim()
-        ? row.imagem_home_alinhamento.trim()
-        : typeof row.imagem_capa_alinhamento === "string" && row.imagem_capa_alinhamento.trim()
-          ? row.imagem_capa_alinhamento.trim()
-          : "center center",
+    imoveisDisponiveis: row.imoveisDisponiveis,
+    image: row.imagemHomeUrl ?? row.imagemCapaUrl ?? null,
+    imagePosition: "center center",
   }));
 
   return { bairro, imoveis, outrosBairros };

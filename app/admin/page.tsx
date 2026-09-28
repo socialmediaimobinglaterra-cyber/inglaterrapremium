@@ -38,49 +38,13 @@ export default async function AdminPage() {
         </div>
 
         <div className="grid gap-4 md:grid-cols-2">
-          <Link
-            className="border border-navy/10 bg-offwhite p-5 transition hover:border-terra"
-            href="/admin/curadoria"
-          >
-            <h2 className="mb-2 text-sm font-semibold">Curadoria</h2>
-            <p className="text-sm leading-relaxed text-sand">
-              Incluir ou excluir imoveis do site sem alterar o filtro automatico.
-            </p>
-          </Link>
           <div className="border border-navy/10 bg-offwhite p-5">
             <h2 className="mb-2 text-sm font-semibold">Conteúdo</h2>
             <p className="text-sm leading-relaxed text-sand">
-              Base de acesso pronta. Os formulários de conteúdo entram nas
-              próximas fases.
+              Imóveis, condomínios, bairros, lançamentos e Instagram são
+              gerenciados pelo Sanity Studio, não por este painel.
             </p>
           </div>
-          <Link
-            className="border border-navy/10 bg-offwhite p-5 transition hover:border-terra"
-            href="/admin/lancamentos"
-          >
-            <h2 className="mb-2 text-sm font-semibold">Lançamentos</h2>
-            <p className="text-sm leading-relaxed text-sand">
-              Cadastrar, editar e remover páginas individuais de lançamentos.
-            </p>
-          </Link>
-          <Link
-            className="border border-navy/10 bg-offwhite p-5 transition hover:border-terra"
-            href="/admin/bairros"
-          >
-            <h2 className="mb-2 text-sm font-semibold">Bairros</h2>
-            <p className="text-sm leading-relaxed text-sand">
-              Editar imagem de capa, texto institucional e FAQ dos bairros.
-            </p>
-          </Link>
-          <Link
-            className="border border-navy/10 bg-offwhite p-5 transition hover:border-terra"
-            href="/admin/instagram"
-          >
-            <h2 className="mb-2 text-sm font-semibold">Instagram</h2>
-            <p className="text-sm leading-relaxed text-sand">
-              Gerenciar a galeria própria de imagens exibida na Home.
-            </p>
-          </Link>
           {user.role === "admin" ? (
             <Link
               className="border border-navy/10 bg-offwhite p-5 transition hover:border-terra"

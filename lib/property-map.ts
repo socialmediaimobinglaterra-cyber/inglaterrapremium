@@ -14,8 +14,10 @@ export function createPropertyIndex(points: MapProperty[]) {
   );
 }
 
+// `p<id>` carries a Sanity document _id (e.g. "gaia-AP1234"), not a UUID —
+// changed when the map switched from Postgres rows to Sanity documents.
 export function validMapSelection(value: unknown): value is string {
-  return typeof value === "string" && /^[a-f0-9]{16}:(?:[0-9]|1[0-8]):(?:c\d{1,12}|p[0-9a-f-]{36})$/.test(value);
+  return typeof value === "string" && /^[a-f0-9]{16}:(?:[0-9]|1[0-8]):(?:c\d{1,12}|p[A-Za-z0-9_-]{1,128})$/.test(value);
 }
 
 export function resolveMapSelection(data: MapDataset, selection: string): string[] {
