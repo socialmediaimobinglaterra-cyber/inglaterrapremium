@@ -16,6 +16,7 @@ export type ImovelSearchFilters = {
   quartosMinimos?: number | null;
   areaMinima?: number | null;
   areaMaxima?: number | null;
+  mobiliado?: boolean | null;
   order?: "relevancia" | "maior_valor" | "menor_valor" | "mais_recentes";
 };
 
@@ -35,6 +36,7 @@ export type ImovelSearchResult = {
   precoLocacao: number | null;
   image: string;
   tag: string;
+  mobilia?: "Mobiliado" | "Semimobiliado" | null;
 };
 
 export type ImovelSearchPage = {
@@ -74,6 +76,7 @@ export type ImovelDetail = {
   longitude: number | null;
   urlKenlo: string | null;
   videoUrl: string | null;
+  mobilia?: "Mobiliado" | "Semimobiliado" | null;
   corretor: {
     nome?: string;
     email?: string;
@@ -131,6 +134,7 @@ export function normalizeSearchFilters(filters: ImovelSearchFilters) {
     quartosMinimos: numberOrNull(filters.quartosMinimos),
     areaMinima: numberOrNull(filters.areaMinima),
     areaMaxima: numberOrNull(filters.areaMaxima),
+    mobiliado: filters.mobiliado === true ? true : null,
     order: filters.order ?? "relevancia",
   } satisfies ImovelSearchFilters;
 }
@@ -216,6 +220,11 @@ async function buildSearchQuery(rawFilters: ImovelSearchFilters) {
     where.push(`coalesce(area, areaTotal, 0) <= $areaMaxima`);
   }
 
+  if (filters.mobiliado) {
+    // Slug exato: "semimobiliado" NÃO entra neste filtro.
+    where.push(`"mobiliado" in amenities`);
+  }
+
   const orderBy =
     filters.order === "maior_valor"
       ? `${priceField} desc`
@@ -246,12 +255,14 @@ function mapSearchRow(row: Record<string, any>, index: number): ImovelSearchResu
     precoLocacao: numberOrNull(row.rentPrice),
     image: getMainImage(row),
     tag: row.featured ? "EXCLUSIVO" : index < 3 ? "DESTAQUE" : "PREMIUM",
+    mobilia: row.mobilia ?? null,
   };
 }
 
 const SEARCH_ROW_PROJECTION = `
   _id, codigoImovel, "slug": slug.current, title, neighborhood, cidade, type,
   area, areaTotal, suites, bedrooms, garage, price, rentPrice, featured,
+  "mobilia": select("mobiliado" in amenities => "Mobiliado", "semimobiliado" in amenities => "Semimobiliado"),
   ${IMAGE_PROJECTION}
 `;
 
@@ -314,6 +325,7 @@ function mapDetailRow(row: Record<string, any>): ImovelDetail {
     longitude: numberOrNull(row.longitude),
     urlKenlo: row.urlSiteAntigo,
     videoUrl: row.videoUrl,
+    mobilia: row.mobilia ?? null,
     corretor: {
       nome: row.captador ?? undefined,
       email: row.captadorEmail ?? undefined,
@@ -330,6 +342,7 @@ const DETAIL_PROJECTION = `
   area, areaTotal, bedrooms, suites, bathrooms, garage,
   description, latitude, longitude, urlSiteAntigo, videoUrl,
   captador, captadorEmail, captadorCelular,
+  "mobilia": select("mobiliado" in amenities => "Mobiliado", "semimobiliado" in amenities => "Semimobiliado"),
   ${IMAGE_PROJECTION}
 `;
 

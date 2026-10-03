@@ -9,7 +9,8 @@ import type {
   ImovelSearchResult,
 } from "@/lib/queries/imoveis";
 import { imageUrlOrFallback } from "@/lib/images";
-import type { CrmConversationListing } from "@/lib/crm-conversation";
+import type { CrmConversationListing } from "@/lib/crm-conversation";
+import MobiliaTag from "@/components/MobiliaTag";
 
 type Props = {
   initialSearchPage: ImovelSearchPage;
@@ -69,6 +70,7 @@ function describeAiFilters(filters: ImovelSearchFilters) {
     filters.tipo,
     filters.bairro,
     filters.condominio,
+    filters.mobiliado ? "Mobiliado" : null,
     filters.negocio === "Alugar" ? "Locação" : filters.negocio === "Comprar" ? "Venda" : null,
     filters.suitesMinimas ? `${filters.suitesMinimas}+ suítes` : null,
     filters.vagasMinimas ? `${filters.vagasMinimas}+ vagas` : null,
@@ -165,6 +167,7 @@ function ListingCard({ imovel }: { imovel: CrmConversationListing }) {
         {imovel.tag ? <span className="absolute left-3.5 top-3.5 border border-white/40 px-2.5 py-[5px] text-[8px] uppercase tracking-[0.3em] text-white">
           {imovel.tag}
         </span> : null}
+        {imovel.mobilia ? <span className="absolute bottom-3.5 left-3.5"><MobiliaTag mobilia={imovel.mobilia} /></span> : null}
       </div>
       <div className="pt-4">
         {imovel.codigo ? <p className="mb-1.5 text-xs text-navy">Ref. {imovel.codigo}</p> : null}
@@ -283,6 +286,7 @@ export function BuscaImoveisClient({
   }
   function onSuitesChange(value: string) { updateFilters({ ...filtersRef.current, suitesMinimas: suitesOptions.find(v => v.label === value)!.value }); }
   function onOrderChange(value: string) { updateFilters({ ...filtersRef.current, order: value as ImovelSearchFilters["order"] }); }
+  function onMobiliadoChange(checked: boolean) { updateFilters({ ...filtersRef.current, mobiliado: checked ? true : null }); }
   function limparBusca() { updateFilters({ negocio: "Comprar", order: "relevancia" }); }
 
   async function carregarMais() {
@@ -365,6 +369,16 @@ export function BuscaImoveisClient({
           <PillSelect label="Localização" onChange={onBairroChange} options={bairroOptions} value={bairro} />
           <PillSelect label="Valor" onChange={onValorChange} options={valorOptions.map((item) => item.label)} value={valor} />
           <PillSelect label="Suítes" onChange={onSuitesChange} options={suitesOptions.map((item) => item.label)} value={suites} />
+
+          <label className="flex shrink-0 cursor-pointer items-center gap-2 text-xs font-medium text-navy">
+            <input
+              checked={currentFilters.mobiliado === true}
+              className="h-4 w-4 cursor-pointer accent-navy"
+              onChange={(event) => onMobiliadoChange(event.target.checked)}
+              type="checkbox"
+            />
+            Mobiliado
+          </label>
 
           <button
             className="shrink-0 rounded-[24px] border-0 bg-navy px-[26px] py-[13px] text-xs font-medium text-white"

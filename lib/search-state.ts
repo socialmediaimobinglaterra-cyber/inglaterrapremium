@@ -30,6 +30,8 @@ export function sanitizeState(value: unknown, vocabulary?: Vocabulary): ImovelSe
     const integer = ["suitesMinimas", "quartosMinimos", "vagasMinimas"].includes(field);
     state[field] = typeof raw === "number" && Number.isFinite(raw) && raw >= 0 && raw <= (integer ? 100 : 1e10) && (!integer || Number.isInteger(raw)) ? raw : null;
   }
+  // "mobiliado" vem da tela (checkbox), não da IA: preserva o filtro manual ao reinterpretar a busca.
+  (state as Record<string, unknown>).mobiliado = input.mobiliado === true ? true : null;
   return state as ImovelSearchFilters;
 }
 export function applyChanges(current: unknown, result: unknown, vocabulary: Vocabulary) {

@@ -6,7 +6,8 @@ import { notFound } from "next/navigation";
 import { PropertyContactButton } from "@/components/analytics/PropertyContactButton";
 import { recordAnalyticsEvent } from "@/lib/analytics";
 import { imageUrlOrFallback } from "@/lib/images";
-import { absoluteUrl } from "@/lib/site";
+import { absoluteUrl } from "@/lib/site";
+import MobiliaTag from "@/components/MobiliaTag";
 import {
   getImovelBySlug,
   getSimilarImoveis,
@@ -343,6 +344,7 @@ export default async function ImovelPage({ params }: PageProps) {
             <p className="mb-3 text-[9px] font-semibold uppercase tracking-[0.3em] text-terra">
               {imovel.tipo ?? "Imóvel"} · {getTransactionLabel(imovel)}
             </p>
+            {imovel.mobilia ? <p className="mb-3"><MobiliaTag mobilia={imovel.mobilia} /></p> : null}
             <h1 className="mb-3 max-w-[620px] text-[clamp(24px,7vw,30px)] font-light leading-[1.15] tracking-[0.01em] md:text-[clamp(28px,3vw,40px)]">
               {imovel.titulo}
             </h1>
