@@ -186,6 +186,14 @@ function getMainImageFromSanity(row: { mainImageUrl?: string | null }) {
 
 const HOME_ACTIVE_FILTER = `status == "ativo" && publicarSite == true`;
 
+// Approved premium coverage, independent of the editorial migration to Sanity.
+const PREMIUM_NEIGHBORHOODS = [
+  "Terra Bonita",
+  "Gleba Palhano",
+  "Bela Suíça",
+  "Nova Prochet",
+];
+
 type SanityBairroRow = {
   slug: string;
   nome: string;
@@ -267,7 +275,7 @@ async function getHomeData() {
     .sort((a, b) => b.imoveis - a.imoveis || a.name.localeCompare(b.name))
     .slice(0, 6);
 
-  const totals = { total_imoveis: totalImoveis, total_bairros: bairrosMeta.length };
+  const totals = { total_imoveis: totalImoveis, total_bairros: PREMIUM_NEIGHBORHOODS.length };
 
   return { featured, bairros, totals, instagramPosts };
 }
@@ -605,8 +613,8 @@ export default async function Home() {
     },
     {
       value: String(totals.total_bairros),
-      suffix: " bairros",
-      label: "com presença ativa em Londrina",
+      suffix: "",
+      label: "bairros de alto padrão em Londrina",
     },
     {
       value: "R$ 2,4bi",
