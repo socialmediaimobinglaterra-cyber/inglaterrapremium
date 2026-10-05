@@ -65,6 +65,8 @@ export type ImovelDetail = {
   precoLocacao: number | null;
   precoCondominio: number | null;
   precoIptu: number | null;
+  /** 'mensal' | 'anual' | 'isento'; null = não informado (CRM antigo). Ao exibir precoIptu, respeitar o período. */
+  precoIptuPeriodo: string | null;
   area: number | null;
   areaTotal: number | null;
   suites: number | null;
@@ -313,7 +315,8 @@ function mapDetailRow(row: Record<string, any>): ImovelDetail {
     precoVenda: numberOrNull(row.price),
     precoLocacao: numberOrNull(row.rentPrice),
     precoCondominio: numberOrNull(row.condominio),
-    precoIptu: numberOrNull(row.iptu),
+    precoIptu: row.iptuPeriodo === 'isento' ? null : numberOrNull(row.iptu),
+    precoIptuPeriodo: typeof row.iptuPeriodo === 'string' ? row.iptuPeriodo : null,
     area: numberOrNull(row.area),
     areaTotal: numberOrNull(row.areaTotal),
     suites: row.suites,
@@ -338,7 +341,7 @@ function mapDetailRow(row: Record<string, any>): ImovelDetail {
 const DETAIL_PROJECTION = `
   _id, codigoImovel, "slug": slug.current, title, type, finalidade, cidade, estado,
   neighborhood, address, addressNumber, condominioNome, "condominioRefNome": condominioRef->nome,
-  price, rentPrice, condominio, iptu,
+  price, rentPrice, condominio, iptu, iptuPeriodo,
   area, areaTotal, bedrooms, suites, bathrooms, garage,
   description, latitude, longitude, urlSiteAntigo, videoUrl,
   captador, captadorEmail, captadorCelular,
