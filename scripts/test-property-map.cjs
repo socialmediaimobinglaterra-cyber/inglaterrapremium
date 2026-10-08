@@ -9,6 +9,7 @@ async function main() {
   const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
   const bundle = await esbuild.build({
     stdin: { contents: `import React from 'react'; import {createRoot} from 'react-dom/client';
+      import {Map} from 'leaflet'; Map.addInitHook(function(){window.testMap=this;});
       import {PropertyMap} from './components/home/PropertyMap';
       createRoot(document.getElementById('root')).render(<><div style={{height:1600}}/><PropertyMap/></>);`,
       resolveDir: process.cwd(), loader: 'tsx' },
@@ -21,7 +22,10 @@ async function main() {
   });
   const js = bundle.outputFiles.find(f=>f.path.endsWith('.js')).text;
   const bundledCss = bundle.outputFiles.find(f=>f.path.endsWith('.css')).text;
-  const css = readdirSync('.next/static/css').filter(f=>f.endsWith('.css')).map(f=>readFileSync(join('.next/static/css',f),'utf8')).join('\n');
+  const css = (await require('postcss')([require('tailwindcss')({
+    ...require('../tailwind.config.ts').default,
+    content: ['./components/home/PropertyMap.tsx'],
+  })]).process(readFileSync('app/globals.css','utf8'), {from:undefined})).css;
   const font = readdirSync('.next/static/media').find(f=>f.endsWith('.p.woff2'));
   const server = createServer((req,res)=>{
     if(req.url==='/bundle.js'){res.setHeader('Content-Type','application/javascript');res.end(js);}
@@ -37,9 +41,10 @@ async function main() {
       const errors=[];page.on('pageerror',e=>errors.push(e.message));
       let requests=0, mode='ready';
       const points=Array.from({length:6},(_,i)=>({id:`00000000-0000-4000-8000-00000000000${i}`,latitude:-23.33+i*0.0003,longitude:-51.18+i*0.0003}));
+      const distantPoint={id:'distant-property',latitude:30,longitude:-50};
       await page.route('**/api/imoveis/map?*',async route=>{
         requests++;
-        await route.fulfill(mode==='error'?{status:503,json:{error:'unavailable'}}:{json:{version:'0123456789abcdef',points:mode==='empty'?[]:route.request().url().includes('Alugar')?points.slice(0,3):points}});
+        await route.fulfill(mode==='error'?{status:503,json:{error:'unavailable'}}:{json:{version:'0123456789abcdef',points:mode==='empty'?[]:route.request().url().includes('Alugar')?points.slice(0,3):[...points,distantPoint]}});
       });
       // Do not automate requests against community tile servers.
       await page.route('https://tile.openstreetmap.org/**',route=>route.fulfill({contentType:'image/svg+xml',body:'<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256"><rect width="256" height="256" fill="#F5F3F0"/><path d="M0 100H256M100 0V256" stroke="#998376" stroke-width="5"/></svg>'}));
@@ -47,7 +52,8 @@ async function main() {
       await page.getByRole('heading',{name:'Imóveis por localização'}).waitFor();
       assert.equal(requests,0,'map must remain deferred above the fold');
       await page.getByRole('heading',{name:'Imóveis por localização'}).scrollIntoViewIfNeeded();
-      await page.getByText('6 imóveis no mapa',{exact:true}).waitFor();
+      await page.getByText('7 imóveis no mapa',{exact:true}).waitFor();
+      await page.locator('.property-map').scrollIntoViewIfNeeded();
       assert.equal(await page.locator('.property-map-pin').count(),1);
       assert.equal(await page.locator('.property-map-pin').innerText(),'6');
       const pinStyle = await page.locator('.property-map-pin').evaluate(el => ({
@@ -61,7 +67,12 @@ async function main() {
       await page.locator('.property-map-pin').click();
       const url = new URL(await page.evaluate(()=>window.mapDestination),'http://localhost');
       assert.equal(url.pathname,'/imoveis');assert.equal(url.searchParams.get('negocio'),'Comprar');
-      assert.match(url.searchParams.get('mapa'),/^0123456789abcdef:14:c\d+$/);
+      assert.match(url.searchParams.get('mapa'),/^0123456789abcdef:[5-7]:c\d+$/);
+      const center=await page.evaluate(()=>window.testMap.getCenter());
+      assert(Math.abs(center.lat+24.63)<0.15 && Math.abs(center.lng+51.325)<0.15,'initial view is centered on Parana');
+      await page.screenshot({path:join(tmpdir(),`premium-map-initial-${width}.png`)});
+      // Move to Londrina, then exercise the existing zoom control and clustering.
+      await page.evaluate(()=>window.testMap.setView([-23.32925,-51.17925],14,{animate:false}));
       for(let i=0;i<4;i++) {
         await page.getByTitle('Aproximar',{exact:true}).click();
         await page.waitForTimeout(350);
