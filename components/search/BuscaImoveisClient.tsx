@@ -9,8 +9,9 @@ import type {
   ImovelSearchResult,
 } from "@/lib/queries/imoveis";
 import { imageUrlOrFallback } from "@/lib/images";
-import type { CrmConversationListing } from "@/lib/crm-conversation";
+import type { CrmConversationListing } from "@/lib/crm-conversation";
 import MobiliaTag from "@/components/MobiliaTag";
+import { IntelligentSearchPanel } from "@/components/search/IntelligentSearchPanel";
 
 type Props = {
   initialSearchPage: ImovelSearchPage;
@@ -214,6 +215,7 @@ export function BuscaImoveisClient({
   const [aiInterpretationNotice, setAiInterpretationNotice] = useState<AiInterpretationNotice | null>(null);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [isAiSearching, setIsAiSearching] = useState(false);
+  const [hasAiSearched, setHasAiSearched] = useState(false);
   const [isPending, startTransition] = useTransition();
   const busy = isAiSearching || isPending || isLoadingMore;
   const initialNaturalQueryHandled = useRef(false);
@@ -319,6 +321,7 @@ export function BuscaImoveisClient({
       const filters: ImovelSearchFilters = { ...data.filters, order: previous.order, mapSelection: previous.mapSelection };
       if (!await runSearch(filters)) return;
       saveFilters(filters);
+      setHasAiSearched(true);
       const naoInterpretado = Array.isArray(data.naoInterpretado) ? data.naoInterpretado.filter((v: unknown): v is string => typeof v === "string") : [];
       setAiInterpretationNotice(naoInterpretado.length ? { interpreted: describeAiFilters(filters), naoInterpretado } : null);
     } catch {
@@ -338,17 +341,31 @@ export function BuscaImoveisClient({
 
   return (
     <main className="bg-offwhite text-navy">
-      <section className="pt-24 md:pt-32">
-        <div className="site-container mb-7 md:mb-10">
-          <p className="mb-4 text-[11px] text-navy">Início / Imóveis / {currentFilters.negocio === "Alugar" ? "Alugar" : "Comprar"}</p>
-          <h1 className="mb-3.5 max-w-[720px] text-[clamp(26px,8vw,34px)] font-light leading-[1.1] tracking-[0.02em] text-navy md:text-[clamp(34px,4vw,52px)]">
+      <section className="pt-20 md:pt-24">
+        <div className="site-container mb-5 md:mb-6">
+          <p className="mb-2 text-[11px] text-navy">Início / Imóveis / {currentFilters.negocio === "Alugar" ? "Alugar" : "Comprar"}</p>
+          <h1 className="mb-2 max-w-[900px] text-[28px] font-light leading-[1.1] text-navy md:text-[40px]">
             Imóveis de Alto Padrão {currentFilters.negocio === "Alugar" ? "para Alugar" : "à Venda"} em Londrina
           </h1>
-          <p className="max-w-[520px] text-sm leading-[1.7] text-navy">
+          <p className="max-w-[900px] text-sm leading-relaxed text-navy">
             Seleção curada de casas, apartamentos e coberturas nos bairros mais valorizados da cidade — Gleba Palhano, Bela Suíça, Aurora, Nova Prochet, Jardim Higienópolis e Terra Bonita.
           </p>
         </div>
       </section>
+
+      <IntelligentSearchPanel
+        query={naturalQuery}
+        onQueryChange={setNaturalQuery}
+        onSearch={(query) => { void runNaturalSearch(query); }}
+        busy={busy}
+        interpreting={isAiSearching}
+        refined={hasAiSearched}
+        criteria={describeAiFilters(currentFilters)}
+        message={aiNote}
+      />
+      <p className="sr-only" role="status" aria-live="polite" aria-atomic="true">
+        {aiNote || (isAiSearching ? "Interpretando sua busca e consultando imóveis." : busy ? "Atualizando imóveis." : `${total} imóveis encontrados.`)}
+      </p>
 
       <div className="border-y border-navy/10">
         <fieldset disabled={busy} aria-label="Filtros rápidos" aria-busy={busy} className="site-container flex min-w-0 flex-nowrap items-center gap-3 overflow-x-auto py-4 md:py-3.5">
@@ -399,67 +416,9 @@ export function BuscaImoveisClient({
         </fieldset>
       </div>
 
-      <section className="site-container border-b border-navy/10 py-5">
-        <div className="flex flex-col gap-3 md:flex-row md:items-end md:gap-0">
-          <div className="md:flex-1">
-            <div className="mb-2 flex items-center gap-2">
-              <div className="h-1.5 w-1.5 rounded-full bg-terra" />
-              <span className="text-[9px] font-semibold uppercase tracking-[0.28em] text-terra">
-                Busca inteligente · Inglaterra AI
-              </span>
-            </div>
-            <form
-              aria-busy={isAiSearching}
-              className="flex flex-col gap-2 border-b border-navy/10 pb-3 md:max-w-[720px] md:flex-row md:gap-0 md:pb-0"
-              onSubmit={(event) => {
-                event.preventDefault();
-                void runNaturalSearch();
-              }}
-            >
-              <input
-                aria-label="Busca inteligente de imóveis"
-                disabled={busy}
-                maxLength={500}
-                className="flex-1 border-0 bg-transparent py-1 text-[15px] italic text-navy outline-none placeholder:text-navy/45 md:py-2.5 md:text-[19px]"
-                onChange={(event) => setNaturalQuery(event.target.value)}
-                placeholder="Descreva o imóvel que você procura..."
-                value={naturalQuery}
-              />
-              <button
-                className="py-1 text-left text-[10px] font-semibold uppercase tracking-[0.2em] text-terra disabled:cursor-wait disabled:opacity-70 md:py-2.5 md:pl-5 md:text-right"
-                disabled={busy}
-                type="submit"
-              >
-                {isAiSearching ? "Interpretando..." : "Perguntar →"}
-              </button>
-            </form>
-            {aiNote ? <p className="mt-2 text-[11px] text-navy">{aiNote}</p> : null}
-          </div>
-          <div className="flex flex-wrap gap-2 md:justify-end">
-            {[
-              "Apartamento na Gleba Palhano até R$ 4 milhões",
-              "Casa com 4 suítes no Terra Bonita",
-            ].map((example) => (
-              <button
-                className="rounded-full border border-navy/10 px-3 py-1.5 text-[10.5px] text-navy disabled:cursor-wait disabled:opacity-70"
-                disabled={busy}
-                key={example}
-                onClick={() => {
-                  setNaturalQuery(example);
-                  void runNaturalSearch(example);
-                }}
-                type="button"
-              >
-                {example}
-              </button>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="site-container py-7 md:py-10">
+      <section aria-busy={busy} className="site-container py-5 md:py-6">
         {currentFilters.mapSelection && total === 0 && <p role="status" className="mb-4 text-sm text-navy">Nenhum imóvel disponível nesta seleção. O catálogo pode ter sido atualizado. <Link className="underline" href="/#property-map-title">Selecionar novamente no mapa</Link></p>}
-        <p aria-live="polite" className="mb-4 text-xs text-navy">{describeAiFilters(currentFilters).join(" · ")}</p>
+        <p className="mb-3 text-sm leading-relaxed text-navy"><span className="font-medium">Sua seleção: </span>{describeAiFilters(currentFilters).join(" · ")}</p>
         <button type="button" onClick={limparBusca} disabled={busy} className="mb-4 text-xs text-terra underline disabled:opacity-60">Limpar filtros</button>
         {aiInterpretationNotice ? (
           <div className="mb-5 border border-navy/10 bg-white px-4 py-3 text-[13px] leading-relaxed text-navy">
@@ -508,11 +467,22 @@ export function BuscaImoveisClient({
               <ListingCard imovel={imovel} key={imovel.slug} />
             ))}
           </div>
+        ) : busy ? (
+          <p className="py-12 text-center text-sm text-navy">Buscando imóveis para você...</p>
         ) : (
           <div className="px-5 py-12 text-center">
             <p className="mb-4 text-[15px] text-navy">
               Nenhum imóvel encontrado com esses critérios.
             </p>
+            <p className="mx-auto mb-5 max-w-md text-sm leading-relaxed text-navy">
+              Uma faixa de valor maior ou outros bairros podem trazer novas opções.
+            </p>
+            <button className="mx-auto mb-4 block py-3 text-sm font-medium text-terra underline underline-offset-4" type="button" onClick={() => {
+              document.getElementById("busca-inteligente")?.scrollIntoView({ block: "start" });
+              document.getElementById("intelligent-search-query")?.focus({ preventScroll: true });
+            }}>
+              Refinar minha busca
+            </button>
             <button
               className="border border-navy bg-transparent px-7 py-3 text-[10px] uppercase tracking-[0.2em] text-navy transition hover:bg-navy hover:text-white"
               onClick={limparBusca}
