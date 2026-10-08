@@ -85,7 +85,8 @@ export function PropertyMap() {
             });
           }
         }
-        map.fitBounds(L.latLngBounds(data.points.map((point) => [point.latitude, point.longitude])), { padding: [40, 40], maxZoom: 14 });
+        // Keep distant listings from expanding the initial view beyond Parana.
+        map.fitBounds([[-26.72, -54.63], [-22.51, -48.02]], { padding: [24, 24] });
         map.on("moveend zoomend", draw);
         draw();
         resize = new ResizeObserver(() => map.invalidateSize());
