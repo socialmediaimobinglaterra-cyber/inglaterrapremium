@@ -145,7 +145,7 @@ function RelatedCard({ condominio }: { condominio: CondominioResumo }) {
       </div>
       <div className="pt-3.5">
         <p className="mb-1 text-[11px] tracking-[0.06em] text-navy">
-          {condominio.bairro}, Londrina
+          {condominio.bairro}, {condominio.cidade}
         </p>
         <h3 className="text-[15px] font-normal leading-[1.3] text-navy">
           {condominio.nome}
@@ -214,7 +214,7 @@ export default async function CondominioPage({ params }: PageProps) {
           Condomínio Fechado
         </span>
         <h1 className="mb-2.5 max-w-[700px] text-[clamp(26px,8vw,34px)] font-light leading-[1.15] tracking-[0.01em] md:text-[clamp(32px,3.6vw,48px)]">
-          Condomínio {condominio.nome} em {condominio.bairro}, Londrina
+          Condomínio {condominio.nome} em {condominio.bairro}, {condominio.cidade}
         </h1>
         {(condominio.seguranca || condominio.unidades) ? (
               <p className="text-[13px] text-navy">
@@ -227,7 +227,7 @@ export default async function CondominioPage({ params }: PageProps) {
         <div className="aspect-[4/3] overflow-hidden md:aspect-[21/9]">
           {condominio.image ? (
             <img
-              alt={`Condomínio ${condominio.nome} - vista geral, ${condominio.bairro}, Londrina`}
+              alt={`Imóvel no condomínio ${condominio.nome}, ${condominio.bairro}, ${condominio.cidade}`}
               className="h-full w-full object-cover"
               src={condominio.image}
             />
