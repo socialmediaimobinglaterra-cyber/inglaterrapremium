@@ -2,6 +2,8 @@ import type { NavDropdownItem } from "@/components/layout/HeaderClient";
 import { sanity } from "@/lib/sanity";
 import type { ImovelSearchResult } from "@/lib/queries/imoveis";
 import { imageUrlOrFallback } from "@/lib/images";
+import { cache } from "react";
+import { CONDOMINIO_PROPERTY_FILTER, publicCondominioDirectory } from "@/lib/premium-condominios";
 
 export type CondominioResumo = {
   id: string;
@@ -58,8 +60,10 @@ const CONDOMINIO_PROJECTION = `
   _id, nome, "slug": slugPublico.current, bairro, cidade, estado,
   logradouro, numero, latitude, longitude,
   unidades, areaTotalTexto, seguranca, descricaoPublica, descricaoPublica2, diferenciais,
-  "imagensUrls": imagens[].asset->url,
-  "imoveisCount": count(*[_type == "property" && condominioRef._ref == ^._id && status == "ativo" && publicarSite == true])
+  "imagensUrls": array::compact(imagens[].asset->url),
+  "imagensImoveis": *[_type == "property" && condominioRef._ref == ^._id && ${CONDOMINIO_PROPERTY_FILTER}
+    && defined(mainImage.asset->url)] | order(coalesce(price, rentPrice) desc, _id asc)[0...3].mainImage.asset->url,
+  "imoveisCount": count(*[_type == "property" && condominioRef._ref == ^._id && ${CONDOMINIO_PROPERTY_FILTER}])
 `;
 
 function mapCondominio(row: SanityCondominioRow): CondominioDetail {
@@ -91,31 +95,39 @@ function mapCondominio(row: SanityCondominioRow): CondominioDetail {
   };
 }
 
-const CONDOMINIO_HAS_PAGE = `defined(slugPublico.current)`;
+export const getPublicCondominios = cache(async (): Promise<CondominioDetail[]> => {
+  const directory = publicCondominioDirectory(await sanity.fetch<Array<{
+    _id: string; nome: string; slug: string | null; ativo?: boolean;
+  }>>(`*[_type == "condominio"] { _id, nome, ativo, "slug": slugPublico.current }`));
+  if (!directory.length) return [];
+  const rows = await sanity.fetch<Array<SanityCondominioRow & { imagensImoveis: string[] | null }>>(
+    `*[_type == "condominio" && _id in $ids] { ${CONDOMINIO_PROJECTION} } | order(nome asc, _id asc)`,
+    { ids: directory.map((row) => row._id) }
+  );
+  const slugs = new Map(directory.map((row) => [row._id, row.slug]));
+  return rows.filter((row) => row.imoveisCount > 0 && slugs.has(row._id)).map((row) => mapCondominio({
+    ...row, slug: slugs.get(row._id)!,
+    imagensUrls: row.imagensUrls?.length ? row.imagensUrls : row.imagensImoveis,
+  }));
+});
 
 export async function getHeaderCondominios(): Promise<NavDropdownItem[]> {
-  const rows = await sanity.fetch<Array<{ nome: string; slug: string }>>(
-    `*[_type == "condominio" && ${CONDOMINIO_HAS_PAGE}] { nome, "slug": slugPublico.current } | order(nome asc)`
-  );
+  const rows = await getPublicCondominios();
 
   return rows.map((row) => ({
-    label: row.nome,
+    label: rows.filter((item) => item.nome === row.nome).length > 1
+      ? `${row.nome} — ${row.cidade}, ${row.bairro}` : row.nome,
     href: `/condominios/${row.slug}`,
   }));
 }
 
 export async function getCondominioBySlug(slug: string) {
-  const row = await sanity.fetch<SanityCondominioRow | null>(
-    `*[_type == "condominio" && slugPublico.current == $slug][0] { ${CONDOMINIO_PROJECTION} }`,
-    { slug }
-  );
-
-  return row ? mapCondominio(row) : null;
+  return (await getPublicCondominios()).find((row) => row.slug === slug) ?? null;
 }
 
 export async function getCondominioImoveis(condominio: CondominioDetail, limit = 3) {
   const rows = await sanity.fetch<Record<string, any>[]>(
-    `*[_type == "property" && status == "ativo" && publicarSite == true && condominioRef._ref == $id
+    `*[_type == "property" && ${CONDOMINIO_PROPERTY_FILTER} && condominioRef._ref == $id
       ] | order(coalesce(price, rentPrice) desc) [0...$limit] {
         _id, codigoImovel, "slug": slug.current, title, neighborhood, cidade, type,
         area, areaTotal, suites, bedrooms, garage, price, rentPrice, featured,
@@ -144,11 +156,5 @@ export async function getCondominioImoveis(condominio: CondominioDetail, limit =
 }
 
 export async function getRelatedCondominios(currentSlug: string, limit = 3) {
-  const rows = await sanity.fetch<SanityCondominioRow[]>(
-    `*[_type == "condominio" && ${CONDOMINIO_HAS_PAGE} && slugPublico.current != $currentSlug
-      ] | order(nome asc) [0...$limit] { ${CONDOMINIO_PROJECTION} }`,
-    { currentSlug, limit }
-  );
-
-  return rows.map(mapCondominio);
+  return (await getPublicCondominios()).filter((row) => row.slug !== currentSlug).slice(0, limit);
 }

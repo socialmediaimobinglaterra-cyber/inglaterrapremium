@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { sanity } from "@/lib/sanity";
 import { absoluteUrl } from "@/lib/site";
+import { getPublicCondominios } from "@/lib/queries/condominios";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +15,7 @@ function lastModified(value: string | null) {
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [imoveis, bairros] = await Promise.all([
+  const [imoveis, bairros, condominios] = await Promise.all([
     sanity.fetch<SanitySlugRow[]>(
       `*[_type == "property" && status == "ativo" && publicarSite == true] {
         "slug": slug.current, "updatedAt": coalesce(dataAtualizacaoCRM, _updatedAt)
@@ -23,6 +24,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     sanity.fetch<SanitySlugRow[]>(
       `*[_type == "bairro" && ativo == true] { "slug": slug.current, "updatedAt": _updatedAt } | order(slug asc)`
     ),
+    getPublicCondominios(),
   ]);
 
   const now = new Date();
@@ -65,5 +67,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.75,
     }));
 
-  return [...staticRoutes, ...bairroRoutes, ...imovelRoutes];
+  const condominioRoutes: MetadataRoute.Sitemap = condominios.map((condominio) => ({
+    url: absoluteUrl(`/condominios/${condominio.slug}`),
+    changeFrequency: "weekly",
+    priority: 0.8,
+  }));
+
+  return [...staticRoutes, ...bairroRoutes, ...imovelRoutes, ...condominioRoutes];
 }
