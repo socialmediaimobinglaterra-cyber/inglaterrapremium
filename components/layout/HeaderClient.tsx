@@ -76,6 +76,7 @@ function DesktopDropdown({ item, active }: { item: NavItem; active: boolean }) {
               <Link
                 className="nav-focus block border-b border-navy/10 px-5 py-4 text-[12px] tracking-[0.08em] text-navy/60 transition duration-200 last:border-b-0 hover:bg-white/55 hover:text-terra"
                 href={entry.href}
+                prefetch={false}
                 key={entry.href}
               >
                 {entry.label}
@@ -131,6 +132,7 @@ function MobileDropdown({
             <Link
               className="nav-focus block border-t border-navy/10 px-8 py-3 text-[12px] tracking-[0.08em] text-navy/65"
               href={entry.href}
+              prefetch={false}
               key={entry.href}
               onClick={closeMenu}
             >

@@ -4,11 +4,11 @@ import Link from "next/link";
 import { InstagramGallery } from "@/components/home/InstagramGallery";
 import { HomeHeroSearch } from "@/components/search/HomeHeroSearch";
 import { PropertyMap } from "@/components/home/PropertyMap";
-import { sanity } from "@/lib/sanity";
+import { sanity, projectId, dataset } from "@/lib/sanity";
+import { unstable_cache } from "next/cache";
 import { imageUrlOrFallback } from "@/lib/images";
 import { getActiveInstagramPosts } from "@/lib/queries/instagram-posts";
-import { getHeaderLancamentos } from "@/lib/queries/lancamentos";
-import { getHeaderCondominios } from "@/lib/queries/condominios";
+import { getSiteNavigation } from "@/lib/queries/navigation";
 import type { NavDropdownItem } from "@/components/layout/HeaderClient";
 
 export const dynamic = "force-dynamic";
@@ -202,7 +202,7 @@ type SanityBairroRow = {
   imagemHomeUrl: string | null;
 };
 
-async function getHomeData() {
+const getHomeData = unstable_cache(async () => {
   const featuredPeriod = String(Math.floor(Date.now() / FEATURED_ROTATION_INTERVAL_MS));
 
   const [featuredRows, bairroCounts, bairrosMeta, totalImoveis, instagramPosts] = await Promise.all([
@@ -278,7 +278,7 @@ async function getHomeData() {
   const totals = { total_imoveis: totalImoveis, total_bairros: PREMIUM_NEIGHBORHOODS.length };
 
   return { featured, bairros, totals, instagramPosts };
-}
+}, ["public-home-v1", projectId, dataset], { revalidate: 60 });
 
 function Rule({ label, right }: { label?: string; right?: string }) {
   return (
@@ -399,15 +399,17 @@ function ProdCard({ p, items = [] }: { p: (typeof PRODUCTS)[0]; items?: NavDropd
           <summary aria-label={p.cta} className="absolute inset-0 cursor-pointer list-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-terra-light [&::-webkit-details-marker]:hidden" />
           <nav aria-label={p.title} className="absolute inset-x-4 bottom-4 top-16 overflow-y-auto overscroll-contain border border-navy/15 bg-offwhite text-navy shadow-lg">
             {items.length ? items.map((item) => (
-              <Link key={item.href} href={item.href} className="block border-b border-navy/10 px-5 py-4 text-sm transition hover:bg-navy/5 focus-visible:bg-navy/5">
+              <Link key={item.href} href={item.href} prefetch={false} className="block border-b border-navy/10 px-5 py-4 text-sm transition hover:bg-navy/5 focus-visible:bg-navy/5">
                 {item.label}
               </Link>
             )) : <p className="px-5 py-4 text-sm">Nenhum empreendimento cadastrado.</p>}
           </nav>
         </details>
       ) : null}
-      <img
+      <Image
         alt={`${p.title} — Inglaterra Premium`}
+        fill
+        sizes="(min-width: 768px) 33vw, 100vw"
         className="absolute inset-0 h-full w-full object-cover opacity-35 transition duration-700 group-hover:scale-105 group-hover:opacity-50"
         src={p.image}
       />
@@ -439,9 +441,11 @@ function ProdCard({ p, items = [] }: { p: (typeof PRODUCTS)[0]; items?: NavDropd
 function DirCard({ d }: { d: (typeof DIRECTORS)[0] }) {
   return (
     <article className="border-t-[3px] border-transparent bg-offwhite transition hover:border-terra">
-      <div className="aspect-square overflow-hidden bg-[#c8bdb6]">
-        <img
+      <div className="relative aspect-square overflow-hidden bg-[#c8bdb6]">
+        <Image
           alt={`${d.name}, ${d.title} da Inglaterra Premium`}
+          fill
+          sizes="(min-width: 768px) 33vw, 100vw"
           className="h-full w-full object-cover object-top grayscale-[20%] transition duration-700 hover:scale-[1.03]"
           src={d.image}
         />
@@ -464,9 +468,11 @@ function DirCard({ d }: { d: (typeof DIRECTORS)[0] }) {
 function NewsCard({ n }: { n: (typeof NEWS)[0] }) {
   return (
     <article className="group cursor-pointer bg-white">
-      <div className="h-[200px] overflow-hidden bg-[#c8bdb6]">
-        <img
+      <div className="relative h-[200px] overflow-hidden bg-[#c8bdb6]">
+        <Image
           alt={n.title}
+          fill
+          sizes="(min-width: 768px) 33vw, 100vw"
           className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
           src={n.image}
         />
@@ -595,10 +601,9 @@ function NewsletterBlock() {
 }
 
 export default async function Home() {
-  const { featured, bairros, totals, instagramPosts } = await getHomeData();
-  const [lancamentos, condominios] = await Promise.all([
-    getHeaderLancamentos(),
-    getHeaderCondominios(),
+  const [{ featured, bairros, totals, instagramPosts }, { lancamentos, condominios }] = await Promise.all([
+    getHomeData(),
+    getSiteNavigation(),
   ]);
   const stats = [
     {

@@ -95,10 +95,14 @@ function mapCondominio(row: SanityCondominioRow): CondominioDetail {
   };
 }
 
-export const getPublicCondominios = cache(async (): Promise<CondominioDetail[]> => {
-  const directory = publicCondominioDirectory(await sanity.fetch<Array<{
+const getCondominioDirectory = cache(async () =>
+  publicCondominioDirectory(await sanity.fetch<Array<{
     _id: string; nome: string; slug: string | null; ativo?: boolean;
-  }>>(`*[_type == "condominio"] { _id, nome, ativo, "slug": slugPublico.current }`));
+  }>>(`*[_type == "condominio"] { _id, nome, ativo, "slug": slugPublico.current }`))
+);
+
+export const getPublicCondominios = cache(async (): Promise<CondominioDetail[]> => {
+  const directory = await getCondominioDirectory();
   if (!directory.length) return [];
   const rows = await sanity.fetch<Array<SanityCondominioRow & { imagensImoveis: string[] | null }>>(
     `*[_type == "condominio" && _id in $ids] { ${CONDOMINIO_PROJECTION} } | order(nome asc, _id asc)`,
@@ -112,12 +116,21 @@ export const getPublicCondominios = cache(async (): Promise<CondominioDetail[]> 
 });
 
 export async function getHeaderCondominios(): Promise<NavDropdownItem[]> {
-  const rows = await getPublicCondominios();
+  const directory = await getCondominioDirectory();
+  if (!directory.length) return [];
+  // The menu needs links and eligibility, not galleries or editorial descriptions.
+  const eligible = await sanity.fetch<Array<{ _id: string; nome: string; cidade: string; bairro: string; imoveisCount: number }>>(
+    `*[_type == "condominio" && _id in $ids] { _id, nome, cidade, bairro,
+      "imoveisCount": count(*[_type == "property" && condominioRef._ref == ^._id && ${CONDOMINIO_PROPERTY_FILTER}])
+    } | order(nome asc, _id asc)`, { ids: directory.map((row) => row._id) }
+  );
+  const slugs = new Map(directory.map((row) => [row._id, row.slug]));
+  const rows = eligible.filter((row) => row.imoveisCount > 0 && slugs.has(row._id));
 
   return rows.map((row) => ({
     label: rows.filter((item) => item.nome === row.nome).length > 1
       ? `${row.nome} — ${row.cidade}, ${row.bairro}` : row.nome,
-    href: `/condominios/${row.slug}`,
+    href: `/condominios/${slugs.get(row._id)}`,
   }));
 }
 
