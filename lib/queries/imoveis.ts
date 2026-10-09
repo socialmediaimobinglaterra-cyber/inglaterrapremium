@@ -1,4 +1,5 @@
 import { sanity } from "@/lib/sanity";
+import { cache } from "react";
 import { imageUrlOrFallback } from "@/lib/images";
 import { resolveMapSelection, validMapSelection } from "@/lib/property-map";
 import { getPropertyMapData } from "@/lib/queries/property-map";
@@ -265,7 +266,7 @@ const SEARCH_ROW_PROJECTION = `
   _id, codigoImovel, "slug": slug.current, title, neighborhood, cidade, type,
   area, areaTotal, suites, bedrooms, garage, price, rentPrice, featured,
   "mobilia": select("mobiliado" in amenities => "Mobiliado", "semimobiliado" in amenities => "Semimobiliado"),
-  ${IMAGE_PROJECTION}
+  "mainImageUrl": coalesce(mainImage.asset->url, images[0].asset->url)
 `;
 
 export async function searchImoveis(
@@ -349,14 +350,14 @@ const DETAIL_PROJECTION = `
   ${IMAGE_PROJECTION}
 `;
 
-export async function getImovelBySlug(slug: string) {
+export const getImovelBySlug = cache(async (slug: string) => {
   const row = await sanity.fetch<Record<string, any> | null>(
     `*[_type == "property" && slug.current == $slug && ${ACTIVE_FILTER}][0] { ${DETAIL_PROJECTION} }`,
     { slug }
   );
 
   return row ? mapDetailRow(row) : null;
-}
+});
 
 export async function getSimilarImoveis(imovel: ImovelDetail, limit = 3) {
   const rows = await sanity.fetch<Record<string, any>[]>(
