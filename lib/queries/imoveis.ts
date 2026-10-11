@@ -48,6 +48,18 @@ export type ImovelSearchPage = {
   hasMore: boolean;
 };
 
+export type Unidade = {
+  key: string;
+  numero: string;
+  preco: number | null;
+  dormitorios: number | null;
+  suites: number | null;
+  banheiros: number | null;
+  vagas: number | null;
+  area: number | null;
+  disponivel: boolean;
+};
+
 export type ImovelDetail = {
   id: string;
   codigo: string;
@@ -80,6 +92,13 @@ export type ImovelDetail = {
   urlKenlo: string | null;
   videoUrl: string | null;
   mobilia?: "Mobiliado" | "Semimobiliado" | null;
+  /** _id do documento condominio (condominioRef). Null = imóvel sem condomínio. */
+  condominioRefId: string | null;
+  /** property.amenities: união das comodidades da unidade com as do condomínio. */
+  comodidades: string[];
+  /** Lançamento: preço é o menor entre as unidades disponíveis ("a partir de"). */
+  precoAPartirDe: boolean;
+  unidades: Unidade[];
   corretor: {
     nome?: string;
     email?: string;
@@ -330,6 +349,23 @@ function mapDetailRow(row: Record<string, any>): ImovelDetail {
     urlKenlo: row.urlSiteAntigo,
     videoUrl: row.videoUrl,
     mobilia: row.mobilia ?? null,
+    condominioRefId: typeof row.condominioRefId === "string" ? row.condominioRefId : null,
+    comodidades: Array.isArray(row.amenities) ? row.amenities.filter((v: unknown): v is string => typeof v === "string") : [],
+    precoAPartirDe: row.priceIsFrom === true,
+    unidades: (Array.isArray(row.unidades) ? row.unidades : [])
+      .filter((u: Record<string, any>) => u?._key && u.numero !== undefined && u.numero !== null)
+      .map((u: Record<string, any>): Unidade => ({
+        key: u._key,
+        numero: String(u.numero),
+        // price 0 = sem valor (esconder)
+        preco: numberOrNull(u.price) ? numberOrNull(u.price) : null,
+        dormitorios: numberOrNull(u.dorms),
+        suites: numberOrNull(u.suites),
+        banheiros: numberOrNull(u.banheiros),
+        vagas: numberOrNull(u.vagas),
+        area: numberOrNull(u.area),
+        disponivel: u.disponivel === true,
+      })),
     corretor: {
       nome: row.captador ?? undefined,
       email: row.captadorEmail ?? undefined,
@@ -346,6 +382,8 @@ const DETAIL_PROJECTION = `
   area, areaTotal, bedrooms, suites, bathrooms, garage,
   description, latitude, longitude, urlSiteAntigo, videoUrl,
   captador, captadorEmail, captadorCelular,
+  "condominioRefId": condominioRef._ref, amenities, priceIsFrom,
+  unidades[]{ _key, numero, price, dorms, suites, banheiros, vagas, area, disponivel },
   "mobilia": select("mobiliado" in amenities => "Mobiliado", "semimobiliado" in amenities => "Semimobiliado"),
   ${IMAGE_PROJECTION}
 `;

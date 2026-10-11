@@ -2,8 +2,12 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CondominioGallery } from "@/components/condominios/CondominioGallery";
+import { CondominioSecao } from "@/components/condominios/CondominioSecao";
+import { condominioSecaoAtiva, type ItemCatalogo } from "@/lib/condominio-secao";
 import {
+  getCatalogoComodidades,
   getCondominioBySlug,
+  getCondominioCompleto,
   getCondominioImoveis,
   getRelatedCondominios,
   type CondominioDetail,
@@ -145,7 +149,7 @@ function RelatedCard({ condominio }: { condominio: CondominioResumo }) {
       </div>
       <div className="pt-3.5">
         <p className="mb-1 text-[11px] tracking-[0.06em] text-navy">
-          {condominio.bairro}, {condominio.cidade}
+          {condominio.bairro}, Londrina
         </p>
         <h3 className="text-[15px] font-normal leading-[1.3] text-navy">
           {condominio.nome}
@@ -185,9 +189,13 @@ export default async function CondominioPage({ params }: PageProps) {
   const condominio = await getCondominioBySlug(slug);
   if (!condominio) notFound();
 
-  const [imoveis, relacionados] = await Promise.all([
+  // Ficha técnica, comodidades, plantas e book: só com CONDOMINIO_SECAO=on.
+  const secaoAtiva = condominioSecaoAtiva();
+  const [imoveis, relacionados, completo, catalogo] = await Promise.all([
     getCondominioImoveis(condominio),
     getRelatedCondominios(condominio.slug),
+    secaoAtiva ? getCondominioCompleto(condominio.id) : Promise.resolve(null),
+    secaoAtiva ? getCatalogoComodidades() : Promise.resolve(new Map<string, ItemCatalogo>()),
   ]);
   const facts = [
     condominio.unidades
@@ -214,7 +222,7 @@ export default async function CondominioPage({ params }: PageProps) {
           Condomínio Fechado
         </span>
         <h1 className="mb-2.5 max-w-[700px] text-[clamp(26px,8vw,34px)] font-light leading-[1.15] tracking-[0.01em] md:text-[clamp(32px,3.6vw,48px)]">
-          Condomínio {condominio.nome} em {condominio.bairro}, {condominio.cidade}
+          Condomínio {condominio.nome} em {condominio.bairro}, Londrina
         </h1>
         {(condominio.seguranca || condominio.unidades) ? (
               <p className="text-[13px] text-navy">
@@ -227,7 +235,7 @@ export default async function CondominioPage({ params }: PageProps) {
         <div className="aspect-[4/3] overflow-hidden md:aspect-[21/9]">
           {condominio.image ? (
             <img
-              alt={`Imóvel no condomínio ${condominio.nome}, ${condominio.bairro}, ${condominio.cidade}`}
+              alt={`Condomínio ${condominio.nome} - vista geral, ${condominio.bairro}, Londrina`}
               className="h-full w-full object-cover"
               src={condominio.image}
             />
@@ -301,6 +309,10 @@ export default async function CondominioPage({ params }: PageProps) {
         </h2>
         <CondominioGallery images={condominio.galeria} nome={condominio.nome} />
       </section>
+
+      {completo ? (
+        <CondominioSecao catalogo={catalogo} comCabecalho={false} comGaleria={false} condominio={completo} />
+      ) : null}
 
       <section className="site-container grid grid-cols-1 gap-7 bg-white py-10 md:grid-cols-[1.6fr_1fr] md:gap-16 md:py-16">
         <div>

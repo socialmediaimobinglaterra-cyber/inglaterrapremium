@@ -8,6 +8,11 @@ import { recordAnalyticsEvent } from "@/lib/analytics";
 import { imageUrlOrFallback } from "@/lib/images";
 import { absoluteUrl } from "@/lib/site";
 import MobiliaTag from "@/components/MobiliaTag";
+import { ComodidadesLista, CondominioSecao } from "@/components/condominios/CondominioSecao";
+import { ImovelGaleria } from "@/components/condominios/ImovelGaleria";
+import { UnidadesDisponiveis } from "@/components/condominios/UnidadesDisponiveis";
+import { comodidadesDaUnidade, condominioSecaoAtiva, type ItemCatalogo } from "@/lib/condominio-secao";
+import { getCatalogoComodidades, getCondominioCompleto } from "@/lib/queries/condominios";
 import {
   getImovelBySlug,
   getSimilarImoveis,
@@ -278,10 +283,15 @@ export default async function ImovelPage({ params }: PageProps) {
     })
   );
 
-  const [similares, gallery] = await Promise.all([
+  // Seção "O condomínio" (e fotos em tela cheia): só com CONDOMINIO_SECAO=on. Desligada, a página é a de sempre.
+  const secaoAtiva = condominioSecaoAtiva();
+  const [similares, gallery, condominio, catalogo] = await Promise.all([
     getSimilarImoveis(imovel),
     Promise.resolve(getGallery(imovel)),
+    secaoAtiva && imovel.condominioRefId ? getCondominioCompleto(imovel.condominioRefId) : Promise.resolve(null),
+    secaoAtiva ? getCatalogoComodidades() : Promise.resolve(new Map<string, ItemCatalogo>()),
   ]);
+  const comodidadesUnidade = condominio ? comodidadesDaUnidade(imovel.comodidades, condominio.comodidades) : [];
   const description = plainDescription(imovel);
   const differentials = extractDifferentials(imovel.descricao);
   const corretor = imovel.corretor;
@@ -306,6 +316,9 @@ export default async function ImovelPage({ params }: PageProps) {
       </div>
 
       <section className="site-container pt-5">
+        {secaoAtiva ? (
+          <ImovelGaleria fotos={gallery} titulo={imovel.titulo} />
+        ) : (
         <div className="md:grid md:h-[560px] md:grid-cols-[1.7fr_1fr] md:gap-2">
           <div className="relative aspect-[4/3] overflow-hidden md:aspect-auto">
             <Image
@@ -336,6 +349,7 @@ export default async function ImovelPage({ params }: PageProps) {
             ))}
           </div>
         </div>
+        )}
       </section>
 
       <div className="site-container grid grid-cols-1 gap-10 py-8 md:grid-cols-[1.6fr_1fr] md:gap-[72px] md:py-14">
@@ -351,6 +365,9 @@ export default async function ImovelPage({ params }: PageProps) {
             {imovel.codigo ? <p className="mb-3 text-sm text-navy">Referência: {imovel.codigo}</p> : null}
             <p className="mb-5 text-[13px] text-navy">{getAddress(imovel)}</p>
             <p className="text-2xl font-medium text-navy md:text-3xl">
+              {secaoAtiva && imovel.precoAPartirDe && imovel.precoVenda ? (
+                <span className="mr-2 text-sm font-normal">a partir de</span>
+              ) : null}
               {currency(getPrice(imovel))}
             </p>
           </div>
@@ -397,6 +414,10 @@ export default async function ImovelPage({ params }: PageProps) {
                 ))}
               </div>
             </section>
+          ) : null}
+
+          {condominio ? (
+            <ComodidadesLista catalogo={catalogo} slugs={comodidadesUnidade} titulo="Comodidades do imóvel" />
           ) : null}
 
           <section>
@@ -454,6 +475,9 @@ export default async function ImovelPage({ params }: PageProps) {
           </div>
         </aside>
       </div>
+
+      {secaoAtiva ? <UnidadesDisponiveis unidades={imovel.unidades} /> : null}
+      {condominio ? <CondominioSecao catalogo={catalogo} condominio={condominio} /> : null}
 
       <section className="site-container bg-white py-12 md:py-[72px]">
         <div className="mb-7 flex flex-col items-start justify-between gap-2.5 md:mb-9 md:flex-row md:items-end">

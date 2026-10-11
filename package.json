@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "test:crm-catalog": "tsx scripts/test-crm-catalog.ts",
+    "test:condominio": "tsx --tsconfig tests/tsconfig.test.json --test tests/condominio-secao.test.tsx",
     "db:migrate": "tsx scripts/migrate.ts",
     "mark:premium-condominios": "tsx scripts/mark-premium-condominios.ts"
   },
