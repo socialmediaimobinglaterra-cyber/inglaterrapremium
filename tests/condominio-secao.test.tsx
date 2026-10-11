@@ -93,7 +93,10 @@ test("sem nada além do nome: só cabeçalho, sem título solto nem 'não inform
   const out = secao({});
   assert.match(out, /Residencial Sonance/);
   assert.ok(!out.includes("<a "), "sem página própria: o nome não vira link");
-  assert.ok(secao({ href: "/condominios/residencial-sonance" }).includes("href=\"/condominios/residencial-sonance\""), "com página: vira link");
+  const comPagina = secao({ href: "/condominios/residencial-sonance" });
+  assert.ok(comPagina.includes("href=\"/condominios/residencial-sonance\""), "com página: vira link");
+  assert.ok(comPagina.includes("Ver página do condomínio"), "com página: botão visível para abrir a página do condomínio");
+  assert.ok(!out.includes("Ver página do condomínio"), "sem página: sem botão");
   for (const proibido of ["Ficha técnica", "Comodidades", "Plantas", "Baixar book", "Fotos do condomínio", "Sobre o condomínio", "não informado", "Não informado"]) {
     assert.ok(!out.includes(proibido), `não deveria aparecer: ${proibido}`);
   }

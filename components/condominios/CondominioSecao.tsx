@@ -149,6 +149,14 @@ export function CondominioSecao({
           {enderecoCompleto || localizacao ? (
             <p className="text-[13px] text-navy">{[enderecoCompleto, localizacao].filter(Boolean).join(" — ")}</p>
           ) : null}
+          {condominio.href ? (
+            <Link
+              className="mt-4 inline-block border border-terra px-5 py-3 text-[10px] uppercase tracking-[0.2em] text-terra no-underline transition hover:bg-terra hover:text-white"
+              href={condominio.href}
+            >
+              Ver página do condomínio
+            </Link>
+          ) : null}
         </div>
       ) : null}
 
