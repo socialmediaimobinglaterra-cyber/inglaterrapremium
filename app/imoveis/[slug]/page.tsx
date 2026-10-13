@@ -6,7 +6,7 @@ import { notFound } from "next/navigation";
 import { PropertyContactButton } from "@/components/analytics/PropertyContactButton";
 import { recordAnalyticsEvent } from "@/lib/analytics";
 import { imageUrlOrFallback } from "@/lib/images";
-import { absoluteUrl } from "@/lib/site";
+import { absoluteUrl } from "@/lib/site";
 import MobiliaTag from "@/components/MobiliaTag";
 import {
   getImovelBySlug,
@@ -19,7 +19,22 @@ export const dynamic = "force-dynamic";
 
 type PageProps = {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ foco?: string | string[] }>;
 };
+
+type Foco = "rent" | "sale" | null;
+
+/**
+ * `?foco=venda|locacao` é o que o link compartilhado pelo CRM carrega: o cliente abre a ficha com o valor da
+ * carteira escolhida em destaque. Só muda algo em imóvel com os dois valores; valor desconhecido ou ausente
+ * = comportamento de sempre (venda em destaque).
+ */
+function focoDaUrl(foco: string | string[] | undefined): Foco {
+  const valor = Array.isArray(foco) ? foco[0] : foco;
+  if (valor === "locacao") return "rent";
+  if (valor === "venda") return "sale";
+  return null;
+}
 
 function currency(value: number | null) {
   if (value === null) return "Sob consulta";
@@ -35,12 +50,18 @@ function area(value: number | null) {
   return `${value.toLocaleString("pt-BR", { maximumFractionDigits: 0 })} m²`;
 }
 
-function getPrice(imovel: ImovelDetail) {
+function getPrice(imovel: ImovelDetail, foco: Foco = null) {
+  if (foco === "rent" && imovel.precoLocacao) return imovel.precoLocacao;
+  if (foco === "sale" && imovel.precoVenda) return imovel.precoVenda;
   return imovel.precoVenda ?? imovel.precoLocacao;
 }
 
-function getTransactionLabel(imovel: ImovelDetail) {
-  if (imovel.precoVenda && imovel.precoLocacao) return "Venda · Locação";
+function getTransactionLabel(imovel: ImovelDetail, foco: Foco = null) {
+  if (imovel.precoVenda && imovel.precoLocacao) {
+    if (foco === "rent") return "Locação";
+    if (foco === "sale") return "Venda";
+    return "Venda · Locação";
+  }
   if (imovel.precoLocacao) return "Locação";
   return "Venda";
 }
@@ -66,13 +87,15 @@ function plainDescription(imovel: ImovelDetail) {
   );
 }
 
-function whatsappHref(imovel: ImovelDetail) {
+function whatsappHref(imovel: ImovelDetail, foco: Foco = null) {
   const phone = (imovel.corretor.celular ?? imovel.corretor.telefone ?? "").replace(/\D/g, "");
   if (!phone) return null;
 
   const number = phone.startsWith("55") ? phone : `55${phone}`;
+  // Imóvel de venda e locação aberto numa carteira: a mensagem diz qual (quem atende precisa saber).
+  const carteira = imovel.precoVenda && imovel.precoLocacao && foco ? (foco === "rent" ? " (locação)" : " (venda)") : "";
   const message = encodeURIComponent(
-    `Tenho interesse no imóvel "${imovel.titulo}". Gostaria de agendar uma visita.`
+    `Tenho interesse no imóvel "${imovel.titulo}"${carteira}. Gostaria de agendar uma visita.`
   );
 
   return `https://wa.me/${number}?text=${message}`;
@@ -262,8 +285,9 @@ function breadcrumbJsonLd(imovel: ImovelDetail) {
   };
 }
 
-export default async function ImovelPage({ params }: PageProps) {
+export default async function ImovelPage({ params, searchParams }: PageProps) {
   const { slug } = await params;
+  const foco = focoDaUrl((await searchParams).foco);
   const imovel = await getImovelBySlug(slug);
   if (!imovel) notFound();
 
@@ -285,7 +309,7 @@ export default async function ImovelPage({ params }: PageProps) {
   const description = plainDescription(imovel);
   const differentials = extractDifferentials(imovel.descricao);
   const corretor = imovel.corretor;
-  const contactWhatsappHref = whatsappHref(imovel);
+  const contactWhatsappHref = whatsappHref(imovel, foco);
   const mainImage = imageUrlOrFallback(gallery[0]?.url);
 
   return (
@@ -342,7 +366,7 @@ export default async function ImovelPage({ params }: PageProps) {
         <div>
           <div className="mb-6 border-b border-navy/10 pb-6 md:mb-8 md:pb-8">
             <p className="mb-3 text-[9px] font-semibold uppercase tracking-[0.3em] text-terra">
-              {imovel.tipo ?? "Imóvel"} · {getTransactionLabel(imovel)}
+              {imovel.tipo ?? "Imóvel"} · {getTransactionLabel(imovel, foco)}
             </p>
             {imovel.mobilia ? <p className="mb-3"><MobiliaTag mobilia={imovel.mobilia} /></p> : null}
             <h1 className="mb-3 max-w-[620px] text-[clamp(24px,7vw,30px)] font-light leading-[1.15] tracking-[0.01em] md:text-[clamp(28px,3vw,40px)]">
@@ -351,7 +375,7 @@ export default async function ImovelPage({ params }: PageProps) {
             {imovel.codigo ? <p className="mb-3 text-sm text-navy">Referência: {imovel.codigo}</p> : null}
             <p className="mb-5 text-[13px] text-navy">{getAddress(imovel)}</p>
             <p className="text-2xl font-medium text-navy md:text-3xl">
-              {currency(getPrice(imovel))}
+              {currency(getPrice(imovel, foco))}
             </p>
           </div>
 
