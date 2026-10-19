@@ -85,7 +85,7 @@ const DIRECTORS = [
     name: "Luis Carlos Itakura",
     title: "Diretor Administrativo",
     quote:
-      '"Vim de uma trajetória em gestão e finanças, e encontrei na Inglaterra Premium o desafio de dar estrutura a um mercado que exige precisão em cada detalhe. A essência da marca, pra mim, é a solidez que sustenta, nos bastidores, a confiança que o cliente sente na hora da venda."',
+      '"A Inglaterra Premium nasceu da nossa visão de evoluir sempre, unindo a experiência de mais de 20 anos no mercado imobiliário com um novo conceito de atendimento, exclusividade e excelência para quem busca muito mais do que um imóvel: busca realizar grandes sonhos."',
     image: "/images/diretoria/luis.jpg",
   },
   {
