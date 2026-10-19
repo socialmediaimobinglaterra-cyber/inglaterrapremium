@@ -92,6 +92,7 @@ export type ImovelDetail = {
     alt?: string;
     principal: boolean;
   }>;
+  fotosCondominio?: Array<{ url: string; alt: string }>;
 };
 
 function numberOrNull(value: unknown) {
@@ -336,12 +337,16 @@ function mapDetailRow(row: Record<string, any>): ImovelDetail {
       celular: row.captadorCelular ?? undefined,
     },
     fotos: mapFotos(row),
+    fotosCondominio: (row.condominioImageUrls ?? [])
+      .filter((url: unknown): url is string => typeof url === "string" && Boolean(url))
+      .map((url: string) => ({ url: imageUrlOrFallback(url), alt: `Áreas comuns - ${row.condominioRefNome ?? "Condomínio"}` })),
   };
 }
 
 const DETAIL_PROJECTION = `
   _id, codigoImovel, "slug": slug.current, title, type, finalidade, cidade, estado,
   neighborhood, address, addressNumber, condominioNome, "condominioRefNome": condominioRef->nome,
+  "condominioImageUrls": condominioRef->imagens[].asset->url,
   price, rentPrice, condominio, iptu, iptuPeriodo,
   area, areaTotal, bedrooms, suites, bathrooms, garage,
   description, latitude, longitude, urlSiteAntigo, videoUrl,

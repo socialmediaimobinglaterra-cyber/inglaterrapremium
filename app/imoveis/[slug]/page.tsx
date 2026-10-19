@@ -8,6 +8,7 @@ import { recordAnalyticsEvent } from "@/lib/analytics";
 import { imageUrlOrFallback } from "@/lib/images";
 import { absoluteUrl } from "@/lib/site";
 import MobiliaTag from "@/components/MobiliaTag";
+import { PropertyGallery } from "@/components/imoveis/PropertyGallery";
 import {
   getImovelBySlug,
   getSimilarImoveis,
@@ -310,7 +311,6 @@ export default async function ImovelPage({ params, searchParams }: PageProps) {
   const differentials = extractDifferentials(imovel.descricao);
   const corretor = imovel.corretor;
   const contactWhatsappHref = whatsappHref(imovel, foco);
-  const mainImage = imageUrlOrFallback(gallery[0]?.url);
 
   return (
     <main className="bg-offwhite text-navy">
@@ -330,36 +330,7 @@ export default async function ImovelPage({ params, searchParams }: PageProps) {
       </div>
 
       <section className="site-container pt-5">
-        <div className="md:grid md:h-[560px] md:grid-cols-[1.7fr_1fr] md:gap-2">
-          <div className="relative aspect-[4/3] overflow-hidden md:aspect-auto">
-            <Image
-              alt={`${imovel.titulo} — foto principal`}
-              className="h-full w-full object-cover"
-              fill
-              priority
-              sizes="(min-width: 768px) 63vw, 100vw"
-              src={mainImage}
-            />
-          </div>
-          <div className="mt-2 grid grid-cols-4 gap-1.5 md:mt-0 md:grid-cols-2 md:grid-rows-2 md:gap-2">
-            {gallery.slice(1, 5).map((foto, index) => (
-              <div className="relative aspect-[4/3] overflow-hidden md:aspect-auto" key={foto.url}>
-                <Image
-                  alt={foto.alt ?? `${imovel.titulo} — foto ${index + 2}`}
-                  className="h-full w-full object-cover"
-                  fill
-                  sizes="(min-width: 768px) 19vw, 25vw"
-                  src={imageUrlOrFallback(foto.url)}
-                />
-                {index === 3 && gallery.length > 5 ? (
-                  <div className="absolute inset-0 flex items-center justify-center bg-navy/60 text-[13px] font-medium text-white">
-                    + {gallery.length - 5} fotos
-                  </div>
-                ) : null}
-              </div>
-            ))}
-          </div>
-        </div>
+        <PropertyGallery photos={gallery} commonPhotos={imovel.fotosCondominio} title={imovel.titulo} />
       </section>
 
       <div className="site-container grid grid-cols-1 gap-10 py-8 md:grid-cols-[1.6fr_1fr] md:gap-[72px] md:py-14">
