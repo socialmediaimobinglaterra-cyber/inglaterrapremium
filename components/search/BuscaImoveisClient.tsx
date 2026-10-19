@@ -151,8 +151,8 @@ function PillSelect({
   );
 }
 
-function ListingCard({ imovel }: { imovel: CrmConversationListing }) {
-  const price = imovel.precoVenda ?? imovel.precoLocacao;
+function ListingCard({ imovel, negocio }: { imovel: CrmConversationListing; negocio: (typeof NEGOCIO_OPTIONS)[number] }) {
+  const price = negocio === "Alugar" ? imovel.precoLocacao : imovel.precoVenda;
   const image = imageUrlOrFallback(imovel.image);
 
   return (
@@ -464,7 +464,7 @@ export function BuscaImoveisClient({
         {imoveis.length > 0 ? (
           <div className="grid grid-cols-1 gap-9 md:grid-cols-3 md:gap-10">
             {imoveis.map((imovel) => (
-              <ListingCard imovel={imovel} key={imovel.slug} />
+              <ListingCard imovel={imovel} negocio={negocio} key={imovel.slug} />
             ))}
           </div>
         ) : busy ? (
