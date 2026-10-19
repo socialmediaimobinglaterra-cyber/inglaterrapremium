@@ -78,7 +78,7 @@ const DIRECTORS = [
     name: "Wagner Lopes Redon",
     title: "Diretor de Locação",
     quote:
-      '"Comecei no mercado imobiliário ainda jovem, acompanhando meu pai em visitas a imóveis aos sábados, e nunca mais quis fazer outra coisa. Para mim, a essência da Inglaterra Premium está em cuidar de cada imóvel administrado como se fosse o nosso próprio patrimônio."',
+      '"Me formei em Adm e ainda muito jovem seguindo os passos de meu Pai e Muitos familiares que ja atuavam no mercado imobiliário de londrina e região, me especializei em administração de imóveis e a mais de 25 anos o Grupo Inglaterra vem atualizando seus processos com muita tecnologia e inovação, capacitação de pessoas para entregar um serviço de qualidade, sobre a Inglaterra Premium e Imobiliária Inglaterra administrar um imóvel é gerar valor patrimonial dando condições para que este imóvel sempre entregue sua melhor rentabilidade,  com segurança juridica e contabil."',
     image: "/images/diretoria/wagner.jpg",
   },
   {
