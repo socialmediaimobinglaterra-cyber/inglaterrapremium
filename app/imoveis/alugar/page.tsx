@@ -19,6 +19,7 @@ export default async function ImoveisAlugarPage() {
   return (
     <BuscaImoveisClient
       bairros={options.bairros}
+      condominios={options.condominios}
       initialSearchPage={initialSearchPage}
       initialNegocio="Alugar"
       tipos={options.tipos}

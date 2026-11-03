@@ -1,5 +1,6 @@
 import { sanity } from "@/lib/sanity";
 import { imageUrlOrFallback } from "@/lib/images";
+import { premiumFilter } from "@/lib/premium-rule";
 import type { ImovelSearchResult } from "@/lib/queries/imoveis";
 
 export type BairroFaq = {
@@ -38,8 +39,6 @@ function numberOrNull(value: unknown) {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : null;
 }
-
-const ACTIVE_FILTER = `status == "ativo" && publicarSite == true`;
 
 type SanityBairroRow = {
   _id: string;
@@ -100,6 +99,7 @@ export async function getBairroPageData(slug: string) {
 
   if (!bairroRow) return null;
 
+  const ACTIVE_FILTER = await premiumFilter();
   const [metrics, imoveisRows, outrosRows] = await Promise.all([
     sanity.fetch<{ valorMedioVenda: number | null; imoveisDisponiveis: number }>(
       `{

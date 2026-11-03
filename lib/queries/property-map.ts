@@ -1,11 +1,12 @@
 import { createHash } from "node:crypto";
 import { sanity } from "@/lib/sanity";
+import { premiumFilter } from "@/lib/premium-rule";
 import type { MapDataset } from "@/lib/property-map";
 
 export async function getPropertyMapData(negocio: "Comprar" | "Alugar"): Promise<MapDataset> {
   const priceField = negocio === "Alugar" ? "rentPrice" : "price";
   const rows = await sanity.fetch<Array<{ id: string; latitude: number; longitude: number }>>(
-    `*[_type == "property" && status == "ativo" && publicarSite == true
+    `*[_type == "property" && ${await premiumFilter()}
         && defined(${priceField}) && defined(latitude) && defined(longitude)
         && latitude >= -85 && latitude <= 85
         && longitude >= -180 && longitude <= 180

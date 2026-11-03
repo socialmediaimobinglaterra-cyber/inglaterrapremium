@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { sanity } from "@/lib/sanity";
+import { premiumFilter } from "@/lib/premium-rule";
 import { absoluteUrl } from "@/lib/site";
 import { getPublicCondominios } from "@/lib/queries/condominios";
 
@@ -17,7 +18,7 @@ function lastModified(value: string | null) {
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [imoveis, bairros, condominios] = await Promise.all([
     sanity.fetch<SanitySlugRow[]>(
-      `*[_type == "property" && status == "ativo" && publicarSite == true] {
+      `*[_type == "property" && ${await premiumFilter()}] {
         "slug": slug.current, "updatedAt": coalesce(dataAtualizacaoCRM, _updatedAt)
       } | order(updatedAt desc)`
     ),

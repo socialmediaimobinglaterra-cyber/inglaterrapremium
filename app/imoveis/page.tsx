@@ -30,6 +30,7 @@ export default async function ImoveisPage({ searchParams }: PageProps) {
   return (
     <BuscaImoveisClient
       bairros={options.bairros}
+      condominios={options.condominios}
       initialSearchPage={initialSearchPage}
       key={`${negocio}:${mapSelection ?? ""}`}
       initialNegocio={negocio}

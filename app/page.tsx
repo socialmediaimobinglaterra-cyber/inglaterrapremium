@@ -7,6 +7,8 @@ import { PropertyMap } from "@/components/home/PropertyMap";
 import { sanity, projectId, dataset } from "@/lib/sanity";
 import { unstable_cache } from "next/cache";
 import { imageUrlOrFallback } from "@/lib/images";
+import { bairroDaLinha, bairroExibicao, bairrosPremiumDe } from "@/lib/cep-bairros";
+import { getPremiumConfig, premiumFilter } from "@/lib/premium-rule";
 import { getActiveInstagramPosts } from "@/lib/queries/instagram-posts";
 import { getSiteNavigation } from "@/lib/queries/navigation";
 import type { NavDropdownItem } from "@/components/layout/HeaderClient";
@@ -184,16 +186,6 @@ function getMainImageFromSanity(row: { mainImageUrl?: string | null }) {
   return imageUrlOrFallback(row.mainImageUrl ?? null);
 }
 
-const HOME_ACTIVE_FILTER = `status == "ativo" && publicarSite == true`;
-
-// Approved premium coverage, independent of the editorial migration to Sanity.
-const PREMIUM_NEIGHBORHOODS = [
-  "Terra Bonita",
-  "Gleba Palhano",
-  "Bela Suíça",
-  "Nova Prochet",
-];
-
 type SanityBairroRow = {
   slug: string;
   nome: string;
@@ -203,6 +195,9 @@ type SanityBairroRow = {
 };
 
 const getHomeData = unstable_cache(async () => {
+  // Regra Premium (documento premiumConfig no Sanity), a mesma de toda a listagem.
+  const [HOME_ACTIVE_FILTER, premiumConfig] = await Promise.all([premiumFilter(), getPremiumConfig()]);
+  const premiumBairros = bairrosPremiumDe(premiumConfig);
   const featuredPeriod = String(Math.floor(Date.now() / FEATURED_ROTATION_INTERVAL_MS));
 
   const [featuredRows, bairroCounts, bairrosMeta, totalImoveis, instagramPosts] = await Promise.all([
@@ -211,7 +206,7 @@ const getHomeData = unstable_cache(async () => {
     // reshuffles every FEATURED_ROTATION_INTERVAL_MS.
     sanity.fetch<Record<string, any>[]>(
       `*[_type == "property" && ${HOME_ACTIVE_FILTER}] {
-        _id, "slug": slug.current, codigoImovel, title, neighborhood, cidade,
+        _id, "slug": slug.current, codigoImovel, title, neighborhood, cep, cidade,
         area, areaTotal, bedrooms, price, rentPrice,
         "mainImageUrl": mainImage.asset->url,
         "_rand": _id + $period
@@ -220,11 +215,14 @@ const getHomeData = unstable_cache(async () => {
     ),
     // Count of active properties per neighborhood, to pick which bairros
     // show on the home and in what order.
-    sanity.fetch<string[]>(
-      `*[_type == "property" && ${HOME_ACTIVE_FILTER} && defined(neighborhood)].neighborhood`
-    ).then((names) => {
+    sanity.fetch<Array<{ cep?: string | null; neighborhood?: string | null }>>(
+      `*[_type == "property" && ${HOME_ACTIVE_FILTER}] { cep, neighborhood }`
+    ).then((rows) => {
       const counts = new Map<string, number>();
-      for (const name of names) counts.set(name, (counts.get(name) ?? 0) + 1);
+      for (const row of rows) {
+        const name = bairroDaLinha(row, premiumBairros);
+        if (name) counts.set(name, (counts.get(name) ?? 0) + 1);
+      }
       return [...counts.entries()].map(([neighborhood, count]) => ({ neighborhood, count }));
     }),
     // Bairro editorial content (name, slug, cover images) — site-managed
@@ -244,7 +242,7 @@ const getHomeData = unstable_cache(async () => {
     codigo: row.codigoImovel,
     slug: row.slug,
     title: row.title,
-    location: `${row.neighborhood}, ${row.cidade ?? "Londrina"}`,
+    location: `${bairroExibicao(row.cep, row.neighborhood, premiumBairros) ?? "Londrina"}, ${row.cidade ?? "Londrina"}`,
     area: area(row.area ?? row.areaTotal),
     bedrooms: row.bedrooms ?? 0,
     price: currency(row.price ?? row.rentPrice),
@@ -275,10 +273,10 @@ const getHomeData = unstable_cache(async () => {
     .sort((a, b) => b.imoveis - a.imoveis || a.name.localeCompare(b.name))
     .slice(0, 6);
 
-  const totals = { total_imoveis: totalImoveis, total_bairros: PREMIUM_NEIGHBORHOODS.length };
+  const totals = { total_imoveis: totalImoveis, total_bairros: premiumConfig.bairrosPremium.length };
 
   return { featured, bairros, totals, instagramPosts };
-}, ["public-home-v1", projectId, dataset], { revalidate: 60 });
+}, ["public-home-v2", projectId, dataset], { revalidate: 60 });
 
 function Rule({ label, right }: { label?: string; right?: string }) {
   return (

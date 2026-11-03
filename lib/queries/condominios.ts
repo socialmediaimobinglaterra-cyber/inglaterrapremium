@@ -3,7 +3,8 @@ import { sanity } from "@/lib/sanity";
 import type { ImovelSearchResult } from "@/lib/queries/imoveis";
 import { imageUrlOrFallback } from "@/lib/images";
 import { cache } from "react";
-import { CONDOMINIO_PROPERTY_FILTER, publicCondominioDirectory } from "@/lib/premium-condominios";
+import { publicCondominioDirectory } from "@/lib/premium-condominios";
+import { getPremiumConfig, premiumFilter } from "@/lib/premium-rule";
 
 export type CondominioResumo = {
   id: string;
@@ -56,14 +57,15 @@ type SanityCondominioRow = {
   imoveisCount: number;
 };
 
-const CONDOMINIO_PROJECTION = `
+// `filter` = regra Premium (premiumFilter): a contagem e as fotos só usam imóveis que o Premium mostra.
+const condominioProjection = (filter: string) => `
   _id, nome, "slug": slugPublico.current, bairro, cidade, estado,
   logradouro, numero, latitude, longitude,
   unidades, areaTotalTexto, seguranca, descricaoPublica, descricaoPublica2, diferenciais,
   "imagensUrls": array::compact(imagens[].asset->url),
-  "imagensImoveis": *[_type == "property" && condominioRef._ref == ^._id && ${CONDOMINIO_PROPERTY_FILTER}
+  "imagensImoveis": *[_type == "property" && condominioRef._ref == ^._id && ${filter}
     && defined(mainImage.asset->url)] | order(coalesce(price, rentPrice) desc, _id asc)[0...3].mainImage.asset->url,
-  "imoveisCount": count(*[_type == "property" && condominioRef._ref == ^._id && ${CONDOMINIO_PROPERTY_FILTER}])
+  "imoveisCount": count(*[_type == "property" && condominioRef._ref == ^._id && ${filter}])
 `;
 
 function mapCondominio(row: SanityCondominioRow): CondominioDetail {
@@ -95,17 +97,21 @@ function mapCondominio(row: SanityCondominioRow): CondominioDetail {
   };
 }
 
-const getCondominioDirectory = cache(async () =>
-  publicCondominioDirectory(await sanity.fetch<Array<{
-    _id: string; nome: string; slug: string | null; ativo?: boolean;
-  }>>(`*[_type == "condominio"] { _id, nome, ativo, "slug": slugPublico.current }`))
-);
+const getCondominioDirectory = cache(async () => {
+  const [rows, config] = await Promise.all([
+    sanity.fetch<Array<{
+      _id: string; nome: string; slug: string | null; ativo?: boolean;
+    }>>(`*[_type == "condominio"] { _id, nome, ativo, "slug": slugPublico.current }`),
+    getPremiumConfig(),
+  ]);
+  return publicCondominioDirectory(rows, config.condominioIds);
+});
 
 export const getPublicCondominios = cache(async (): Promise<CondominioDetail[]> => {
   const directory = await getCondominioDirectory();
   if (!directory.length) return [];
   const rows = await sanity.fetch<Array<SanityCondominioRow & { imagensImoveis: string[] | null }>>(
-    `*[_type == "condominio" && _id in $ids] { ${CONDOMINIO_PROJECTION} } | order(nome asc, _id asc)`,
+    `*[_type == "condominio" && _id in $ids] { ${condominioProjection(await premiumFilter())} } | order(nome asc, _id asc)`,
     { ids: directory.map((row) => row._id) }
   );
   const slugs = new Map(directory.map((row) => [row._id, row.slug]));
@@ -119,9 +125,10 @@ export async function getHeaderCondominios(): Promise<NavDropdownItem[]> {
   const directory = await getCondominioDirectory();
   if (!directory.length) return [];
   // The menu needs links and eligibility, not galleries or editorial descriptions.
+  const filter = await premiumFilter();
   const eligible = await sanity.fetch<Array<{ _id: string; nome: string; cidade: string; bairro: string; imoveisCount: number }>>(
     `*[_type == "condominio" && _id in $ids] { _id, nome, cidade, bairro,
-      "imoveisCount": count(*[_type == "property" && condominioRef._ref == ^._id && ${CONDOMINIO_PROPERTY_FILTER}])
+      "imoveisCount": count(*[_type == "property" && condominioRef._ref == ^._id && ${filter}])
     } | order(nome asc, _id asc)`, { ids: directory.map((row) => row._id) }
   );
   const slugs = new Map(directory.map((row) => [row._id, row.slug]));
@@ -140,7 +147,7 @@ export async function getCondominioBySlug(slug: string) {
 
 export async function getCondominioImoveis(condominio: CondominioDetail, limit = 3) {
   const rows = await sanity.fetch<Record<string, any>[]>(
-    `*[_type == "property" && ${CONDOMINIO_PROPERTY_FILTER} && condominioRef._ref == $id
+    `*[_type == "property" && ${await premiumFilter()} && condominioRef._ref == $id
       ] | order(coalesce(price, rentPrice) desc) [0...$limit] {
         _id, codigoImovel, "slug": slug.current, title, neighborhood, cidade, type,
         area, areaTotal, suites, bedrooms, garage, price, rentPrice, featured,

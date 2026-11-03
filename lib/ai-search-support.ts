@@ -2,6 +2,8 @@ import { createHmac } from "node:crypto";
 import { unstable_cache } from "next/cache";
 import { getPool } from "./db";
 import { sanity } from "./sanity";
+import { getPremiumConfig, premiumFilter } from "./premium-rule";
+import { bairroDaLinha, bairrosPremiumDe } from "./cep-bairros";
 import { normalizeName, type Vocabulary } from "./search-state";
 
 let schemaReady: Promise<unknown> | undefined;
@@ -22,19 +24,23 @@ function ensureAiSchema() {
 }
 
 export const getSearchVocabulary = unstable_cache(async (): Promise<Vocabulary> => {
-  const [bairro, tipo, condominio] = await Promise.all([
-    sanity.fetch<string[]>(
-      `array::unique(*[_type == "property" && status == "ativo" && defined(neighborhood)].neighborhood)`
+  // Vocabulário só do que o Premium mostra (mesma regra da listagem), com o bairro oficial pelo CEP.
+  const [filter, config] = await Promise.all([premiumFilter(), getPremiumConfig()]);
+  const premiumBairros = bairrosPremiumDe(config);
+  const [rows, tipo, condominio] = await Promise.all([
+    sanity.fetch<Array<{ cep?: string | null; neighborhood?: string | null }>>(
+      `*[_type == "property" && ${filter}] { cep, neighborhood }`
     ),
     sanity.fetch<string[]>(
-      `array::unique(*[_type == "property" && status == "ativo" && defined(type)].type)`
+      `array::unique(*[_type == "property" && ${filter} && defined(type)].type)`
     ),
     sanity.fetch<string[]>(
-      `array::unique(*[_type == "property" && status == "ativo" && defined(coalesce(condominioNome, condominioRef->nome))].coalesce(condominioNome, condominioRef->nome))`
+      `array::unique(*[_type == "property" && ${filter} && defined(coalesce(condominioNome, condominioRef->nome))].coalesce(condominioNome, condominioRef->nome))`
     ),
   ]);
+  const bairro = [...new Set(rows.map((row) => bairroDaLinha(row, premiumBairros)).filter((b): b is string => Boolean(b)))];
   return { bairro, tipo, condominio };
-}, ["ai-search-vocabulary"], { revalidate: 600 });
+}, ["ai-search-vocabulary-v2"], { revalidate: 600 });
 
 // Only short, relevant names are sent, never property records or the entire vocabulary.
 export function vocabularyHints(query: string, vocabulary: Vocabulary) {

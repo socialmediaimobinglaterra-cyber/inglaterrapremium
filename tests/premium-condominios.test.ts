@@ -1,15 +1,19 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { sanity } from "../lib/sanity";
-import { isPremiumCondominio, publicCondominioDirectory, CONDOMINIO_PROPERTY_FILTER } from "../lib/premium-condominios";
+import { publicCondominioDirectory } from "../lib/premium-condominios";
+import { buildPremiumFilter, normalizeConfig } from "../lib/premium-rule-core";
 import { getPublicCondominios, getHeaderCondominios, getCondominioBySlug, getCondominioImoveis, getRelatedCondominios } from "../lib/queries/condominios";
 import sitemap from "../app/sitemap";
 
-test("matches approved names and confirmed aliases, never approximate names", () => {
-  for (const name of ["Alphaville Imbuias", "  CONDOMINIO ACACIA IMPERIAL ", "Sun Lake", "Residencial Athenas", "Residencial Terras de Canaã"])
-    assert.equal(isPremiumCondominio(name), true, name);
-  for (const name of ["Artesano", "Edifício Artesano", "Royal Maison Residence e Resort", "Alphaville III", "Atenas", "Via Bella"])
-    assert.equal(isPremiumCondominio(name), false, name);
+test("só entram no diretório os cadastros marcados no premiumConfig (por id, nunca por nome parecido)", () => {
+  const rows = [
+    { _id: "a", nome: "Sun Lake", slug: null },
+    { _id: "b", nome: "Sun Lake Residence", slug: null },
+    { _id: "c", nome: "Atenas", slug: null },
+  ];
+  assert.deepEqual(publicCondominioDirectory(rows, ["a"]).map((r) => r._id), ["a"]);
+  assert.deepEqual(publicCondominioDirectory(rows, []), []);
 });
 
 test("generates deterministic routes, preserves curated routes and separates duplicate records", () => {
@@ -21,18 +25,24 @@ test("generates deterministic routes, preserves curated routes and separates dup
     { _id: "e", nome: "Royal Tennis", slug: null, ativo: false },
     { _id: "f", nome: "Edifício Artesano", slug: "artesano" },
   ];
-  const result = publicCondominioDirectory(rows);
+  const result = publicCondominioDirectory(rows, ["a", "b", "c", "d", "e"]);
   assert.equal(result.length, 4);
   assert.equal(result[0].slug, "sun-lake-original");
   assert.equal(result[1].slug, "alphaville-ii");
   assert.equal(new Set(result.map((r) => r.slug)).size, 4);
-  assert.deepEqual(publicCondominioDirectory([...rows].reverse()).reverse(), result);
+  assert.deepEqual(publicCondominioDirectory([...rows].reverse(), ["a", "b", "c", "d", "e"]).reverse(), result);
 });
 
-test("menu, detail, related and sitemap share eligibility; property query keeps the value floor", async (t) => {
+test("menu, detail, related and sitemap share eligibility; property query keeps the premium rule", async (t) => {
+  const config = normalizeConfig({
+    bairrosPremium: ["Terra Bonita"], condominioIds: ["sun", "empty"], vendaMinima: 1000000, locacaoMinima: 4000,
+  });
+  const filter = buildPremiumFilter(config);
   const queries: string[] = [];
   t.mock.method(sanity, "fetch", async (query: string, params?: { ids?: string[]; id?: string; limit?: number }) => {
     queries.push(query);
+    if (query.includes('_id == "premiumConfig"'))
+      return { bairrosPremium: ["Terra Bonita"], condominioIds: ["sun", "empty"], vendaMinima: 1000000, locacaoMinima: 4000 };
     if (query.includes('_type == "bairro"')) return [];
     if (query.includes("_id, nome, ativo")) return [
       { _id: "sun", nome: "Sun Lake", slug: null },
@@ -41,7 +51,7 @@ test("menu, detail, related and sitemap share eligibility; property query keeps 
     ];
     if (query.includes("_id in $ids")) {
       assert.deepEqual(params?.ids, ["sun", "empty"]);
-      assert(query.includes(CONDOMINIO_PROPERTY_FILTER));
+      assert(query.includes(filter));
       return [
         { _id: "sun", nome: "Sun Lake", cidade: "Londrina", bairro: "Sun Lake Residence", imoveisCount: 2,
           imagensUrls: [], imagensImoveis: ["https://cdn.sanity.io/property.jpg"], diferenciais: [] },
@@ -50,7 +60,7 @@ test("menu, detail, related and sitemap share eligibility; property query keeps 
     }
     if (query.includes("condominioRef._ref == $id")) {
       assert.equal(params?.id, "sun");
-      assert(query.includes(CONDOMINIO_PROPERTY_FILTER));
+      assert(query.includes(filter));
       assert(query.includes("[0...$limit]"));
       return [];
     }

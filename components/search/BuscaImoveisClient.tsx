@@ -19,6 +19,8 @@ type Props = {
   initialNaturalQuery?: string;
   initialMapSelection?: string;
   bairros: string[];
+  /** Condomínios premium que têm imóveis (filtro por condomínio). */
+  condominios?: string[];
   tipos: string[];
   crmPreview?: boolean;
 };
@@ -197,6 +199,7 @@ export function BuscaImoveisClient({
   initialNaturalQuery,
   initialMapSelection,
   bairros,
+  condominios = [],
   tipos,
   crmPreview = false,
 }: Props) {
@@ -224,6 +227,8 @@ export function BuscaImoveisClient({
   const tipo = currentFilters.tipo ?? "Todos os tipos";
   const order = currentFilters.order ?? "relevancia";
   const bairroOptions = [...new Set(["Todos os bairros", ...bairros, ...(currentFilters.bairro ? [currentFilters.bairro] : [])])];
+  const condominio = currentFilters.condominio ?? "Todos os condomínios";
+  const condominioOptions = [...new Set(["Todos os condomínios", ...condominios, ...(currentFilters.condominio ? [currentFilters.condominio] : [])])];
   const tipoOptions = [...new Set(["Todos os tipos", ...tipos, ...(currentFilters.tipo ? [currentFilters.tipo] : [])])];
   const valorOptions = [...VALOR_OPTIONS];
   let valorOption = valorOptions.find(v => v.valorMinimo === (currentFilters.valorMinimo ?? null) && v.valorMaximo === (currentFilters.valorMaximo ?? null));
@@ -280,6 +285,7 @@ export function BuscaImoveisClient({
     });
   }
   function onBairroChange(value: string) { updateFilters({ ...filtersRef.current, bairro: value === "Todos os bairros" ? null : value }); }
+  function onCondominioChange(value: string) { updateFilters({ ...filtersRef.current, condominio: value === "Todos os condomínios" ? null : value }); }
   function onTipoChange(value: string) { updateFilters({ ...filtersRef.current, tipo: value === "Todos os tipos" ? null : value }); }
   function onNegocioChange(value: string) { updateFilters({ ...filtersRef.current, negocio: value === "Alugar" ? "Alugar" : "Comprar" }); }
   function onValorChange(value: string) {
@@ -384,6 +390,9 @@ export function BuscaImoveisClient({
           <PillSelect label="Tipo" onChange={onTipoChange} options={tipoOptions} value={tipo} />
           <PillSelect label="Negócio" onChange={onNegocioChange} options={[...NEGOCIO_OPTIONS]} value={negocio} />
           <PillSelect label="Localização" onChange={onBairroChange} options={bairroOptions} value={bairro} />
+          {condominios.length > 0 || currentFilters.condominio ? (
+            <PillSelect label="Condomínio" onChange={onCondominioChange} options={condominioOptions} value={condominio} />
+          ) : null}
           <PillSelect label="Valor" onChange={onValorChange} options={valorOptions.map((item) => item.label)} value={valor} />
           <PillSelect label="Suítes" onChange={onSuitesChange} options={suitesOptions.map((item) => item.label)} value={suites} />
 

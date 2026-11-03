@@ -3,6 +3,8 @@ import { cache } from "react";
 import { imageUrlOrFallback } from "@/lib/images";
 import { resolveMapSelection, validMapSelection } from "@/lib/property-map";
 import { getPropertyMapData } from "@/lib/queries/property-map";
+import { bairroClause, bairroExibicao, bairroDaLinha, bairrosPremiumDe, type BairrosPremium } from "@/lib/cep-bairros";
+import { getPremiumConfig, premiumFilter } from "@/lib/premium-rule";
 
 export type ImovelSearchFilters = {
   mapSelection?: string | null;
@@ -143,25 +145,40 @@ export function normalizeSearchFilters(filters: ImovelSearchFilters) {
   } satisfies ImovelSearchFilters;
 }
 
-const ACTIVE_FILTER = `status == "ativo" && publicarSite == true`;
+const byPtBr = (a: string, b: string) => a.localeCompare(b, "pt-BR");
 
+// Opções dos filtros: só o que existe entre os imóveis que o Premium realmente mostra.
+// Bairro é o oficial pelo CEP (o do CRM vem com nome de condomínio); condomínio só os premium.
 export async function getImoveisFilterOptions() {
-  const [bairros, tipos] = await Promise.all([
-    sanity.fetch<string[]>(
-      `array::unique(*[_type == "property" && ${ACTIVE_FILTER} && defined(neighborhood)].neighborhood) | order(@ asc)`
-    ),
-    sanity.fetch<string[]>(
-      `array::unique(*[_type == "property" && ${ACTIVE_FILTER} && defined(type)].type) | order(@ asc)`
-    ),
-  ]);
+  const [filter, config] = await Promise.all([premiumFilter(), getPremiumConfig()]);
+  const rows = await sanity.fetch<Array<{ cep?: string | null; neighborhood?: string | null; type?: string | null; cond?: string | null; condId?: string | null }>>(
+    `*[_type == "property" && ${filter}] { cep, neighborhood, type, "cond": condominioRef->nome, "condId": condominioRef._ref }`
+  );
 
-  return { bairros, tipos };
+  const bairros = new Set<string>();
+  const tipos = new Set<string>();
+  const condominios = new Set<string>();
+  const premium = new Set(config.condominioIds);
+  const premiumBairros = bairrosPremiumDe(config);
+  for (const row of rows) {
+    const bairro = bairroDaLinha(row, premiumBairros);
+    if (bairro) bairros.add(bairro);
+    if (row.type) tipos.add(row.type);
+    if (row.cond && row.condId && premium.has(row.condId)) condominios.add(row.cond);
+  }
+
+  return {
+    bairros: [...bairros].sort(byPtBr),
+    tipos: [...tipos].sort(byPtBr),
+    condominios: [...condominios].sort(byPtBr),
+  };
 }
 
 async function buildSearchQuery(rawFilters: ImovelSearchFilters) {
   const filters = normalizeSearchFilters(rawFilters);
   const params: Record<string, unknown> = {};
-  const where = [`_type == "property"`, ACTIVE_FILTER];
+  const premiumBairros = bairrosPremiumDe(await getPremiumConfig());
+  const where = [`_type == "property"`, await premiumFilter()];
 
   if (filters.mapSelection) {
     const ids = validMapSelection(filters.mapSelection)
@@ -175,8 +192,7 @@ async function buildSearchQuery(rawFilters: ImovelSearchFilters) {
   where.push(`defined(${priceField})`);
 
   if (filters.bairro) {
-    params.bairro = filters.bairro;
-    where.push(`neighborhood == $bairro`);
+    where.push(bairroClause(filters.bairro, params, premiumBairros));
   }
 
   if (filters.tipo) {
@@ -239,16 +255,16 @@ async function buildSearchQuery(rawFilters: ImovelSearchFilters) {
           : "featured desc, dataAtualizacaoCRM desc";
 
   // Sync timestamps and prices can tie; keep page boundaries deterministic.
-  return { filters, params, where, orderBy: `${orderBy}, _id asc` };
+  return { filters, params, where, premiumBairros, orderBy: `${orderBy}, _id asc` };
 }
 
-function mapSearchRow(row: Record<string, any>, index: number): ImovelSearchResult {
+function mapSearchRow(row: Record<string, any>, index: number, premiumBairros: BairrosPremium): ImovelSearchResult {
   return {
     id: row._id,
     codigo: row.codigoImovel,
     slug: row.slug,
     titulo: row.title,
-    bairro: row.neighborhood ?? "Londrina",
+    bairro: bairroExibicao(row.cep, row.neighborhood, premiumBairros) ?? "Londrina",
     cidade: row.cidade ?? "Londrina",
     tipo: row.type ?? "Imovel",
     area: numberOrNull(row.area ?? row.areaTotal),
@@ -264,7 +280,7 @@ function mapSearchRow(row: Record<string, any>, index: number): ImovelSearchResu
 }
 
 const SEARCH_ROW_PROJECTION = `
-  _id, codigoImovel, "slug": slug.current, title, neighborhood, cidade, type,
+  _id, codigoImovel, "slug": slug.current, title, neighborhood, cep, cidade, type,
   area, areaTotal, suites, bedrooms, garage, price, rentPrice, featured,
   "mobilia": select("mobiliado" in amenities => "Mobiliado", "semimobiliado" in amenities => "Semimobiliado"),
   "mainImageUrl": coalesce(mainImage.asset->url, images[0].asset->url)
@@ -274,7 +290,7 @@ export async function searchImoveis(
   rawFilters: ImovelSearchFilters,
   options: { page?: number; perPage?: number } = {}
 ): Promise<ImovelSearchPage> {
-  const { params, where, orderBy } = await buildSearchQuery(rawFilters);
+  const { params, where, orderBy, premiumBairros } = await buildSearchQuery(rawFilters);
   const page = Math.max(1, Math.trunc(options.page ?? 1));
   const perPage = Math.min(48, Math.max(1, Math.trunc(options.perPage ?? 24)));
   const offset = (page - 1) * perPage;
@@ -288,7 +304,7 @@ export async function searchImoveis(
     ),
   ]);
 
-  const imoveis = rows.map((row, index): ImovelSearchResult => mapSearchRow(row, offset + index));
+  const imoveis = rows.map((row, index): ImovelSearchResult => mapSearchRow(row, offset + index, premiumBairros));
 
   return {
     imoveis,
@@ -299,7 +315,7 @@ export async function searchImoveis(
   };
 }
 
-function mapDetailRow(row: Record<string, any>): ImovelDetail {
+function mapDetailRow(row: Record<string, any>, premiumBairros: BairrosPremium): ImovelDetail {
   return {
     id: row._id,
     codigo: row.codigoImovel,
@@ -307,7 +323,7 @@ function mapDetailRow(row: Record<string, any>): ImovelDetail {
     titulo: row.title,
     tipo: row.type,
     finalidade: row.finalidade,
-    bairro: row.neighborhood ?? "Londrina",
+    bairro: bairroExibicao(row.cep, row.neighborhood, premiumBairros) ?? "Londrina",
     cidade: row.cidade ?? "Londrina",
     estado: row.estado ?? "PR",
     endereco: row.address,
@@ -345,7 +361,7 @@ function mapDetailRow(row: Record<string, any>): ImovelDetail {
 
 const DETAIL_PROJECTION = `
   _id, codigoImovel, "slug": slug.current, title, type, finalidade, cidade, estado,
-  neighborhood, address, addressNumber, condominioNome, "condominioRefNome": condominioRef->nome,
+  neighborhood, cep, address, addressNumber, condominioNome, "condominioRefNome": condominioRef->nome,
   "condominioImageUrls": condominioRef->imagens[].asset->url,
   price, rentPrice, condominio, iptu, iptuPeriodo,
   area, areaTotal, bedrooms, suites, bathrooms, garage,
@@ -355,24 +371,28 @@ const DETAIL_PROJECTION = `
   ${IMAGE_PROJECTION}
 `;
 
+// Fora da regra Premium a ficha responde 404 (o imóvel continua no site da matriz).
 export const getImovelBySlug = cache(async (slug: string) => {
   const row = await sanity.fetch<Record<string, any> | null>(
-    `*[_type == "property" && slug.current == $slug && ${ACTIVE_FILTER}][0] { ${DETAIL_PROJECTION} }`,
+    `*[_type == "property" && slug.current == $slug && ${await premiumFilter()}][0] { ${DETAIL_PROJECTION} }`,
     { slug }
   );
 
-  return row ? mapDetailRow(row) : null;
+  return row ? mapDetailRow(row, bairrosPremiumDe(await getPremiumConfig())) : null;
 });
 
 export async function getSimilarImoveis(imovel: ImovelDetail, limit = 3) {
+  const params: Record<string, unknown> = { slug: imovel.slug, tipo: imovel.tipo, limit };
+  const premiumBairros = bairrosPremiumDe(await getPremiumConfig());
+  const mesmoBairro = bairroClause(imovel.bairro, params, premiumBairros);
   const rows = await sanity.fetch<Record<string, any>[]>(
-    `*[_type == "property" && ${ACTIVE_FILTER} && slug.current != $slug
-        && (neighborhood == $bairro || type == $tipo)
+    `*[_type == "property" && ${await premiumFilter()} && slug.current != $slug
+        && (${mesmoBairro} || type == $tipo)
       ] {
         ${SEARCH_ROW_PROJECTION},
-        "_rank": select(neighborhood == $bairro && type == $tipo => 0, neighborhood == $bairro => 1, true => 2)
+        "_rank": select(${mesmoBairro} && type == $tipo => 0, ${mesmoBairro} => 1, true => 2)
       } | order(_rank asc, coalesce(price, rentPrice) desc) [0...$limit]`,
-    { slug: imovel.slug, bairro: imovel.bairro, tipo: imovel.tipo, limit }
+    params
   );
 
   return rows.map((row, index): ImovelSearchResult => ({
@@ -380,7 +400,7 @@ export async function getSimilarImoveis(imovel: ImovelDetail, limit = 3) {
     codigo: row.codigoImovel,
     slug: row.slug,
     titulo: row.title,
-    bairro: row.neighborhood ?? "Londrina",
+    bairro: bairroExibicao(row.cep, row.neighborhood, premiumBairros) ?? "Londrina",
     cidade: row.cidade ?? "Londrina",
     tipo: row.type ?? "Imovel",
     area: numberOrNull(row.area ?? row.areaTotal),
