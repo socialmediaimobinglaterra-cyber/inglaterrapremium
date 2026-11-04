@@ -36,7 +36,6 @@ const ALIAS = [
   ["Condomínio Morada Imperial", ["Morada Imperial"]],
   ["Condomínio Petit Ville", ["Petit Ville"]],
   ["Condomínio Residencial Graciosa", ["Residencial Graciosa"]],
-  ["Condomínio Residencial Tucanos", ["Condomínio Residencial Tucanos"]],
   ["Condomínio Santana Residence", ["Condomínio Santana Residence"]],
   ["Condomínio Village Premium", ["Village Premium"]],
   ["Condomínio Villa Noah", ["Villa Noah"]],
@@ -45,7 +44,6 @@ const ALIAS = [
   ["Pitanguá", ["Pitangua"]],
   ["Recanto do Salto", ["Recanto do Salto"]],
   ["Recanto Golf Ville", ["Recanto Golf Ville"]],
-  ["Residencial Athenas", ["Residenc Ial Athenas"]],
   ["Residencial Maanaim", ["Residencial Maanaim"]],
   ["Residencial Terras de Canaã", ["Residencial Terras de Canaã"]],
   ["Royal Forest Residence & Resort", ["Royal Forest Residence & Resort"]],
@@ -69,9 +67,11 @@ const FORA_DE_PROPOSITO = [
   ["Royal Maison Residence e Resort", "Eveline: Royal Maison não é premium"],
   ["Catuaí Residence", "Eveline: Catuaí Park não é premium"],
   ["Residencial Catuai", "Eveline: Catuaí Park não é premium"],
-  ["Condomínio Residencial Alphaville", "Sem resposta sobre 'Alphaville Jacarandás' (não está na lista de 27): fica fora até confirmar"],
-  ["Atenas", "Lista dela diz 'Residencial Athenas' (CEP 86047240); 'Atenas' (CEP 86046230) é outro cadastro: fica fora até confirmar"],
-  ["Residencial Vale dos Tucanos", "Lista dela diz 'Condomínio Residencial Tucanos'; este é outro cadastro: fica fora até confirmar"],
+  ["Condomínio Residencial Alphaville", "Apartamentos na Vila Siam (R$ 412 mil), cadastro diferente dos Alphavilles de Londrina; nenhum imóvel passaria do mínimo de qualquer jeito"],
+  ["Residenc Ial Athenas", "Eveline (04/11): Athenas/Atenas não é premium"],
+  ["Atenas", "Eveline (04/11): Athenas/Atenas não é premium"],
+  ["Condomínio Residencial Tucanos", "Eveline (04/11): Tucanos (bairro e condomínio) não é premium"],
+  ["Residencial Vale dos Tucanos", "Eveline (04/11): Tucanos não é premium"],
   ["Solar dos Tucanos", "Não está na lista dela"],
   ["Reserva Santana", "Lista dela diz 'Condomínio Santana Residence'; este é outro cadastro"],
 ];
@@ -137,7 +137,7 @@ async function main() {
     forcarPremium: [],
     forcarMatriz: [],
     observacoes:
-      "Regra definida pela Eveline (Marketing) em novembro/2026. Pendências: confirmar 'Alphaville Jacarandás', 'Athenas x Atenas' e 'Residencial Tucanos'; cadastrar 'Malie Home Resort' no CRM.",
+      "Regra definida pela Eveline (Marketing) em novembro/2026. Confirmado em 04/11: todos os Alphavilles são premium (não existe cadastro 'Jacarandás' no CRM); Athenas/Atenas e Tucanos NÃO são premium. Pendência: cadastrar 'Malie Home Resort' (lançamento) no CRM.",
   };
   const res = await fetch(`${API}/data/mutate/${DATASET}`, {
     method: "POST",
