@@ -142,7 +142,9 @@ async function main() {
       assert.equal(savedLeads[0].consent,true);
       assert(!('query' in savedLeads[0]));
       await modal.getByRole('button',{name:'Salva busca',exact:true}).click();
-      await modal.getByRole('status').filter({hasText:'Busca salva.'}).waitFor();
+      await modal.getByRole('status').filter({hasText:'Sua busca foi enviada com sucesso!'}).waitFor();
+      assert.equal(await modal.getByText('Protocolo:', {exact:false}).count(),0);
+      assert.equal(await modal.getByRole('link',{name:'Falar com a equipe'}).count(),0);
       await modal.getByRole('button',{name:'Fechar'}).click();
       await modal.waitFor({state:'hidden'});
       await page.locator('a[href="/imoveis/apartamento-0-p2"]').scrollIntoViewIfNeeded();
