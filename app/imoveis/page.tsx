@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { BuscaImoveisClient } from "@/components/search/BuscaImoveisClient";
 import { getImoveisFilterOptions, searchImoveis } from "@/lib/queries/imoveis";
+import { filtersFromSearchParams } from "@/lib/search-url";
 
 export const dynamic = "force-dynamic";
 
@@ -15,16 +16,22 @@ type PageProps = {
     q?: string;
     mapa?: string;
     negocio?: string;
+    tipo?: string;
+    bairro?: string;
+    condominio?: string;
+    valorMinimo?: string;
+    valorMaximo?: string;
   }>;
 };
 
 export default async function ImoveisPage({ searchParams }: PageProps) {
   const params = await searchParams;
   const negocio = params.negocio === "Alugar" ? "Alugar" : "Comprar";
+  const initialFilters = filtersFromSearchParams(params);
   const mapSelection = typeof params.mapa === "string" ? params.mapa.slice(0, 120) : undefined;
   const [options, initialSearchPage] = await Promise.all([
     getImoveisFilterOptions(),
-    searchImoveis({ negocio, order: "relevancia", mapSelection }),
+    searchImoveis({ ...initialFilters, negocio, order: "relevancia", mapSelection }),
   ]);
 
   return (
@@ -32,7 +39,8 @@ export default async function ImoveisPage({ searchParams }: PageProps) {
       bairros={options.bairros}
       condominios={options.condominios}
       initialSearchPage={initialSearchPage}
-      key={`${negocio}:${mapSelection ?? ""}`}
+      key={JSON.stringify([initialFilters, mapSelection, params.q])}
+      initialFilters={initialFilters}
       initialNegocio={negocio}
       initialMapSelection={mapSelection}
       initialNaturalQuery={params.q}
