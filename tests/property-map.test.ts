@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { Pool } from "pg";
+import { sanity } from "../lib/sanity";
 import { createPropertyIndex, resolveMapSelection, validMapSelection, type MapDataset } from "../lib/property-map";
 import { getPropertyMapData } from "../lib/queries/property-map";
 import { searchImoveis } from "../lib/queries/imoveis";
@@ -44,21 +44,22 @@ test("coincident coordinates stay grouped; stale or invalid links never broaden 
   }
 });
 
-test("SQL limits pins to visible geolocated properties and preserves exact selection for count, sort and pagination", async (t) => {
-  const originalUrl = process.env.DATABASE_URL;
-  process.env.DATABASE_URL = "postgres://test:test@127.0.0.1:1/test";
-  t.after(() => { if (originalUrl === undefined) delete process.env.DATABASE_URL; else process.env.DATABASE_URL = originalUrl; });
-  const calls: { sql: string; values: unknown[] }[] = [];
-  t.mock.method(Pool.prototype, "query", async (sql: string, values: unknown[] = []) => {
-    calls.push({ sql, values });
-    if (sql.includes("latitude::float8")) return { rows: data.points };
-    if (sql.includes("count(*)")) return { rows: [{ total: 3 }] };
-    return { rows: [] };
-  });
+test("Sanity queries preserve visible map selection through count, sorting and pagination", async (t) => {
+  const calls: { query: string; params: Record<string, unknown> }[] = [];
+  t.mock.method(sanity, "fetch", (async (query: string, params: Record<string, unknown> = {}) => {
+    calls.push({ query, params });
+    if (query.includes('_id == "premiumConfig"')) return { bairrosPremium: ["Gleba Palhano"], condominioIds: [], vendaMinima: 1000000, locacaoMinima: 4000 };
+    if (query.startsWith("array::unique")) return ["Gleba Palhano"];
+    if (query.includes('"id": _id, latitude, longitude')) return data.points;
+    if (query.startsWith("count(")) return 3;
+    return [];
+  }) as typeof sanity.fetch);
   const dataset = await getPropertyMapData("Comprar");
-  assert.match(calls[0].sql, /ativo = true and ativo_no_site = true and preco_venda is not null/);
-  assert.match(calls[0].sql, /latitude between -85 and 85/);
-  assert.match(calls[0].sql, /not \(latitude = 0 and longitude = 0\)/);
+  const mapQuery = calls.at(-1)!.query;
+  assert.match(mapQuery, /status == "ativo" && publicarSite == true/);
+  assert.match(mapQuery, /defined\(price\)/);
+  assert.match(mapQuery, /latitude >= -85 && latitude <= 85/);
+  assert.match(mapQuery, /!\(latitude == 0 && longitude == 0\)/);
   const feature = createPropertyIndex(dataset.points).getClusters(world, 3)[0];
   assert.ok("cluster" in feature.properties);
   const selection = `${dataset.version}:3:c${feature.properties.cluster_id}`;
@@ -66,13 +67,13 @@ test("SQL limits pins to visible geolocated properties and preserves exact selec
   assert.equal(result.total, 3);
   const count = calls.at(-2)!;
   const list = calls.at(-1)!;
-  assert.match(count.sql, /id = any\(\$1::uuid\[\]\)/);
-  assert.deepEqual(count.values[0], list.values[0]);
-  assert.deepEqual([...(count.values[0] as string[])].sort(), data.points.map((p) => p.id).sort());
-  assert.match(list.sql, /preco_venda asc nulls last, id asc/);
-  assert.deepEqual(list.values.slice(-2), [1, 1]);
+  assert.match(count.query, /_id in \$ids/);
+  assert.deepEqual(count.params.ids, list.params.ids);
+  assert.deepEqual([...(count.params.ids as string[])].sort(), data.points.map((p) => p.id).sort());
+  assert.match(list.query, /order\(price asc, _id asc\)/);
+  assert.match(list.query, /\[1\.\.\.2\]/);
   await searchImoveis({ mapSelection: "invalid" });
-  assert.deepEqual(calls.at(-1)!.values[0], []);
+  assert.deepEqual(calls.at(-1)!.params.ids, []);
   await getPropertyMapData("Alugar");
-  assert.match(calls.at(-1)!.sql, /preco_locacao is not null/);
+  assert.match(calls.at(-1)!.query, /defined\(rentPrice\)/);
 });
