@@ -8,6 +8,7 @@ import { recordAnalyticsEvent } from "@/lib/analytics";
 import { imageUrlOrFallback } from "@/lib/images";
 import { absoluteUrl } from "@/lib/site";
 import MobiliaTag from "@/components/MobiliaTag";
+import { PropertyLocationMap } from "@/components/imoveis/PropertyLocationMap";
 import { PropertyGallery } from "@/components/imoveis/PropertyGallery";
 import {
   getImovelBySlug,
@@ -398,11 +399,7 @@ export default async function ImovelPage({ params, searchParams }: PageProps) {
             <h2 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.16em]">
               Localização
             </h2>
-            <div className="flex h-[200px] items-center justify-center border border-dashed border-navy/10 bg-white text-center text-xs leading-relaxed text-navy md:h-[260px]">
-              {imovel.latitude && imovel.longitude
-                ? `${imovel.latitude}, ${imovel.longitude} — ${imovel.bairro}, Londrina`
-                : `${getAddress(imovel)}`}
-            </div>
+            <PropertyLocationMap latitude={imovel.latitude} longitude={imovel.longitude} address={getAddress(imovel)} />
           </section>
         </div>
 
