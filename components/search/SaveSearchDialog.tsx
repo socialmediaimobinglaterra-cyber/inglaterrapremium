@@ -9,6 +9,7 @@ export function SaveSearchDialog({ filters, onClose }: { filters: ImovelSearchFi
   const submitting = useRef(false);
   const [busy, setBusy] = useState(false);
   const [finished, setFinished] = useState(false);
+  const [sent, setSent] = useState(false);
   const [message, setMessage] = useState("");
   const [reference, setReference] = useState("");
   const [error, setError] = useState(false);
@@ -40,8 +41,10 @@ export function SaveSearchDialog({ filters, onClose }: { filters: ImovelSearchFi
           body: JSON.stringify({ name: form.get("name"), email: form.get("email"), phone: form.get("phone"), consent: form.get("consent") === "on", filters }),
         });
         const result = await response.json();
-        setMessage(result.message || "Não foi possível confirmar o envio.");
-        setReference(result.reference || "");
+        const confirmed = response.ok && result.ok === true;
+        setSent(confirmed);
+        setMessage(confirmed ? "Sua busca foi enviada com sucesso!" : result.message || "Não foi possível confirmar o envio.");
+        setReference(confirmed ? "" : result.reference || "");
         setFinished(result.ok === true || result.pending === true || result.terminal === true);
         setError(result.ok !== true && result.pending !== true);
       } catch { setError(true); setMessage("Não foi possível confirmar o envio. Verifique sua conexão e tente novamente."); }
@@ -67,7 +70,7 @@ export function SaveSearchDialog({ filters, onClose }: { filters: ImovelSearchFi
     <div role={error ? "alert" : "status"} aria-live="polite" className="mt-4 text-sm leading-relaxed">
       {message}
       {reference && <p className="mt-2 break-all text-xs">Protocolo: {reference}</p>}
-      {finished && <a href="/contato" className="mt-3 inline-block text-terra underline">Falar com a equipe</a>}
+      {finished && !sent && <a href="/contato" className="mt-3 inline-block text-terra underline">Falar com a equipe</a>}
     </div>
   </dialog>;
 }
