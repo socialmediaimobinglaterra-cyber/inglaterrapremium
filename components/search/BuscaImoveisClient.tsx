@@ -12,12 +12,14 @@ import { imageUrlOrFallback } from "@/lib/images";
 import type { CrmConversationListing } from "@/lib/crm-conversation";
 import MobiliaTag from "@/components/MobiliaTag";
 import { IntelligentSearchPanel } from "@/components/search/IntelligentSearchPanel";
+import { NEGOCIO_OPTIONS, VALOR_OPTIONS } from "@/lib/search-options";
 
 type Props = {
   initialSearchPage: ImovelSearchPage;
   initialNegocio?: (typeof NEGOCIO_OPTIONS)[number];
   initialNaturalQuery?: string;
   initialMapSelection?: string;
+  initialFilters?: ImovelSearchFilters;
   bairros: string[];
   /** Condomínios premium que têm imóveis (filtro por condomínio). */
   condominios?: string[];
@@ -25,18 +27,11 @@ type Props = {
   crmPreview?: boolean;
 };
 
-type ValorOption = {
-  label: string;
-  valorMinimo: number | null;
-  valorMaximo: number | null;
-};
-
 type AiInterpretationNotice = {
   interpreted: string[];
   naoInterpretado: string[];
 };
 
-const NEGOCIO_OPTIONS = ["Comprar", "Alugar"] as const;
 const SEARCH_PER_PAGE = 24;
 const SUITES_OPTIONS = [
   { label: "Não definido", value: null },
@@ -45,13 +40,6 @@ const SUITES_OPTIONS = [
   { label: "4+ suítes", value: 4 },
   { label: "5+ suítes", value: 5 },
 ] as const;
-const VALOR_OPTIONS: ValorOption[] = [
-  { label: "Não definido", valorMinimo: null, valorMaximo: null },
-  { label: "Até R$ 2.000.000", valorMinimo: null, valorMaximo: 2_000_000 },
-  { label: "Até R$ 4.000.000", valorMinimo: null, valorMaximo: 4_000_000 },
-  { label: "Até R$ 6.000.000", valorMinimo: null, valorMaximo: 6_000_000 },
-  { label: "Acima de R$ 6.000.000", valorMinimo: 6_000_000, valorMaximo: null },
-];
 
 function currency(value: number | null) {
   if (value === null) return "Sob consulta";
@@ -198,6 +186,7 @@ export function BuscaImoveisClient({
   initialNegocio = "Comprar",
   initialNaturalQuery,
   initialMapSelection,
+  initialFilters,
   bairros,
   condominios = [],
   tipos,
@@ -207,7 +196,7 @@ export function BuscaImoveisClient({
   const [total, setTotal] = useState(initialSearchPage.total);
   const [page, setPage] = useState(initialSearchPage.page);
   const [hasMore, setHasMore] = useState(initialSearchPage.hasMore);
-  const [currentFilters, setCurrentFilters] = useState<ImovelSearchFilters>({ negocio: initialNegocio, order: "relevancia", mapSelection: initialMapSelection });
+  const [currentFilters, setCurrentFilters] = useState<ImovelSearchFilters>({ ...initialFilters, negocio: initialNegocio, order: "relevancia", mapSelection: initialMapSelection });
   const filtersRef = useRef(currentFilters);
   const requestSequence = useRef(0);
   const aiBusyRef = useRef(false);

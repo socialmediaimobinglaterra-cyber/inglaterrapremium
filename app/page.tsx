@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { InstagramGallery } from "@/components/home/InstagramGallery";
 import { HomeHeroSearch } from "@/components/search/HomeHeroSearch";
+import { getImoveisFilterOptions } from "@/lib/queries/imoveis";
 import { PropertyMap } from "@/components/home/PropertyMap";
 import { sanity, projectId, dataset } from "@/lib/sanity";
 import { unstable_cache } from "next/cache";
@@ -200,7 +201,7 @@ const getHomeData = unstable_cache(async () => {
   const premiumBairros = bairrosPremiumDe(premiumConfig);
   const featuredPeriod = String(Math.floor(Date.now() / FEATURED_ROTATION_INTERVAL_MS));
 
-  const [featuredRows, bairroCounts, bairrosMeta, totalImoveis, instagramPosts] = await Promise.all([
+  const [featuredRows, bairroCounts, bairrosMeta, totalImoveis, instagramPosts, filterOptions] = await Promise.all([
     // Pseudo-random rotation keyed by a time bucket, same trick as the old
     // `md5(id::text || ':' || period)` ordering — deterministic per window,
     // reshuffles every FEATURED_ROTATION_INTERVAL_MS.
@@ -235,6 +236,7 @@ const getHomeData = unstable_cache(async () => {
     ),
     sanity.fetch<number>(`count(*[_type == "property" && ${HOME_ACTIVE_FILTER}])`),
     getActiveInstagramPosts(),
+    getImoveisFilterOptions(),
   ]);
 
   const featured: FeaturedProperty[] = featuredRows.map((row, index) => ({
@@ -275,8 +277,8 @@ const getHomeData = unstable_cache(async () => {
 
   const totals = { total_imoveis: totalImoveis, total_bairros: premiumConfig.bairrosPremium.length };
 
-  return { featured, bairros, totals, instagramPosts };
-}, ["public-home-v2", projectId, dataset], { revalidate: 60 });
+  return { featured, bairros, totals, instagramPosts, filterOptions };
+}, ["public-home-v3", projectId, dataset], { revalidate: 60 });
 
 function Rule({ label, right }: { label?: string; right?: string }) {
   return (
@@ -599,7 +601,7 @@ function NewsletterBlock() {
 }
 
 export default async function Home() {
-  const [{ featured, bairros, totals, instagramPosts }, { lancamentos, condominios }] = await Promise.all([
+  const [{ featured, bairros, totals, instagramPosts, filterOptions }, { lancamentos, condominios }] = await Promise.all([
     getHomeData(),
     getSiteNavigation(),
   ]);
@@ -653,7 +655,7 @@ export default async function Home() {
           <p className="mb-5 text-[clamp(15px,4.4vw,18px)] font-light italic tracking-[0.02em] text-white/75 md:mb-9 md:text-[clamp(16px,1.8vw,22px)]">
             Onde visão se torna patrimônio.
           </p>
-          <HomeHeroSearch />
+          <HomeHeroSearch filterOptions={filterOptions} />
         </div>
         <div className="absolute bottom-12 right-16 hidden flex-col items-center gap-2 text-[8px] uppercase tracking-[0.35em] text-white/75 [writing-mode:vertical-rl] md:flex">
           Rolar
