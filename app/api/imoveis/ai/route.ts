@@ -1,6 +1,6 @@
 import { after, NextResponse } from "next/server";
 import { recordAnalyticsEvent } from "@/lib/analytics";
-import { applyChanges, filterFields, QUERY_MAX_LENGTH, sanitizeState } from "@/lib/search-state";
+import { applyChanges, filterFields, locationClarification, QUERY_MAX_LENGTH, sanitizeState } from "@/lib/search-state";
 import { consumeAiQuota, getSearchVocabulary, recordOpenAiUsage, vocabularyHints } from "@/lib/ai-search-support";
 import { conversationVocabulary, consumePreviewAiQuota } from "@/lib/crm-conversation";
 import { isLocalCrmPreview } from "@/lib/crm-preview";
@@ -82,7 +82,13 @@ export async function POST(request: Request) {
     if (typeof data.model === "string") model = data.model;
     if (!response.ok) { errorCode = `http_${response.status}`; return failure("Busca inteligente indisponível. Seus filtros foram mantidos."); }
     if (data.choices?.[0]?.finish_reason !== "stop" || !data.choices?.[0]?.message?.content) throw new Error("invalid_output");
-    const result = applyChanges(state, JSON.parse(data.choices[0].message.content), vocabulary);
+    const interpreted = JSON.parse(data.choices[0].message.content);
+    const clarification = locationClarification(interpreted, vocabulary);
+    if (clarification) {
+      success = true;
+      return failure(clarification);
+    }
+    const result = applyChanges(state, interpreted, vocabulary);
     success = true;
     if (!preview) after(() => recordAnalyticsEvent({ tipoEvento: "busca_ia_usada", payload: { termo_livre: null } }));
     return NextResponse.json({ ok: true, ...result });

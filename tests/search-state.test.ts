@@ -1,10 +1,20 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { applyChanges, sanitizeState, resolveName } from "../lib/search-state";
+import { applyChanges, sanitizeState, resolveName, locationClarification } from "../lib/search-state";
 const vocabulary = { bairro: ["Gleba Palhano", "Bela Suíça", "Centro"], tipo: ["Apartamento", "Casa"], condominio: ["Residencial Maanaim"] };
 const initial = { bairro: "Gleba Palhano", tipo: "Apartamento", negocio: "Comprar", valorMaximo: 2000000 };
 const operation = (campo: string, acao: string, texto: string | null = null, numero: number | null = null) => ({ campo, acao, texto, numero });
 const patch = (...alteracoes: ReturnType<typeof operation>[]) => ({ reiniciar: false, alteracoes, naoInterpretado: [] });
+
+test("abbreviated condominium asks for clarification instead of dropping location", () => {
+  const names = { ...vocabulary, condominio: ["Alphaville II", "Alphaville Imbuias"] };
+  const message = locationClarification(patch(operation("condominio", "definir", "Alphaville")), names);
+  assert.match(message!, /Alphaville II, Alphaville Imbuias/);
+  assert.equal(locationClarification(patch(operation("condominio", "definir", "Alphaville II")), names), null);
+  assert.match(locationClarification(patch(operation("bairro", "definir", "Alphaville")), names)!, /Alphaville II/);
+  assert.match(locationClarification(patch(operation("condominio", "definir", "Inexistente")), names)!, /Não reconhecemos/);
+  assert.equal(locationClarification(patch(operation("bairro", "remover")), names), null);
+});
 test("incremental suites preserve location, type and price", () => {
   const result = applyChanges(initial, patch(operation("suitesMinimas", "definir", null, 3)), vocabulary);
   assert.equal(result.filters.valorMaximo, 2000000);

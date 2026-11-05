@@ -35,12 +35,12 @@ export const getSearchVocabulary = unstable_cache(async (): Promise<Vocabulary> 
       `array::unique(*[_type == "property" && ${filter} && defined(type)].type)`
     ),
     sanity.fetch<string[]>(
-      `array::unique(*[_type == "property" && ${filter} && defined(coalesce(condominioNome, condominioRef->nome))]{"nome": coalesce(condominioNome, condominioRef->nome)}.nome)`
+      `array::unique(*[_type == "property" && ${filter} && defined(coalesce(condominioRef->nome, condominioNome))]{"nome": coalesce(condominioRef->nome, condominioNome)}.nome)`
     ),
   ]);
   const bairro = [...new Set(rows.map((row) => bairroDaLinha(row, premiumBairros)).filter((b): b is string => Boolean(b)))];
   return { bairro, tipo, condominio };
-}, ["ai-search-vocabulary-v2"], { revalidate: 600 });
+}, ["ai-search-vocabulary-v3"], { revalidate: 600 });
 
 // Only short, relevant names are sent, never property records or the entire vocabulary.
 export function vocabularyHints(query: string, vocabulary: Vocabulary) {
