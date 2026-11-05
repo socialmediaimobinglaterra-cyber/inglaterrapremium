@@ -5,12 +5,12 @@ import vm from "node:vm";
 import ts from "typescript";
 import * as state from "../lib/search-state";
 
-function harness(options: { retry?: number; status?: number; timeout?: boolean } = {}) {
+function harness(options: { retry?: number; status?: number; timeout?: boolean; location?: string } = {}) {
   const pending: (() => Promise<unknown>)[] = [];
   const usage: unknown[][] = [];
   const calls: any[] = [];
   const module = { exports: {} as { POST: (request: Request) => Promise<Response> } };
-  const vocabulary = { bairro: ["Gleba Palhano"], tipo: ["Apartamento"], condominio: [] };
+  const vocabulary = { bairro: ["Gleba Palhano"], tipo: ["Apartamento"], condominio: ["Alphaville II", "Alphaville Imbuias"] };
   const code = ts.transpileModule(readFileSync("app/api/imoveis/ai/route.ts", "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
   vm.runInNewContext(code, {
     module, exports: module.exports, Buffer, URL, Response, AbortController, setTimeout, clearTimeout, console,
@@ -33,7 +33,7 @@ function harness(options: { retry?: number; status?: number; timeout?: boolean }
     fetch: async (_url: string, init: RequestInit) => {
       calls.push(JSON.parse(init.body as string));
       if (options.timeout) throw new DOMException("aborted", "AbortError");
-      return Response.json({ model: "gpt-4o-mini-test", usage: { prompt_tokens: 321, completion_tokens: 45, total_tokens: 366 }, choices: [{ finish_reason: "stop", message: { content: JSON.stringify({ reiniciar: false, alteracoes: [{ campo: "suitesMinimas", acao: "definir", texto: null, numero: 3 }], naoInterpretado: [] }) } }] }, { status: options.status ?? 200 });
+      return Response.json({ model: "gpt-4o-mini-test", usage: { prompt_tokens: 321, completion_tokens: 45, total_tokens: 366 }, choices: [{ finish_reason: "stop", message: { content: JSON.stringify({ reiniciar: false, alteracoes: options.location ? [{campo:"condominio",acao:"definir",texto:options.location,numero:null}] : [{ campo: "suitesMinimas", acao: "definir", texto: null, numero: 3 }], naoInterpretado: [] }) } }] }, { status: options.status ?? 200 });
     },
   });
   return { calls, usage, async run(body: unknown) {
@@ -42,6 +42,18 @@ function harness(options: { retry?: number; status?: number; timeout?: boolean }
     return { status: response.status, headers: response.headers, data: await response.json() };
   } };
 }
+
+test("ambiguous location preserves results until customer specifies condominium", async () => {
+  const h = harness({ location: "Alphaville" });
+  const result = await h.run({query:"Casa no alphaville",state:{bairro:"Gleba Palhano"}});
+  assert.equal(result.data.ok,false);
+  assert.equal(result.data.filters,null);
+  assert.match(result.data.message,/Alphaville II, Alphaville Imbuias/);
+  assert.equal(h.calls.length,1);
+  const exact = await harness({location:"Alphaville II"}).run({query:"Alphaville II"});
+  assert.equal(exact.data.ok,true);
+  assert.equal(exact.data.filters.condominio,"Alphaville II");
+});
 test("one OpenAI call, only structured state, real usage propagated", async () => {
   const h = harness();
   const result = await h.run({ query: "Agora com 3 suítes", state: { bairro: "Gleba Palhano", tipo: "Apartamento", valorMaximo: 2000000, fotos: ["private"], history: ["private"] } });

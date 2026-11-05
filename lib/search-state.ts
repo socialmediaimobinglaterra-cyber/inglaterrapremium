@@ -16,6 +16,23 @@ export function resolveName(value: string, names: string[]) {
   const matches = names.filter((name) => withoutPrefix(name) === withoutPrefix(value));
   return matches.length === 1 ? matches[0] : null;
 }
+export function locationClarification(result: unknown, vocabulary: Vocabulary): string | null {
+  if (!result || typeof result !== "object") return null;
+  const data = result as Record<string, unknown>;
+  if (!Array.isArray(data.alteracoes)) return null;
+  for (const change of data.alteracoes) {
+    if (!change || change.acao !== "definir" || !["bairro", "condominio"].includes(change.campo) || typeof change.texto !== "string") continue;
+    const field = change.campo as "bairro" | "condominio";
+    if (resolveName(change.texto, vocabulary[field])) continue;
+    const bare = (name: string) => normalizeName(name).replace(/^(?:(?:condominio|residencial|edificio) )+/, "");
+    const key = bare(change.texto);
+    const candidates = key.length >= 3 ? [...new Set([...vocabulary.bairro, ...vocabulary.condominio])]
+      .filter(name => bare(name) === key || bare(name).startsWith(`${key} `)) : [];
+    if (candidates.length) return `Qual localização você deseja: ${candidates.slice(0, 6).join(", ")}? Escreva o nome completo na busca. Seus filtros foram mantidos.`;
+    return "Não reconhecemos a localização informada. Confira o nome ou selecione um bairro ou condomínio nos filtros. Seus filtros foram mantidos.";
+  }
+  return null;
+}
 export function sanitizeState(value: unknown, vocabulary?: Vocabulary): ImovelSearchFilters {
   const input = value && typeof value === "object" ? value as Record<string, unknown> : {};
   const state: Record<string, string | number | null> = {};
