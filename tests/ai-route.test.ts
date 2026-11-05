@@ -13,12 +13,15 @@ function harness(options: { retry?: number; status?: number; timeout?: boolean }
   const vocabulary = { bairro: ["Gleba Palhano"], tipo: ["Apartamento"], condominio: [] };
   const code = ts.transpileModule(readFileSync("app/api/imoveis/ai/route.ts", "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
   vm.runInNewContext(code, {
-    module, exports: module.exports, Buffer, AbortController, setTimeout, clearTimeout, console,
+    module, exports: module.exports, Buffer, URL, Response, AbortController, setTimeout, clearTimeout, console,
     process: { env: { OPENAI_API_KEY: "test-only" } },
     require: (name: string) => {
       if (name === "next/server") return { after: (fn: () => Promise<unknown>) => pending.push(fn), NextResponse: { json: (value: unknown, init?: ResponseInit) => Response.json(value, init) } };
       if (name === "@/lib/search-state") return state;
       if (name === "@/lib/analytics") return { recordAnalyticsEvent: async () => {} };
+      if (name === "@/lib/crm-conversation") return { conversationVocabulary: async () => vocabulary, consumePreviewAiQuota: () => 0 };
+      if (name === "@/lib/crm-preview") return { isLocalCrmPreview: () => false };
+      if (name === "@/lib/crm-preview-access") return { canAccessCrmPreview: async () => false };
       if (name === "@/lib/ai-search-support") return {
         consumeAiQuota: async () => options.retry ?? 0,
         getSearchVocabulary: async () => vocabulary,

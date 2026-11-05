@@ -35,7 +35,7 @@ export const getSearchVocabulary = unstable_cache(async (): Promise<Vocabulary> 
       `array::unique(*[_type == "property" && ${filter} && defined(type)].type)`
     ),
     sanity.fetch<string[]>(
-      `array::unique(*[_type == "property" && ${filter} && defined(coalesce(condominioNome, condominioRef->nome))].coalesce(condominioNome, condominioRef->nome))`
+      `array::unique(*[_type == "property" && ${filter} && defined(coalesce(condominioNome, condominioRef->nome))]{"nome": coalesce(condominioNome, condominioRef->nome)}.nome)`
     ),
   ]);
   const bairro = [...new Set(rows.map((row) => bairroDaLinha(row, premiumBairros)).filter((b): b is string => Boolean(b)))];
