@@ -16,11 +16,13 @@ async function main() {
   const bundle = await esbuild.build({
     stdin: { contents: `import React from 'react'; import { createRoot } from 'react-dom/client';
       import { BuscaImoveisClient } from './components/search/BuscaImoveisClient';
+      import { filtersFromSearchParams } from './lib/search-url';
       const params = new URLSearchParams(location.search);
       createRoot(document.getElementById('root')).render(<BuscaImoveisClient
         bairros={['Gleba Palhano', 'Terra Bonita']} tipos={['Casa', 'Apartamento']}
         crmPreview={params.has('preview')} initialNaturalQuery={params.get('q') || undefined}
-        initialNegocio={params.has('rent') ? 'Alugar' : 'Comprar'}
+        initialFilters={filtersFromSearchParams(Object.fromEntries(params))}
+        initialNegocio={params.has('rent') || params.get('negocio') === 'Alugar' ? 'Alugar' : 'Comprar'}
         initialSearchPage={{imoveis:${JSON.stringify(listings)},total:30,page:1,perPage:24,hasMore:true}} />);`,
       resolveDir: process.cwd(), loader: 'tsx' },
     bundle: true, write: false, format: 'iife', jsx: 'automatic',
@@ -159,6 +161,14 @@ async function main() {
       await page.waitForFunction(()=>document.activeElement.id === 'intelligent-search-query');
       assert.equal(await input.inputValue(),'Agora quero com 3 suítes');
       assert.equal(await page.getByRole('textbox').count(),1);
+      const stored = new URL(page.url()).searchParams;
+      for (const [key,value] of Object.entries({negocio:'Alugar',bairro:'Gleba Palhano',suitesMinimas:3,quartosMinimos:3,vagasMinimas:2,areaMinima:100,areaMaxima:300,order:'menor_valor'})) assert.equal(stored.get(key),String(value));
+      const priorAiCalls = aiRequests.length;
+      await page.reload();
+      await page.getByRole('combobox',{name:'Suítes',exact:true}).waitFor();
+      assert.equal(await page.getByRole('combobox',{name:'Suítes',exact:true}).inputValue(),'3+ suítes');
+      assert.equal(await page.getByRole('combobox',{name:'Ordenar por'}).inputValue(),'menor_valor');
+      assert.equal(aiRequests.length,priorAiCalls);
       await page.getByRole('combobox',{name:'Negócio',exact:true}).selectOption('Comprar');
       await cardPrice('apartamento-0').filter({hasText:'2.000.000'}).waitFor();
       assert.match(await cardPrice('apartamento-0').innerText(), /2\.000\.000/);
@@ -202,6 +212,16 @@ async function main() {
       await page.getByRole('heading',{name:'Vamos refinar sua busca?'}).waitFor();
       assert.equal(calls,1);
       assert.equal(await page.getByRole('textbox').inputValue(),'Casa');
+      if (!preview) {
+        assert.equal(new URL(page.url()).searchParams.has('q'),false);
+        const savedUrl = page.url();
+        await page.goto(`http://127.0.0.1:${server.address().port}/imoveis/ficha-exemplo`);
+        await page.goBack();
+        await page.getByRole('combobox',{name:'Localização',exact:true}).waitFor();
+        assert.equal(page.url(),savedUrl);
+        assert.equal(await page.getByRole('combobox',{name:'Localização',exact:true}).inputValue(),'Terra Bonita');
+        assert.equal(calls,1);
+      }
       await page.close();
     }
     console.log(`PASS: search regression + Salva busca modal, consent, filter snapshot, failure/retry, success, keyboard focus and responsive widths. Screenshots: ${output}`);
