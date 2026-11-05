@@ -52,7 +52,7 @@ function area(value: number | null) {
   return `${value.toLocaleString("pt-BR", { maximumFractionDigits: 0 })} m²`;
 }
 
-function getPrice(imovel: ImovelDetail, foco: Foco = null) {
+function getPrice(imovel: Pick<ImovelDetail, "precoVenda" | "precoLocacao">, foco: Foco = null) {
   if (foco === "rent" && imovel.precoLocacao) return imovel.precoLocacao;
   if (foco === "sale" && imovel.precoVenda) return imovel.precoVenda;
   return imovel.precoVenda ?? imovel.precoLocacao;
@@ -169,12 +169,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
-function SimilarCard({ imovel }: { imovel: ImovelSearchResult }) {
-  const price = imovel.precoVenda ?? imovel.precoLocacao;
+function SimilarCard({ imovel, foco }: { imovel: ImovelSearchResult; foco: Foco }) {
+  const price = getPrice(imovel, foco);
   const image = imageUrlOrFallback(imovel.image);
 
   return (
-    <Link className="group block text-inherit no-underline" href={`/imoveis/${imovel.slug}`}>
+    <Link className="group block text-inherit no-underline" href={`/imoveis/${imovel.slug}${foco ? `?foco=${foco === "rent" ? "locacao" : "venda"}` : ""}`}>
       <div className="relative aspect-[5/4] overflow-hidden bg-[#1e1e1e]">
         <Image
           alt={`${imovel.titulo} — ${imovel.bairro}, Londrina`}
@@ -213,8 +213,9 @@ function Field({ label, placeholder }: { label: string; placeholder: string }) {
   );
 }
 
-function jsonLd(imovel: ImovelDetail) {
-  const price = getPrice(imovel);
+function jsonLd(imovel: ImovelDetail, foco: Foco = null) {
+  const price = getPrice(imovel, foco);
+  const renting = foco === "rent" && Boolean(imovel.precoLocacao) || !imovel.precoVenda && Boolean(imovel.precoLocacao);
   const gallery = getGallery(imovel);
 
   return {
@@ -246,7 +247,7 @@ function jsonLd(imovel: ImovelDetail) {
           price,
           priceCurrency: "BRL",
           availability: "https://schema.org/InStock",
-          businessFunction: imovel.precoLocacao
+          businessFunction: renting
             ? "https://purl.org/goodrelations/v1#LeaseOut"
             : "https://purl.org/goodrelations/v1#Sell",
         }
@@ -316,11 +317,11 @@ export default async function ImovelPage({ params, searchParams }: PageProps) {
   return (
     <main className="bg-offwhite text-navy">
       <script
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd(imovel)) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd(imovel, foco)).replace(/</g, "\\u003c") }}
         type="application/ld+json"
       />
       <script
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd(imovel)) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd(imovel)).replace(/</g, "\\u003c") }}
         type="application/ld+json"
       />
 
@@ -460,7 +461,7 @@ export default async function ImovelPage({ params, searchParams }: PageProps) {
         </div>
         <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
           {similares.map((similar) => (
-            <SimilarCard imovel={similar} key={similar.codigo} />
+            <SimilarCard imovel={similar} foco={foco} key={similar.codigo} />
           ))}
         </div>
       </section>

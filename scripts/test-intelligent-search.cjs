@@ -72,8 +72,10 @@ async function main() {
       const input = page.getByRole('textbox', {name:'Busca inteligente de imóveis'});
       const submit = page.getByRole('button', {name:'Encontrar imóveis',exact:true});
       await input.waitFor();
-      const cardPrice = slug => page.locator(`a[href="/imoveis/${slug}"]`).locator('span').last();
+      const cardLink = slug => page.locator(`a[href^="/imoveis/${slug}?"]`);
+      const cardPrice = slug => cardLink(slug).locator('span').last();
       assert.match(await cardPrice('apartamento-0').innerText(), /2\.000\.000/);
+      assert.equal(await cardLink('apartamento-0').getAttribute('href'),'/imoveis/apartamento-0?foco=venda');
       await page.evaluate(()=>document.fonts.ready);
       assert.equal(await page.getByRole('textbox').count(),1);
       assert((await input.boundingBox()).height >= 48);
@@ -106,6 +108,7 @@ async function main() {
       assert.equal(searches.at(-1).negocio,'Alugar');
       assert.match(await cardPrice('apartamento-0').innerText(), /3\.316/);
       assert.match(await cardPrice('apartamento-0-p2').innerText(), /3\.316/);
+      assert.equal(await cardLink('apartamento-0-p2').getAttribute('href'),'/imoveis/apartamento-0-p2?foco=locacao');
       for (const [key,value] of Object.entries({order:'menor_valor',bairro:'Gleba Palhano',valorMaximo:3000000,suitesMinimas:3,quartosMinimos:3,vagasMinimas:2,areaMinima:100,areaMaxima:300})) assert.equal(searches.at(-1)[key],value);
       const savedLeads = [];
       await page.route('**/api/imoveis/salvar-busca', async route => {
@@ -147,7 +150,7 @@ async function main() {
       assert.equal(await modal.getByRole('link',{name:'Falar com a equipe'}).count(),0);
       await modal.getByRole('button',{name:'Fechar'}).click();
       await modal.waitFor({state:'hidden'});
-      await page.locator('a[href="/imoveis/apartamento-0-p2"]').scrollIntoViewIfNeeded();
+      await cardLink('apartamento-0-p2').scrollIntoViewIfNeeded();
       const edit = page.getByRole('button',{name:'Editar busca',exact:true});
       await edit.waitFor();
       const box = await edit.boundingBox(); assert(box.y >= 64 && box.y < 125);
@@ -179,7 +182,15 @@ async function main() {
     // Home entry and the existing CRM preview reuse the same component/endpoints.
     const rentalPage = await browser.newPage();
     await rentalPage.goto(`http://127.0.0.1:${server.address().port}/?rent=1`);
-    assert.match(await rentalPage.locator('a[href="/imoveis/apartamento-0"]').locator('span').last().innerText(), /3\.316/);
+    assert.match(await rentalPage.locator('a[href="/imoveis/apartamento-0?foco=locacao"]').locator('span').last().innerText(), /3\.316/);
+    let cleared;
+    await rentalPage.route('**/api/imoveis/search', async route => {
+      cleared = route.request().postDataJSON();
+      await route.fulfill({json:{ok:true,imoveis:listings,total:6,page:1,hasMore:false}});
+    });
+    await rentalPage.getByRole('button',{name:'Limpar filtros',exact:true}).click();
+    await rentalPage.waitForFunction(()=>document.querySelector('#filtro-negocio').value === 'Alugar' && !document.querySelector('fieldset').disabled);
+    assert.equal(cleared.negocio,'Alugar');
     await rentalPage.close();
     for (const preview of [false,true]) {
       const page = await browser.newPage();
