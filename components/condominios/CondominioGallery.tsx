@@ -38,12 +38,14 @@ export function CondominioGallery({
           <img
             alt={images[activeIndex]?.alt ?? `${nome} - foto ${activeIndex + 1}`}
             className="h-full w-full object-cover"
+            loading="lazy"
             src={images[activeIndex]?.url}
           />
         </button>
         <div className="mt-2 flex gap-1.5 overflow-x-auto">
           {images.map((image, index) => (
             <button
+              aria-label={`Abrir foto ${index + 1} em tela cheia`}
               className={`h-11 w-14 shrink-0 overflow-hidden border-2 ${
                 index === activeIndex ? "border-terra" : "border-transparent"
               }`}
@@ -54,13 +56,13 @@ export function CondominioGallery({
               }}
               type="button"
             >
-              <img alt="" className="h-full w-full object-cover" src={image.url} />
+              <img alt="" loading="lazy" className="h-full w-full object-cover" src={image.url} />
             </button>
           ))}
         </div>
       </div>
 
-      <div className="hidden h-[520px] grid-cols-[1.7fr_1fr] gap-2 md:grid">
+      <div className={`hidden h-[520px] gap-2 md:grid ${images.length > 1 ? "grid-cols-[1.7fr_1fr]" : "grid-cols-1"}`}>
         <button
           aria-label="Abrir foto principal em tela cheia"
           className="h-full w-full cursor-zoom-in overflow-hidden border-0 bg-transparent p-0"
@@ -70,10 +72,11 @@ export function CondominioGallery({
           <img
             alt={images[0]?.alt ?? `${nome} - vista geral`}
             className="h-full w-full object-cover"
+            loading="lazy"
             src={images[0]?.url}
           />
         </button>
-        <div className="grid grid-cols-2 grid-rows-2 gap-2">
+        {images.length > 1 ? <div className={`grid gap-2 ${images.length > 3 ? "grid-cols-2 grid-rows-2" : images.length === 3 ? "grid-cols-1 grid-rows-2" : "grid-cols-1"}`}>
           {images.slice(1, 5).map((image, index) => (
             <button
               aria-label={`Abrir foto ${index + 2} em tela cheia`}
@@ -85,6 +88,7 @@ export function CondominioGallery({
               <img
                 alt={image.alt}
                 className="h-full w-full object-cover"
+                loading="lazy"
                 src={image.url}
               />
               {index === 3 && images.length > 5 ? (
@@ -94,7 +98,7 @@ export function CondominioGallery({
               ) : null}
             </button>
           ))}
-        </div>
+        </div> : null}
       </div>
 
       {modalIndex !== null ? (
