@@ -28,6 +28,15 @@ export default function ContatoPage() {
             <p>Londrina, PR</p>
           </div>
         </div>
+        <a
+          className="mt-6 inline-flex min-h-11 items-center bg-terra px-6 py-3.5 text-[10px] uppercase tracking-[0.2em] text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-terra"
+          href="https://link.imobiliariainglaterra.com.br/p/imobiliaria-inglaterra"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          WhatsApp
+          <span className="sr-only"> (abre em nova aba)</span>
+        </a>
         <p className="mt-8 max-w-[520px] text-[13px] leading-relaxed text-navy">
           Para atendimento específico sobre Inglaterra BTS, acesse o canal do
           serviço.
