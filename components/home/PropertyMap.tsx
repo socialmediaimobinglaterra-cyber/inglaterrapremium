@@ -47,7 +47,7 @@ export function PropertyMap() {
         if (!data.points.length) { setStatus("empty"); return; }
         const index = createPropertyIndex(data.points);
         const map = L.map(container.current, {
-          minZoom: 3, maxZoom: MAP_MAX_ZOOM, scrollWheelZoom: false,
+          minZoom: 3, maxZoom: MAP_MAX_ZOOM, scrollWheelZoom: true,
           zoomControl: false, worldCopyJump: true,
         });
         mapRef.current = map;
