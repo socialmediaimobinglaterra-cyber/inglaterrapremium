@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CondominioGallery } from "@/components/condominios/CondominioGallery";
@@ -67,7 +68,8 @@ function EmptyImage({ nome }: { nome: string }) {
 function ContactField({ placeholder }: { placeholder: string }) {
   return (
     <input
-        className="border border-white/20 bg-white/10 px-3.5 py-3 text-[13px] text-white outline-none placeholder:text-white/75"
+      aria-label={placeholder}
+      className="min-w-0 w-full border border-white/20 bg-white/10 px-3.5 py-3 text-[13px] text-white outline-none placeholder:text-white/75"
       placeholder={placeholder}
     />
   );
@@ -91,33 +93,41 @@ function formatArea(value: number | null) {
 function ImovelCard({ imovel, condominio }: { imovel: ImovelSearchResult; condominio: string }) {
   return (
     <Link
-      className="group block text-inherit no-underline"
+      className="group grid items-center gap-6 text-inherit no-underline md:grid-cols-[1.2fr_1fr] md:gap-12 lg:gap-16"
       href={`/imoveis/${imovel.slug}`}
     >
-      <div className="relative aspect-[5/4] overflow-hidden bg-[#1e1e1e]">
-        <img
+      <div className="relative aspect-[4/3] overflow-hidden bg-[#1e1e1e]">
+        <Image
           alt={`${imovel.titulo} - Condomínio ${condominio}, Londrina`}
           className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
+          fill
+          sizes="(min-width: 768px) 55vw, 100vw"
           src={imovel.image}
         />
         <span className="absolute left-3.5 top-3.5 border border-white/40 px-2.5 py-[5px] text-[8px] uppercase tracking-[0.2em] text-white">
           {imovel.tag}
         </span>
       </div>
-      <div className="pt-3.5">
+      <div className="min-w-0 py-1 md:py-5">
         {imovel.codigo ? <p className="mb-1.5 text-xs text-navy">Ref. {imovel.codigo}</p> : null}
         <p className="mb-1 text-[11px] tracking-[0.06em] text-navy">
           {condominio}, {imovel.bairro}
         </p>
-        <h3 className="mb-2.5 text-[15px] font-normal leading-[1.3] text-navy">
+        <h3 className="mb-6 break-words text-[22px] font-light leading-[1.3] text-navy md:text-[28px]">
           {imovel.titulo}
         </h3>
-        <div className="flex items-baseline justify-between border-t border-navy/10 pt-2.5">
-          <span className="text-[11px] text-navy">{formatArea(imovel.area) ?? imovel.tipo}</span>
-          <span className="text-[17px] font-medium text-navy">
-            {formatCurrency(imovel.precoVenda ?? imovel.precoLocacao)}
-          </span>
+        <p className="border-y border-navy/10 py-4 text-[13px] leading-relaxed text-navy">
+          {[formatArea(imovel.area) ?? imovel.tipo,
+            imovel.dormitorios ? `${imovel.dormitorios} quartos` : null,
+            imovel.suites ? `${imovel.suites} suítes` : null,
+            imovel.vagas ? `${imovel.vagas} vagas` : null].filter(Boolean).join(" · ")}
+        </p>
+        <div className="my-6 flex flex-wrap gap-x-8 gap-y-3">
+          {imovel.precoVenda !== null && <p className="text-[22px] font-light"><span className="mb-1 block text-[11px] font-normal">Venda</span>{formatCurrency(imovel.precoVenda)}</p>}
+          {imovel.precoLocacao !== null && <p className="text-[22px] font-light"><span className="mb-1 block text-[11px] font-normal">Locação / mês</span>{formatCurrency(imovel.precoLocacao)}</p>}
+          {imovel.precoVenda === null && imovel.precoLocacao === null && <p className="text-[22px] font-light">Consulte</p>}
         </div>
+        <span className="inline-block border-b border-terra pb-1 text-[10px] uppercase tracking-[0.2em] text-terra">Conhecer imóvel</span>
       </div>
     </Link>
   );
@@ -192,12 +202,7 @@ export default async function CondominioPage({ params }: PageProps) {
   const facts = [
     condominio.unidades
       ? { value: condominio.unidades, label: "Unidades" }
-      : condominio.imoveisCount > 0
-        ? {
-            value: `${condominio.imoveisCount} ${condominio.imoveisCount === 1 ? "imóvel" : "imóveis"}`,
-            label: "Imóveis disponíveis",
-          }
-        : null,
+      : null,
     condominio.areaTotal ? { value: condominio.areaTotal, label: "Área total" } : null,
     condominio.seguranca ? { value: condominio.seguranca, label: "Segurança" } : null,
   ].filter(Boolean) as Array<{ value: string; label: string }>;
@@ -213,9 +218,16 @@ export default async function CondominioPage({ params }: PageProps) {
         <span className="mb-4 inline-block bg-navy px-3 py-1.5 text-[9px] font-semibold uppercase tracking-[0.15em] text-white">
           Condomínio Fechado
         </span>
-        <h1 className="mb-2.5 max-w-[700px] text-[clamp(26px,8vw,34px)] font-light leading-[1.15] tracking-[0.01em] md:text-[clamp(32px,3.6vw,48px)]">
+        <h1 className="mb-2.5 max-w-[900px] break-words text-[32px] font-light leading-[1.15] md:text-[48px]">
           Condomínio {condominio.nome} em {condominio.bairro}, {condominio.cidade}
         </h1>
+        <p className="mt-4 text-[13px] text-navy">
+          {condominio.bairro}, {condominio.cidade} - {condominio.estado}
+          <span className="mx-2" aria-hidden="true">·</span>
+          <a className="underline decoration-navy/25 underline-offset-4" href="#imoveis-disponiveis">
+            {condominio.imoveisCount} {condominio.imoveisCount === 1 ? "imóvel disponível" : "imóveis disponíveis"}
+          </a>
+        </p>
         {(condominio.seguranca || condominio.unidades) ? (
               <p className="text-[13px] text-navy">
             {[condominio.seguranca, condominio.unidades].filter(Boolean).join(" · ")}
@@ -223,25 +235,25 @@ export default async function CondominioPage({ params }: PageProps) {
         ) : null}
       </div>
 
-      <div className="site-container pt-5 md:pt-7">
-        <div className="aspect-[4/3] overflow-hidden md:aspect-[21/9]">
-          {condominio.image ? (
-            <img
-              alt={`Imóvel no condomínio ${condominio.nome}, ${condominio.bairro}, ${condominio.cidade}`}
-              className="h-full w-full object-cover"
-              src={condominio.image}
-            />
-          ) : (
-            <EmptyImage nome={condominio.nome} />
-          )}
-        </div>
-      </div>
+      <section id="imoveis-disponiveis" className="site-container scroll-mt-28 py-12 md:py-[72px]" aria-labelledby="imoveis-title">
+        <h2 id="imoveis-title" className="mb-6 text-[22px] font-light md:mb-8 md:text-[28px]">
+          Imóveis disponíveis neste condomínio
+        </h2>
+        {imoveis.length > 0 ? <>
+          {condominio.imoveisCount > imoveis.length && <p className="mb-6 text-xs text-navy">Uma seleção de {imoveis.length} dos {condominio.imoveisCount} imóveis disponíveis.</p>}
+          <div className="flex flex-col gap-10 md:gap-16">
+            {imoveis.map((imovel) => (
+              <ImovelCard condominio={condominio.nome} imovel={imovel} key={imovel.slug} />
+            ))}
+          </div>
+        </> : <p className="text-sm text-navy">Não há imóveis disponíveis neste condomínio no momento.</p>}
+      </section>
 
       {facts.length > 0 ? (
         <div className="site-container pt-6">
-          <div className="grid grid-cols-1 gap-2 md:grid-cols-3 md:gap-4">
+          <div className="flex flex-wrap gap-x-12 gap-y-6 border-y border-navy/10 py-6">
             {facts.map((fact) => (
-              <div className="bg-white px-2 py-3.5 text-center md:px-4 md:py-5" key={fact.label}>
+              <div key={fact.label}>
                 <p className="mb-1 text-[13px] font-medium text-navy md:text-[17px]">
                   {fact.value}
                 </p>
@@ -255,7 +267,7 @@ export default async function CondominioPage({ params }: PageProps) {
       ) : null}
 
       {(condominio.descricao || condominio.descricao2 || condominio.diferenciais.length > 0) ? (
-        <section className="site-container grid grid-cols-1 gap-7 py-10 md:grid-cols-[1.6fr_1fr] md:gap-16 md:py-16">
+        <section className={`site-container grid grid-cols-1 gap-7 py-10 md:gap-16 md:py-16 ${(condominio.descricao || condominio.descricao2) && condominio.diferenciais.length > 0 ? "md:grid-cols-[1.6fr_1fr]" : ""}`}>
           {(condominio.descricao || condominio.descricao2) ? (
             <div>
               <h2 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.16em]">
@@ -295,29 +307,27 @@ export default async function CondominioPage({ params }: PageProps) {
         </section>
       ) : null}
 
-      <section className="site-container pb-10 pt-10 md:pb-16 md:pt-16">
+      {condominio.galeriaPropria.length > 0 ? <section className="site-container py-10 md:py-16">
         <h2 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.16em]">
-          Galeria de fotos
+          Condomínio e áreas comuns
         </h2>
-        <CondominioGallery images={condominio.galeria} nome={condominio.nome} />
-      </section>
+        <CondominioGallery images={condominio.galeriaPropria} nome={condominio.nome} />
+      </section> : null}
 
-      <section className="site-container grid grid-cols-1 gap-7 bg-white py-10 md:grid-cols-[1.6fr_1fr] md:gap-16 md:py-16">
-        <div>
+      <section className="site-container grid grid-cols-1 items-start gap-8 py-10 md:grid-cols-[1.2fr_1fr] md:gap-12 md:py-16 lg:gap-16">
+        <div className="min-w-0 border-t border-navy/10 pt-6">
           <h2 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.16em]">
             Localização
           </h2>
             <p className="mb-4 text-[13px] text-navy">
-            {condominio.bairro}, Londrina - PR
+            {[condominio.endereco, condominio.bairro, condominio.cidade, condominio.estado].filter(Boolean).join(" · ")}
           </p>
-            <div className="flex h-[200px] items-center justify-center border border-dashed border-navy/10 bg-offwhite text-center text-xs leading-relaxed text-navy md:h-[300px]">
-            {condominio.latitude && condominio.longitude
-              ? `${condominio.latitude}, ${condominio.longitude} - ${condominio.bairro}, Londrina`
-              : `${condominio.bairro}, Londrina - PR`}
-          </div>
+          {condominio.latitude !== null && condominio.longitude !== null && Number.isFinite(condominio.latitude) && Number.isFinite(condominio.longitude) && Math.abs(condominio.latitude) <= 90 && Math.abs(condominio.longitude) <= 180 && (condominio.latitude !== 0 || condominio.longitude !== 0) ? (
+            <a className="inline-block border-b border-terra pb-1 text-[10px] uppercase tracking-[0.2em] text-terra" href={`https://www.openstreetmap.org/?mlat=${condominio.latitude}&mlon=${condominio.longitude}#map=16/${condominio.latitude}/${condominio.longitude}`} target="_blank" rel="noopener noreferrer">Ver localização no mapa</a>
+          ) : null}
         </div>
 
-        <div className="bg-navy p-6 md:p-8">
+        <div className="min-w-0 bg-navy p-6 md:p-8">
           <p className="mb-5 text-[10px] font-semibold uppercase tracking-[0.16em] text-terra-light">
             Quero receber informações
           </p>
@@ -334,22 +344,6 @@ export default async function CondominioPage({ params }: PageProps) {
           </form>
         </div>
       </section>
-
-      {imoveis.length > 0 ? (
-        <section className="site-container py-12 md:py-[72px]">
-          <p className="mb-2 text-[9px] font-semibold uppercase tracking-[0.25em] text-terra">
-            {condominio.nome}
-          </p>
-          <h2 className="mb-6 text-[22px] font-light tracking-[0.01em] md:mb-8 md:text-[28px]">
-            Imóveis disponíveis neste condomínio
-          </h2>
-          <div className="grid grid-cols-1 gap-7 md:grid-cols-3 md:gap-8">
-            {imoveis.map((imovel) => (
-              <ImovelCard condominio={condominio.nome} imovel={imovel} key={imovel.slug} />
-            ))}
-          </div>
-        </section>
-      ) : null}
 
       {relacionados.length > 0 ? (
         <section className="site-container py-12 md:py-[72px]">

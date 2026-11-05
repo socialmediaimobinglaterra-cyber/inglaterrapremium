@@ -28,6 +28,7 @@ export type CondominioDetail = CondominioResumo & {
   latitude: number | null;
   longitude: number | null;
   galeria: Array<{ url: string; alt: string; principal: boolean }>;
+  galeriaPropria: Array<{ url: string; alt: string; principal: boolean }>;
 };
 
 function numberOrNull(value: unknown) {
@@ -94,6 +95,7 @@ function mapCondominio(row: SanityCondominioRow): CondominioDetail {
     latitude: numberOrNull(row.latitude),
     longitude: numberOrNull(row.longitude),
     galeria,
+    galeriaPropria: galeria,
   };
 }
 
@@ -115,10 +117,16 @@ export const getPublicCondominios = cache(async (): Promise<CondominioDetail[]> 
     { ids: directory.map((row) => row._id) }
   );
   const slugs = new Map(directory.map((row) => [row._id, row.slug]));
-  return rows.filter((row) => row.imoveisCount > 0 && slugs.has(row._id)).map((row) => mapCondominio({
-    ...row, slug: slugs.get(row._id)!,
-    imagensUrls: row.imagensUrls?.length ? row.imagensUrls : row.imagensImoveis,
-  }));
+  return rows.filter((row) => row.imoveisCount > 0 && slugs.has(row._id)).map((row) => {
+    const mapped = mapCondominio({ ...row, slug: slugs.get(row._id)! });
+    // Preserve directory/SEO fallback without presenting unit photos as common areas.
+    if (!mapped.galeria.length) {
+      const fallback = mapCondominio({ ...row, imagensUrls: row.imagensImoveis });
+      mapped.image = fallback.image;
+      mapped.galeria = fallback.galeria;
+    }
+    return mapped;
+  });
 });
 
 export async function getHeaderCondominios(): Promise<NavDropdownItem[]> {
