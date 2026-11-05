@@ -32,10 +32,17 @@ async function main() {
       await page.getByRole('textbox').fill('Casa com piscina');
       await ai.focus(); await ai.press('ArrowRight');
       assert.equal(await filters.getAttribute('aria-selected'),'true');
+      await page.getByLabel('Faixa de valor',{exact:true}).selectOption('2');
       await page.getByLabel('Finalidade',{exact:true}).selectOption('Alugar');
+      assert.equal(await page.getByLabel('Faixa de valor',{exact:true}).inputValue(),'0');
       await page.getByLabel('Tipo de imóvel',{exact:true}).selectOption('Casa');
       await page.getByLabel('Localização',{exact:true}).selectOption('condominio:Royal Park');
       await page.getByLabel('Faixa de valor',{exact:true}).selectOption('1');
+      assert.match(await page.getByLabel('Faixa de valor',{exact:true}).innerText(),/5\.000\/mês/);
+      await page.getByLabel('Finalidade',{exact:true}).selectOption('Comprar');
+      assert.equal(await page.getByLabel('Faixa de valor',{exact:true}).inputValue(),'2');
+      await page.getByLabel('Finalidade',{exact:true}).selectOption('Alugar');
+      assert.equal(await page.getByLabel('Faixa de valor',{exact:true}).inputValue(),'1');
       await ai.click(); assert.equal(await page.getByRole('textbox').inputValue(),'Casa com piscina');
       await filters.click();
       assert.equal(await page.getByLabel('Finalidade',{exact:true}).inputValue(),'Alugar');
@@ -46,7 +53,7 @@ async function main() {
       const url=new URL(await page.evaluate(()=>window.destination),'https://example.test');
       assert.equal(url.pathname,'/imoveis'); assert.equal(url.searchParams.get('negocio'),'Alugar');
       assert.equal(url.searchParams.get('condominio'),'Royal Park'); assert.equal(url.searchParams.get('tipo'),'Casa');
-      assert.equal(url.searchParams.get('valorMaximo'),'2000000'); assert(!url.searchParams.has('q'));
+      assert.equal(url.searchParams.get('valorMaximo'),'5000'); assert(!url.searchParams.has('q'));
       await page.reload();
       await page.getByRole('button',{name:'Casa com 4 suítes no Terra Bonita',exact:true}).click();
       await page.waitForFunction(()=>window.destination);

@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useId, useState, useTransition } from "react";
-import { NEGOCIO_OPTIONS, VALOR_OPTIONS } from "@/lib/search-options";
+import { NEGOCIO_OPTIONS, getValorOptions } from "@/lib/search-options";
 
 const EXAMPLES = [
   "Apartamento na Gleba Palhano até R$ 3 milhões",
@@ -19,7 +19,9 @@ export function HomeHeroSearch({ searchPath = "/imoveis", filterOptions }: {
   const [negocio, setNegocio] = useState("Comprar");
   const [tipo, setTipo] = useState("");
   const [location, setLocation] = useState("");
-  const [price, setPrice] = useState("0");
+  const [prices, setPrices] = useState<Record<string, string>>({ Comprar: "0", Alugar: "0" });
+  const price = prices[negocio] ?? "0";
+  const valorOptions = getValorOptions(negocio);
   const [query, setQuery] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -33,7 +35,7 @@ export function HomeHeroSearch({ searchPath = "/imoveis", filterOptions }: {
       const separator = location.indexOf(":");
       params.set(location.slice(0, separator), location.slice(separator + 1));
     }
-    const range = VALOR_OPTIONS[Number(price)];
+    const range = valorOptions[Number(price)];
     if (range.valorMinimo !== null) params.set("valorMinimo", String(range.valorMinimo));
     if (range.valorMaximo !== null) params.set("valorMaximo", String(range.valorMaximo));
     setIsSubmitting(true);
@@ -141,8 +143,8 @@ export function HomeHeroSearch({ searchPath = "/imoveis", filterOptions }: {
                 </select>
               </label>
               <label className="min-w-0 text-[11px] text-navy">Faixa de valor
-                <select aria-label="Faixa de valor" className="mt-1 min-h-11 w-full border-0 border-b border-navy/20 bg-transparent text-sm text-navy focus-visible:outline-terra" value={price} onChange={(event) => setPrice(event.target.value)}>
-                  {VALOR_OPTIONS.map((value, index) => <option key={value.label} value={index}>{value.label}</option>)}
+                <select aria-label="Faixa de valor" className="mt-1 min-h-11 w-full border-0 border-b border-navy/20 bg-transparent text-sm text-navy focus-visible:outline-terra" value={price} onChange={(event) => setPrices(current => ({ ...current, [negocio]: event.target.value }))}>
+                  {valorOptions.map((value, index) => <option key={value.label} value={index}>{value.label}</option>)}
                 </select>
               </label>
             </div>
