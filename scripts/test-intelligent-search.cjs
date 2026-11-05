@@ -107,6 +107,45 @@ async function main() {
       assert.match(await cardPrice('apartamento-0').innerText(), /3\.316/);
       assert.match(await cardPrice('apartamento-0-p2').innerText(), /3\.316/);
       for (const [key,value] of Object.entries({order:'menor_valor',bairro:'Gleba Palhano',valorMaximo:3000000,suitesMinimas:3,quartosMinimos:3,vagasMinimas:2,areaMinima:100,areaMaxima:300})) assert.equal(searches.at(-1)[key],value);
+      const savedLeads = [];
+      await page.route('**/api/imoveis/salvar-busca', async route => {
+        savedLeads.push(route.request().postDataJSON());
+        await new Promise(resolve => setTimeout(resolve, 200));
+        await route.fulfill(savedLeads.length === 1
+          ? { status:502,json:{ok:false,message:'Falha parcial. Tente novamente.'} }
+          : { json:{ok:true,message:'Busca salva.',reference:'test-protocol'} });
+      });
+      const save = page.getByRole('button',{name:'Salva busca',exact:true});
+      await save.click();
+      const modal = page.getByRole('dialog',{name:'Salva busca',exact:true});
+      await modal.waitFor();
+      await modal.press('Escape');
+      await modal.waitFor({state:'hidden'});
+      assert(await save.evaluate(el=>el===document.activeElement));
+      await save.click();
+      await modal.getByLabel('Nome',{exact:true}).fill('Cliente de teste');
+      await modal.getByLabel('E-mail',{exact:true}).fill('teste@example.com');
+      await modal.getByLabel('WhatsApp com DDD',{exact:true}).fill('(43) 99999-0000');
+      await modal.getByRole('button',{name:'Salva busca',exact:true}).click();
+      assert.equal(savedLeads.length,0,'consent required');
+      await modal.getByRole('checkbox').check();
+      await page.screenshot({path:join(output,`save-search-${width}.png`)});
+      const modalBox = await modal.boundingBox();
+      assert(modalBox.x >= 0 && modalBox.x + modalBox.width <= width);
+      await modal.getByRole('button',{name:'Salva busca',exact:true}).click();
+      await modal.getByRole('button',{name:'Enviando...',exact:true}).waitFor();
+      assert(await modal.getByRole('button',{name:'Fechar'}).isDisabled());
+      await modal.getByRole('alert').filter({hasText:'Falha parcial'}).waitFor();
+      assert.equal(await modal.getByLabel('E-mail',{exact:true}).inputValue(),'teste@example.com');
+      assert.equal(savedLeads[0].filters.negocio,'Alugar');
+      for (const key of ['bairro','valorMaximo','suitesMinimas','quartosMinimos','vagasMinimas','areaMinima','areaMaxima']) assert.equal(savedLeads[0].filters[key],searches.at(-1)[key]);
+      assert.equal(savedLeads[0].consent,true);
+      assert(!('query' in savedLeads[0]));
+      await modal.getByRole('button',{name:'Salva busca',exact:true}).click();
+      await modal.getByRole('status').filter({hasText:'Busca salva.'}).waitFor();
+      await modal.getByRole('button',{name:'Fechar'}).click();
+      await modal.waitFor({state:'hidden'});
+      await page.locator('a[href="/imoveis/apartamento-0-p2"]').scrollIntoViewIfNeeded();
       const edit = page.getByRole('button',{name:'Editar busca',exact:true});
       await edit.waitFor();
       const box = await edit.boundingBox(); assert(box.y >= 64 && box.y < 125);
@@ -152,7 +191,7 @@ async function main() {
       assert.equal(await page.getByRole('textbox').inputValue(),'Casa');
       await page.close();
     }
-    console.log(`PASS: Enter, suggestions, pending lock, refinement, manual filters, sorting, pagination, error recovery, empty state, Home/CRM entry, single field, mobile/desktop. Screenshots: ${output}`);
+    console.log(`PASS: search regression + Salva busca modal, consent, filter snapshot, failure/retry, success, keyboard focus and responsive widths. Screenshots: ${output}`);
   } finally {
     if (browser) await browser.close();
     await new Promise(resolve => server.close(resolve));
