@@ -13,6 +13,7 @@ import type { CrmConversationListing } from "@/lib/crm-conversation";
 import MobiliaTag from "@/components/MobiliaTag";
 import { IntelligentSearchPanel } from "@/components/search/IntelligentSearchPanel";
 import { NEGOCIO_OPTIONS, VALOR_OPTIONS } from "@/lib/search-options";
+import { SaveSearchDialog } from "@/components/search/SaveSearchDialog";
 
 type Props = {
   initialSearchPage: ImovelSearchPage;
@@ -198,6 +199,7 @@ export function BuscaImoveisClient({
   const [hasMore, setHasMore] = useState(initialSearchPage.hasMore);
   const [currentFilters, setCurrentFilters] = useState<ImovelSearchFilters>({ ...initialFilters, negocio: initialNegocio, order: "relevancia", mapSelection: initialMapSelection });
   const filtersRef = useRef(currentFilters);
+  const [savedSearchFilters, setSavedSearchFilters] = useState<ImovelSearchFilters | null>(null);
   const requestSequence = useRef(0);
   const aiBusyRef = useRef(false);
   const manualBusyRef = useRef(false);
@@ -407,7 +409,7 @@ export function BuscaImoveisClient({
             <button aria-label="Filtros avançados" className="flex h-[38px] w-[38px] items-center justify-center rounded-full border border-navy/10 bg-transparent" type="button">
               <IconFiltros />
             </button>
-            <button aria-label="Salvar busca" className="flex h-[38px] w-[38px] items-center justify-center rounded-full bg-navy" type="button">
+            <button aria-label="Salva busca" title="Salva busca" disabled={busy || crmPreview} onClick={() => setSavedSearchFilters({ ...filtersRef.current })} className="flex h-11 w-11 items-center justify-center rounded-full bg-navy disabled:opacity-50" type="button">
               <IconSalvar />
             </button>
           </div>
@@ -505,6 +507,7 @@ export function BuscaImoveisClient({
           </div>
         ) : null}
       </section>
+      {savedSearchFilters && <SaveSearchDialog filters={savedSearchFilters} onClose={() => setSavedSearchFilters(null)} />}
     </main>
   );
 }
