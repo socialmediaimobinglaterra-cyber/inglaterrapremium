@@ -147,7 +147,7 @@ function ListingCard({ imovel, negocio }: { imovel: CrmConversationListing; nego
   const image = imageUrlOrFallback(imovel.image);
 
   return (
-    <Link className="group block text-inherit no-underline" aria-disabled={imovel.crmDisplay && !imovel.crmDisplay.href ? true : undefined} onClick={event => { if (imovel.crmDisplay && !imovel.crmDisplay.href) event.preventDefault(); }} href={imovel.crmDisplay ? imovel.crmDisplay.href ?? "#" : `/imoveis/${imovel.slug}`}>
+    <Link className="group block text-inherit no-underline" aria-disabled={imovel.crmDisplay && !imovel.crmDisplay.href ? true : undefined} onClick={event => { if (imovel.crmDisplay && !imovel.crmDisplay.href) event.preventDefault(); }} href={imovel.crmDisplay ? imovel.crmDisplay.href ?? "#" : `/imoveis/${imovel.slug}?foco=${negocio === "Alugar" ? "locacao" : "venda"}`}>
       <div className="relative aspect-[4/3] cursor-pointer overflow-hidden bg-[#1e1e1e] md:aspect-[5/4]">
         {imovel.crmDisplay ? (imovel.image ? <img alt={imovel.titulo} className="h-full w-full object-cover transition duration-700 group-hover:scale-105" src={imovel.image} /> : <span className="flex h-full items-center justify-center text-sm text-white">Foto indisponível</span>) : <Image
           alt={`${imovel.titulo} — ${imovel.bairro}, Londrina`}
@@ -169,11 +169,11 @@ function ListingCard({ imovel, negocio }: { imovel: CrmConversationListing; nego
         <h3 className="mb-2.5 text-base font-normal leading-[1.3] tracking-[0.01em] text-navy">
           {imovel.titulo}
         </h3>
-        <div className={`flex items-baseline justify-between gap-4 border-t border-navy/10 pt-2.5 ${imovel.crmDisplay ? "flex-wrap" : ""}`}>
+        <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2 border-t border-navy/10 pt-2.5">
           <span className="text-[11px] text-navy">
             {imovel.crmDisplay?.area ?? area(imovel.area)}
-            {imovel.suites && imovel.suites > 0 ? ` · ${imovel.suites} suítes` : ""}
-            {imovel.vagas && imovel.vagas > 0 ? ` · ${imovel.vagas} vagas` : ""}
+            {imovel.suites && imovel.suites > 0 ? ` · ${imovel.suites} ${imovel.suites === 1 ? "suíte" : "suítes"}` : ""}
+            {imovel.vagas && imovel.vagas > 0 ? ` · ${imovel.vagas} ${imovel.vagas === 1 ? "vaga" : "vagas"}` : ""}
           </span>
           <span className="shrink-0 text-[17px] text-navy">{imovel.crmDisplay?.price ?? currency(price)}</span>
         </div>
@@ -286,7 +286,7 @@ export function BuscaImoveisClient({
   function onSuitesChange(value: string) { updateFilters({ ...filtersRef.current, suitesMinimas: suitesOptions.find(v => v.label === value)!.value }); }
   function onOrderChange(value: string) { updateFilters({ ...filtersRef.current, order: value as ImovelSearchFilters["order"] }); }
   function onMobiliadoChange(checked: boolean) { updateFilters({ ...filtersRef.current, mobiliado: checked ? true : null }); }
-  function limparBusca() { updateFilters({ negocio: "Comprar", order: "relevancia" }); }
+  function limparBusca() { updateFilters({ negocio: filtersRef.current.negocio ?? initialNegocio, order: "relevancia" }); }
 
   async function carregarMais() {
     if (!hasMore || loadingMoreRef.current || aiBusyRef.current || manualBusyRef.current) return;
