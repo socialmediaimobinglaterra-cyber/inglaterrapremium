@@ -73,6 +73,14 @@ async function main() {
       await page.screenshot({path:join(tmpdir(),`premium-map-initial-${width}.png`)});
       // Move to Londrina, then exercise the existing zoom control and clustering.
       await page.evaluate(()=>window.testMap.setView([-23.32925,-51.17925],14,{animate:false}));
+      await page.locator('.property-map').hover();
+      await page.mouse.wheel(0,-120);
+      await page.waitForFunction(()=>window.testMap.getZoom()>14);
+      await page.waitForTimeout(400);
+      const wheelZoom = await page.evaluate(()=>window.testMap.getZoom());
+      await page.mouse.wheel(0,120);
+      await page.waitForFunction(zoom=>window.testMap.getZoom()<zoom,wheelZoom);
+      await page.evaluate(()=>window.testMap.setView([-23.32925,-51.17925],14,{animate:false}));
       for(let i=0;i<4;i++) {
         await page.getByTitle('Aproximar',{exact:true}).click();
         await page.waitForTimeout(350);
