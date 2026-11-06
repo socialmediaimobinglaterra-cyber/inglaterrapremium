@@ -19,7 +19,7 @@ async function main() {
       import { filtersFromSearchParams } from './lib/search-url';
       const params = new URLSearchParams(location.search);
       createRoot(document.getElementById('root')).render(<BuscaImoveisClient
-        bairros={['Gleba Palhano', 'Terra Bonita']} tipos={['Casa', 'Apartamento']}
+        bairros={['Gleba Palhano', 'Terra Bonita']} tipos={['Casa', 'Apartamento']} condominios={['Royal Park Residence e Resort']}
         crmPreview={params.has('preview')} initialNaturalQuery={params.get('q') || undefined}
         initialFilters={filtersFromSearchParams(Object.fromEntries(params))}
         initialNegocio={params.has('rent') || params.get('negocio') === 'Alugar' ? 'Alugar' : 'Comprar'}
@@ -51,7 +51,7 @@ async function main() {
     browser = await chromium.launch({ channel: 'msedge', headless: true });
     const output = join(tmpdir(), 'premium-intelligent-search');
     mkdirSync(output, {recursive:true});
-    for (const width of [1440, 390, 320]) {
+    for (const width of [1440, 1280, 1024, 768, 390, 320]) {
       const page = await browser.newPage({ viewport: {width, height:900}, reducedMotion: 'reduce' });
       const errors = [];
       page.on('pageerror', error => errors.push(error.message));
@@ -84,6 +84,18 @@ async function main() {
       assert((await submit.boundingBox()).height >= 48);
       assert((await input.boundingBox()).y < (await page.getByRole('group',{name:'Filtros rápidos'}).boundingBox()).y);
       await page.screenshot({path:join(output,`initial-${width}.png`),fullPage:true});
+      const quickFilters = page.getByRole('group', {name:'Filtros rápidos'});
+      assert.equal(await quickFilters.getByRole('combobox').count(), 4);
+      const moreFilters = page.getByRole('button', {name:/Mais filtros/});
+      assert.equal(await moreFilters.getAttribute('aria-expanded'), 'false');
+      await moreFilters.click();
+      assert.equal(await quickFilters.getByRole('combobox').count(), 6);
+      assert(await page.getByRole('checkbox', {name:'Mobiliado'}).isVisible());
+      assert.equal(searches.length, 0, 'expanding does not search');
+      await page.screenshot({path:join(output,`expanded-filters-${width}.png`),fullPage:true});
+      await moreFilters.click();
+      assert.equal(searches.length, 0, 'collapsing does not search');
+      assert(await page.evaluate(()=>document.documentElement.scrollWidth <= innerWidth));
       await input.fill('Apartamento na Gleba Palhano até R$ 3 milhões');
       await input.press('Enter');
       await page.getByRole('button',{name:'Interpretando...',exact:true}).waitFor();
@@ -105,12 +117,23 @@ async function main() {
       assert.match(await cardPrice('apartamento-0').innerText(), /3\.316/);
       assert.equal(aiRequests[1].state.valorMaximo,3000000);
       assert.equal(aiRequests[1].state.bairro,'Gleba Palhano');
+      assert.equal(await moreFilters.innerText(), 'Mais filtros (1)\n▾');
+      await moreFilters.click();
+      await page.getByRole('combobox', {name:'Condomínio',exact:true}).selectOption('Royal Park Residence e Resort');
+      await page.waitForFunction(()=>document.querySelector('#filtro-condominio').value === 'Royal Park Residence e Resort');
+      await page.getByRole('checkbox', {name:'Mobiliado'}).click();
+      await page.waitForFunction(()=>document.querySelector('#secondary-property-filters input[type=checkbox]').checked && !document.querySelector('fieldset').disabled);
+      const beforeCollapse = searches.length;
+      await moreFilters.click();
+      assert.equal(searches.length,beforeCollapse);
       assert.equal(await page.getByText('vista para o lago',{exact:true}).count(),1);
       await page.getByRole('combobox',{name:'Ordenar por'}).selectOption('menor_valor');
       await page.waitForFunction(()=>document.querySelector('#ordenar-imoveis').value === 'menor_valor');
       await page.getByRole('button',{name:'Carregar mais imóveis'}).click();
       await page.getByRole('button',{name:'Carregar mais imóveis'}).waitFor({state:'hidden'});
       assert.equal(searches.at(-1).page,2);
+      assert.equal(searches.at(-1).condominio,'Royal Park Residence e Resort');
+      assert.equal(searches.at(-1).mobiliado,true);
       assert.equal(searches.at(-1).negocio,'Alugar');
       assert.match(await cardPrice('apartamento-0').innerText(), /3\.316/);
       assert.match(await cardPrice('apartamento-0-p2').innerText(), /3\.316/);
@@ -169,6 +192,7 @@ async function main() {
       for (const [key,value] of Object.entries({negocio:'Alugar',bairro:'Gleba Palhano',suitesMinimas:3,quartosMinimos:3,vagasMinimas:2,areaMinima:100,areaMaxima:300,order:'menor_valor'})) assert.equal(stored.get(key),String(value));
       const priorAiCalls = aiRequests.length;
       await page.reload();
+      await page.getByRole('button',{name:/Mais filtros/}).click();
       await page.getByRole('combobox',{name:'Suítes',exact:true}).waitFor();
       assert.equal(await page.getByRole('combobox',{name:'Suítes',exact:true}).inputValue(),'3+ suítes');
       assert.equal(await page.getByRole('combobox',{name:'Ordenar por'}).inputValue(),'menor_valor');
