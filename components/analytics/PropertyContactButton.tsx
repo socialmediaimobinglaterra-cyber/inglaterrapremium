@@ -5,25 +5,26 @@ type Props = {
   whatsappHref?: string | null;
 };
 
-function sendClickEvent(imovelId: string, isWhatsapp: boolean) {
+export function recordPropertyContactClick(imovelId: string, isWhatsapp: boolean) {
   const body = JSON.stringify({
     tipoEvento: isWhatsapp ? "clique_whatsapp" : "clique_contato",
     imovelId,
     canal: isWhatsapp ? "whatsapp" : "formulario_ficha",
   });
 
-  if (navigator.sendBeacon) {
-    const blob = new Blob([body], { type: "application/json" });
-    navigator.sendBeacon("/api/analytics/event", blob);
-    return;
-  }
+  try {
+    if (navigator.sendBeacon) {
+      const blob = new Blob([body], { type: "application/json" });
+      if (navigator.sendBeacon("/api/analytics/event", blob)) return;
+    }
 
-  void fetch("/api/analytics/event", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body,
-    keepalive: true,
-  });
+    void fetch("/api/analytics/event", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body,
+      keepalive: true,
+    }).catch(() => {});
+  } catch { /* Analytics must never prevent contact navigation. */ }
 }
 
 export function PropertyContactButton({ imovelId, whatsappHref }: Props) {
@@ -35,7 +36,7 @@ export function PropertyContactButton({ imovelId, whatsappHref }: Props) {
       <a
         className={`${className} text-center`}
         href={whatsappHref}
-        onClick={() => sendClickEvent(imovelId, true)}
+        onClick={() => recordPropertyContactClick(imovelId, true)}
         rel="noreferrer"
         target="_blank"
       >
@@ -45,12 +46,12 @@ export function PropertyContactButton({ imovelId, whatsappHref }: Props) {
   }
 
   return (
-    <button
-      className={className}
-      onClick={() => sendClickEvent(imovelId, false)}
-      type="button"
+    <a
+      className={`${className} block text-center`}
+      onClick={() => recordPropertyContactClick(imovelId, false)}
+      href="/contato"
     >
-      Falar com a corretora
-    </button>
+      Falar com a equipe
+    </a>
   );
 }
