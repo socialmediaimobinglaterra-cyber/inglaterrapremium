@@ -14,6 +14,8 @@ import { bairroDaLinha, bairroExibicao, bairrosPremiumDe } from "@/lib/cep-bairr
 import { getPremiumConfig, premiumFilter } from "@/lib/premium-rule";
 import { getActiveInstagramPosts } from "@/lib/queries/instagram-posts";
 import { getSiteNavigation } from "@/lib/queries/navigation";
+import { getHomeBanners } from "@/lib/queries/home-banners";
+import { BannerCarousel } from "@/components/home/BannerCarousel";
 import type { NavDropdownItem } from "@/components/layout/HeaderClient";
 
 export const dynamic = "force-dynamic";
@@ -585,9 +587,10 @@ function NewsletterBlock() {
 }
 
 export default async function Home() {
-  const [{ featured, bairros, totals, instagramPosts, filterOptions }, { lancamentos, condominios }] = await Promise.all([
+  const [{ featured, bairros, totals, instagramPosts, filterOptions }, { lancamentos, condominios }, banners] = await Promise.all([
     getHomeData(),
     getSiteNavigation(),
+    getHomeBanners(),
   ]);
   const stats = [
     {
@@ -679,6 +682,8 @@ export default async function Home() {
           </div>
         </div>
       </section>
+
+      <BannerCarousel banners={banners} />
 
       {bairros.length > 0 ? <>
       <Rule label="Explorar por Localização" />
