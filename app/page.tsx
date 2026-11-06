@@ -683,7 +683,7 @@ export default async function Home() {
         </div>
       </section>
 
-      <BannerCarousel banners={banners} />
+      <BannerCarousel banners={banners} compactBottom={bairros.length === 0} />
 
       {bairros.length > 0 ? <>
       <Rule label="Explorar por Localização" />
@@ -705,7 +705,7 @@ export default async function Home() {
 
       </> : null}
 
-      <PropertyMap />
+      <PropertyMap compactTop={banners.length > 0 && bairros.length === 0} />
 
       <section className="site-container bg-navy py-12 md:py-20">
         <div className="mb-10 flex flex-col items-start justify-between gap-5 border-b border-white/10 pb-8 md:flex-row md:items-end md:gap-0">

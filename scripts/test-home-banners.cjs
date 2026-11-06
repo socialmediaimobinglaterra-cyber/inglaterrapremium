@@ -8,7 +8,7 @@ async function main() {
   const bundle = await require('esbuild').build({
     stdin: { contents: `import React from 'react'; import {createRoot} from 'react-dom/client'; import {BannerCarousel} from './components/home/BannerCarousel';
       const root=createRoot(document.getElementById('root'));
-      window.showBanners=(banners)=>root.render(<BannerCarousel banners={banners}/>);`, resolveDir: process.cwd(), loader: 'tsx' },
+      window.showBanners=(banners)=>root.render(<BannerCarousel banners={banners} compactBottom/>);`, resolveDir: process.cwd(), loader: 'tsx' },
     bundle: true, write: false, jsx: 'automatic', plugins: [{ name: 'image-stub', setup(build) {
       build.onResolve({ filter: /^next\/image$/ }, () => ({ path: 'image', namespace: 'fixture' }));
       build.onLoad({ filter: /.*/, namespace: 'fixture' }, () => ({ loader: 'jsx', resolveDir: process.cwd(), contents: `import React from 'react';export default function Image({fill,...props}){return <img {...props} style={fill?{position:'absolute',inset:0,width:'100%',height:'100%'}:undefined}/>}` }));
@@ -28,6 +28,7 @@ async function main() {
       assert.equal(await page.locator('section').count(), 0);
       await page.evaluate(b => window.showBanners([b]), banner);
       await page.getByAltText('Banner de teste').waitFor();
+      assert.equal(await page.locator('section').evaluate(el => getComputedStyle(el).paddingBottom), '0px');
       assert.equal(await page.getByRole('button').count(), 0);
       assert.equal(await page.getByRole('link').getAttribute('href'), '/contato');
       await page.evaluate(b => window.showBanners([b, { ...b, id: 'two', alt: 'Segundo banner', href: null }]), banner);
@@ -55,7 +56,9 @@ async function main() {
     }
     const home = readFileSync('app/page.tsx', 'utf8');
     assert(home.includes('{bairros.length > 0 ? <>'));
-    assert(home.indexOf('<BannerCarousel banners={banners} />') < home.indexOf('{bairros.length > 0 ? <>'));
+    const bannerPosition = home.indexOf('<BannerCarousel banners={banners} compactBottom={bairros.length === 0} />');
+    assert(bannerPosition > 0 && bannerPosition < home.indexOf('{bairros.length > 0 ? <>'));
+    assert(home.includes('<PropertyMap compactTop={banners.length > 0 && bairros.length === 0} />'));
     console.log(`PASS: empty/single/multiple banners, links, navigation, reduced motion and responsive widths. Screenshots: ${output}`);
   } finally { await browser.close(); }
 }
