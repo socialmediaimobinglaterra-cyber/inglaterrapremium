@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import type { HomeBanner } from "@/lib/home-banners";
 
-export function BannerCarousel({ banners }: { banners: HomeBanner[] }) {
+export function BannerCarousel({ banners, compactBottom = false }: { banners: HomeBanner[]; compactBottom?: boolean }) {
   const [index, setIndex] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [hovered, setHovered] = useState(false);
@@ -43,7 +43,7 @@ export function BannerCarousel({ banners }: { banners: HomeBanner[] }) {
 
   return (
     <section aria-label="Banners da Inglaterra Premium" aria-roledescription={count > 1 ? "carrossel" : undefined}
-      className="site-container py-12 md:py-20"
+      className={compactBottom ? "site-container pt-12 md:pt-20" : "site-container py-12 md:py-20"}
       onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}
       onFocusCapture={() => setFocused(true)}
       onBlurCapture={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setFocused(false); }}>
