@@ -1,7 +1,7 @@
 import { brazilianPhone } from "./property-contact";
 
-export const INQUIRY_CONSENT_VERSION = "contato-imovel-v1";
-export const INQUIRY_CONSENT = "Autorizo a Inglaterra Premium a cadastrar meus dados no RD Station e entrar em contato sobre este imóvel. Posso solicitar o encerramento desse contato a qualquer momento.";
+export const INQUIRY_CONSENT_VERSION = "contato-imovel-v2";
+export const INQUIRY_CONSENT = "Autorizo a Inglaterra Premium a utilizar meus dados para entrar em contato comigo sobre minha solicitação, conforme a Política de Privacidade.";
 
 export function parsePropertyInquiry(value: unknown) {
   if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("Informe seus dados.");

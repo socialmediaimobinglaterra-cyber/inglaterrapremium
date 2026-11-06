@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { organization } from "@/lib/site";
 import { contactSettings } from "@/lib/contact-settings";
+import { PRIVACY_POLICY_PATH, PRIVACY_POLICY_TITLE } from "@/lib/privacy-policy";
 
 const footerColumns = [
   { title: "Comprar", links: ["Apartamentos", "Casas", "Coberturas", "Terrenos"] },
@@ -64,7 +65,7 @@ export function Footer() {
           © 2026 Inglaterra Premium · Todos os direitos reservados
         </p>
         <p className="text-[9px] text-white/75">
-          Política de Privacidade · Termos de Uso
+          <Link className="nav-focus hover:underline" href={PRIVACY_POLICY_PATH}>{PRIVACY_POLICY_TITLE}</Link> · Termos de Uso
         </p>
       </div>
     </footer>
