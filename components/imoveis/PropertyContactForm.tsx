@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { PropertyContactButton, recordPropertyContactClick } from "@/components/analytics/PropertyContactButton";
 import { brazilianPhone, propertyContactUrl, propertyWhatsappTarget } from "@/lib/property-contact";
 import { INQUIRY_CONSENT } from "@/lib/property-inquiry";
+import { PRIVACY_POLICY_PATH, PRIVACY_POLICY_TITLE } from "@/lib/privacy-policy";
 
 export function PropertyContactForm({ imovelId, whatsappHref, context, slug, foco }: {
   imovelId: string; whatsappHref: string | null; context: string; slug: string; foco?: "locacao" | "venda" | null;
@@ -70,7 +71,7 @@ export function PropertyContactForm({ imovelId, whatsappHref, context, slug, foc
     </label>
     <label className="flex items-start gap-2 text-xs leading-relaxed text-white/75">
       <input className="mt-1 shrink-0 accent-terra" name="consent" type="checkbox" required />
-      <span>{INQUIRY_CONSENT}</span>
+      <span>{INQUIRY_CONSENT.slice(0, -(`${PRIVACY_POLICY_TITLE}.`.length))}<a className="underline underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-terra-light" href={PRIVACY_POLICY_PATH} target="_blank" rel="noopener noreferrer">{PRIVACY_POLICY_TITLE}</a>.</span>
     </label>
     <button className="mt-1 min-h-11 bg-terra p-3.5 text-[10px] uppercase tracking-[0.2em] text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-terra-light" type="submit">{pending ? "Enviando" : "Continuar no WhatsApp"}</button>
     </fieldset>

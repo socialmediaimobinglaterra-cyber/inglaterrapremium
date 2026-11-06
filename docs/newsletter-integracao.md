@@ -54,7 +54,7 @@ Excecao aprovada ao WhatsApp geral: a ficha continua abrindo `wa.me` para o nume
 do corretor cadastrado. Sem numero valido, o botao usa o canal oficial geral.
 O telefone exibido na ficha permanece o institucional padronizado.
 
-O formulario agora exige email e consentimento proprio (`contato-imovel-v1`), sem
+O formulario agora exige email e consentimento proprio (`contato-imovel-v2`), sem
 inscrever o interessado na newsletter. `POST /api/imoveis/contato` valida o imovel
 no catalogo e envia somente ao RD, nunca a Central. Usa o mesmo controle de
 repeticao/limites da newsletter, separado por email, telefone, imovel e finalidade.
