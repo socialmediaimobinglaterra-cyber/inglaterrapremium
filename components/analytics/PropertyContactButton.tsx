@@ -31,7 +31,7 @@ export function recordPropertyContactClick(imovelId: string, isWhatsapp: boolean
 
 export function PropertyContactButton({ imovelId, whatsappHref }: Props) {
   const className =
-    "mt-1 bg-terra p-3.5 text-[10px] uppercase tracking-[0.2em] text-white";
+    "mt-1 bg-terra p-3.5 text-caption uppercase tracking-[0.2em] text-white";
 
   if (whatsappHref) {
     return (

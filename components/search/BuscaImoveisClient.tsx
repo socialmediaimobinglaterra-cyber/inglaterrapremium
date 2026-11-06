@@ -120,11 +120,11 @@ function PillSelect({
       <label className="sr-only" htmlFor={selectId}>
         {label}
       </label>
-      <span className="mb-0.5 block text-[8px] uppercase tracking-[0.14em] text-navy">
+      <span className="mb-0.5 block text-caption uppercase tracking-[0.14em] text-navy">
         {label}
       </span>
       <select
-        className="w-full min-w-0 cursor-pointer appearance-none truncate border-0 bg-transparent text-[13px] font-medium text-navy outline-none disabled:cursor-wait disabled:opacity-60"
+        className="w-full min-w-0 cursor-pointer appearance-none truncate border-0 bg-transparent text-copy font-medium text-navy outline-none disabled:cursor-wait disabled:opacity-60"
         title={value}
         id={selectId}
         onChange={(event) => onChange(event.target.value)}
@@ -136,7 +136,7 @@ function PillSelect({
           </option>
         ))}
       </select>
-      <span className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-[9px] text-navy">
+      <span className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-caption text-navy">
         ▾
       </span>
     </div>
@@ -157,21 +157,21 @@ function ListingCard({ imovel, negocio }: { imovel: CrmConversationListing; nego
           sizes="(min-width: 768px) 33vw, 100vw"
           src={image}
         />}
-        {imovel.tag ? <span className="absolute left-3.5 top-3.5 border border-white/40 px-2.5 py-[5px] text-[8px] uppercase tracking-[0.3em] text-white">
+        {imovel.tag ? <span className="absolute left-3.5 top-3.5 border border-white/40 px-2.5 py-[5px] text-caption uppercase tracking-[0.3em] text-white">
           {imovel.tag}
         </span> : null}
         {imovel.mobilia ? <span className="absolute bottom-3.5 left-3.5"><MobiliaTag mobilia={imovel.mobilia} /></span> : null}
       </div>
       <div className="pt-4">
-        {imovel.codigo ? <p className="mb-1.5 text-xs text-navy">Ref. {imovel.codigo}</p> : null}
-        <p className="mb-1.5 text-[11px] tracking-[0.06em] text-navy">
+        {imovel.codigo ? <p className="mb-1.5 text-detail text-navy">Ref. {imovel.codigo}</p> : null}
+        <p className="mb-1.5 text-detail tracking-[0.06em] text-navy">
           {imovel.bairro}, {imovel.crmDisplay ? imovel.cidade : "Londrina"}
         </p>
         <h3 className="mb-2.5 text-base font-normal leading-[1.3] tracking-[0.01em] text-navy">
           {imovel.titulo}
         </h3>
         <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2 border-t border-navy/10 pt-2.5">
-          <span className="text-[11px] text-navy">
+          <span className="text-detail text-navy">
             {imovel.crmDisplay?.area ?? area(imovel.area)}
             {imovel.suites && imovel.suites > 0 ? ` · ${imovel.suites} ${imovel.suites === 1 ? "suíte" : "suítes"}` : ""}
             {imovel.vagas && imovel.vagas > 0 ? ` · ${imovel.vagas} ${imovel.vagas === 1 ? "vaga" : "vagas"}` : ""}
@@ -347,7 +347,7 @@ export function BuscaImoveisClient({
     <main className="bg-offwhite text-navy">
       <section className="pt-20 md:pt-24">
         <div className="site-container mb-5 md:mb-6">
-          <p className="mb-2 text-[11px] text-navy">Início / Imóveis / {currentFilters.negocio === "Alugar" ? "Alugar" : "Comprar"}</p>
+          <p className="mb-2 text-detail text-navy">Início / Imóveis / {currentFilters.negocio === "Alugar" ? "Alugar" : "Comprar"}</p>
           <h1 className="mb-2 max-w-[900px] text-[28px] font-light leading-[1.1] text-navy md:text-[40px]">
             Imóveis de Alto Padrão {currentFilters.negocio === "Alugar" ? "para Alugar" : "à Venda"} em Londrina
           </h1>
@@ -376,10 +376,10 @@ export function BuscaImoveisClient({
           <div className="flex shrink-0 items-center gap-2 pr-1.5">
             <IconFiltros />
             <div>
-              <p className="text-[9px] font-semibold uppercase leading-[1.3] tracking-[0.1em] text-terra">
+              <p className="text-caption font-semibold uppercase leading-[1.3] tracking-[0.1em] text-terra">
                 Filtros rápidos
               </p>
-              <p className="text-xs font-medium leading-[1.3] text-navy">
+              <p className="text-detail font-medium leading-[1.3] text-navy">
                 Refine a sua busca
               </p>
             </div>
@@ -394,7 +394,7 @@ export function BuscaImoveisClient({
           <PillSelect label="Valor" onChange={onValorChange} options={valorOptions.map((item) => item.label)} value={valor} />
           <PillSelect label="Suítes" onChange={onSuitesChange} options={suitesOptions.map((item) => item.label)} value={suites} />
 
-          <label className="flex shrink-0 cursor-pointer items-center gap-2 text-xs font-medium text-navy">
+          <label className="flex shrink-0 cursor-pointer items-center gap-2 text-detail font-medium text-navy">
             <input
               checked={currentFilters.mobiliado === true}
               className="h-4 w-4 cursor-pointer accent-navy"
@@ -405,7 +405,7 @@ export function BuscaImoveisClient({
           </label>
 
           <button
-            className="shrink-0 rounded-[24px] border-0 bg-navy px-[26px] py-[13px] text-xs font-medium text-white"
+            className="shrink-0 rounded-[24px] border-0 bg-navy px-[26px] py-[13px] text-detail font-medium text-white"
             onClick={() => updateFilters(filtersRef.current)}
             type="button"
           >
@@ -426,9 +426,9 @@ export function BuscaImoveisClient({
       <section aria-busy={busy} className="site-container py-5 md:py-6">
         {currentFilters.mapSelection && total === 0 && <p role="status" className="mb-4 text-sm text-navy">Nenhum imóvel disponível nesta seleção. O catálogo pode ter sido atualizado. <Link className="underline" href="/#property-map-title">Selecionar novamente no mapa</Link></p>}
         <p className="mb-3 text-sm leading-relaxed text-navy"><span className="font-medium">Sua seleção: </span>{describeAiFilters(currentFilters).join(" · ")}</p>
-        <button type="button" onClick={limparBusca} disabled={busy} className="mb-4 text-xs text-terra underline disabled:opacity-60">Limpar filtros</button>
+        <button type="button" onClick={limparBusca} disabled={busy} className="mb-4 text-detail text-terra underline disabled:opacity-60">Limpar filtros</button>
         {aiInterpretationNotice ? (
-          <div className="mb-5 border border-navy/10 bg-white px-4 py-3 text-[13px] leading-relaxed text-navy">
+          <div className="mb-5 border border-navy/10 bg-white px-4 py-3 text-copy leading-relaxed text-navy">
             Filtramos por:{" "}
             <span className="font-medium">
               {aiInterpretationNotice.interpreted.length > 0
@@ -450,11 +450,11 @@ export function BuscaImoveisClient({
             </span>
           </h2>
           <div className="flex items-center gap-2">
-            <label className="text-xs text-navy" htmlFor="ordenar-imoveis">
+            <label className="text-detail text-navy" htmlFor="ordenar-imoveis">
               Ordenar por
             </label>
             <select
-              className="cursor-pointer border-0 bg-transparent text-xs font-medium text-navy outline-none"
+              className="cursor-pointer border-0 bg-transparent text-detail font-medium text-navy outline-none"
               id="ordenar-imoveis"
               disabled={busy}
               onChange={(event) => onOrderChange(event.target.value)}
@@ -491,7 +491,7 @@ export function BuscaImoveisClient({
               Refinar minha busca
             </button>
             <button
-              className="border border-navy bg-transparent px-7 py-3 text-[10px] uppercase tracking-[0.2em] text-navy transition hover:bg-navy hover:text-white"
+              className="border border-navy bg-transparent px-7 py-3 text-caption uppercase tracking-[0.2em] text-navy transition hover:bg-navy hover:text-white"
               onClick={limparBusca}
               disabled={busy}
               type="button"
@@ -504,7 +504,7 @@ export function BuscaImoveisClient({
         {hasMore ? (
           <div className="mt-10 flex justify-center md:mt-16">
             <button
-              className="border border-navy bg-transparent px-9 py-3.5 text-[10px] uppercase tracking-[0.2em] text-navy transition hover:bg-navy hover:text-white disabled:cursor-wait disabled:opacity-60"
+              className="border border-navy bg-transparent px-9 py-3.5 text-caption uppercase tracking-[0.2em] text-navy transition hover:bg-navy hover:text-white disabled:cursor-wait disabled:opacity-60"
               disabled={isLoadingMore || isAiSearching || isPending}
               onClick={carregarMais}
               type="button"

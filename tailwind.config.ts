@@ -17,6 +17,11 @@ const config: Config = {
       fontFamily: {
         sans: ["var(--font-dm-sans)", "system-ui", "sans-serif"],
       },
+      fontSize: {
+        caption: ["0.75rem", { lineHeight: "1.5" }],
+        detail: ["0.8125rem", { lineHeight: "1.5" }],
+        copy: ["0.875rem", { lineHeight: "1.5" }],
+      },
       boxShadow: {
         "nav-blur": "0 14px 34px rgba(16, 26, 38, 0.06)",
       },

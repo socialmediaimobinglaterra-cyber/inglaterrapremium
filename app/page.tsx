@@ -287,13 +287,13 @@ function Rule({ label, right }: { label?: string; right?: string }) {
     <div className="border-y border-navy/10">
       <div className="site-container flex items-center gap-5 py-4">
         {label ? (
-          <span className="max-w-[62vw] overflow-hidden text-ellipsis whitespace-nowrap text-[8px] uppercase tracking-[0.2em] text-navy md:tracking-[0.4em]">
+          <span className="max-w-[62vw] overflow-hidden text-ellipsis whitespace-nowrap text-caption uppercase tracking-[0.2em] text-navy md:tracking-[0.4em]">
             {label}
           </span>
         ) : null}
         <div className="h-px flex-1 bg-navy/10" />
         {right ? (
-          <span className="whitespace-nowrap text-[8px] uppercase tracking-[0.4em] text-navy">
+          <span className="whitespace-nowrap text-caption uppercase tracking-[0.4em] text-navy">
             {right}
           </span>
         ) : null}
@@ -306,7 +306,7 @@ function Anchor({ label }: { label: string }) {
   return (
     <a
       href="#"
-      className="border-b border-terra pb-0.5 text-[9px] uppercase tracking-[0.28em] text-terra"
+      className="border-b border-terra pb-0.5 text-caption uppercase tracking-[0.28em] text-terra"
     >
       {label}
     </a>
@@ -331,20 +331,20 @@ function PropCard({ p, h }: { p: FeaturedProperty; h: string }) {
         <span className="text-[32px] font-light leading-none text-white/75">
           {p.id}
         </span>
-        <span className="border border-white/25 px-2.5 py-1 text-[8px] uppercase tracking-[0.38em] text-white/80">
+        <span className="border border-white/25 px-2.5 py-1 text-caption uppercase tracking-[0.38em] text-white/80">
           {p.tag}
         </span>
       </div>
       <div className="absolute inset-x-0 bottom-0 p-[22px] pt-12">
-        <p className="mb-2 text-[8px] uppercase tracking-[0.3em] text-terra-light">
+        <p className="mb-2 text-caption uppercase tracking-[0.3em] text-terra-light">
           {p.location}
         </p>
         <h3 className="text-xl leading-tight tracking-[0.03em] text-white">
           {p.title}
         </h3>
-        {p.codigo ? <p className="mt-2 text-xs text-white">Ref. {p.codigo}</p> : null}
+        {p.codigo ? <p className="mt-2 text-detail text-white">Ref. {p.codigo}</p> : null}
         <div className="max-h-14 overflow-hidden opacity-100 transition duration-500 md:max-h-0 md:opacity-0 md:group-hover:max-h-14 md:group-hover:opacity-100">
-          <div className="flex flex-wrap gap-x-3.5 gap-y-1 pt-2.5 text-[10px] text-white/75">
+          <div className="flex flex-wrap gap-x-3.5 gap-y-1 pt-2.5 text-caption text-white/75">
             <span>{p.area}</span>
             {p.bedrooms > 0 ? (
               <>
@@ -376,14 +376,14 @@ function BairroCard({ b }: { b: Bairro }) {
       ) : null}
       <div className="absolute inset-0 bg-gradient-to-t from-navy/95 via-navy/70 to-navy/15" />
       <div className="absolute inset-x-2 bottom-2.5 md:inset-x-4 md:bottom-[18px]">
-        <p className="mb-1 text-[6px] uppercase tracking-[0.3em] text-terra-light md:text-[7px]">
+        <p className="mb-1 text-[6px] uppercase tracking-[0.3em] text-terra-light md:text-caption">
           {b.cidade}
         </p>
-        <h3 className="text-xs leading-tight tracking-[0.02em] text-white md:text-[15px]">
+        <h3 className="text-detail leading-tight tracking-[0.02em] text-white md:text-[15px]">
           {b.name}
         </h3>
         <div className="max-h-6 overflow-hidden opacity-100 transition duration-300 md:max-h-0 md:opacity-0 md:group-hover:max-h-6 md:group-hover:opacity-100">
-          <p className="pt-1 text-[8px] text-white/75 md:text-[9px]">
+          <p className="pt-1 text-caption text-white/75 md:text-caption">
             {b.imoveis} imóveis
           </p>
         </div>
@@ -416,7 +416,7 @@ function ProdCard({ p, items = [] }: { p: (typeof PRODUCTS)[0]; items?: NavDropd
         src={p.image}
       />
       <div className="absolute left-[22px] top-[22px]">
-        <span className="border border-white/20 px-2.5 py-1 text-[8px] uppercase tracking-[0.4em] text-white/75">
+        <span className="border border-white/20 px-2.5 py-1 text-caption uppercase tracking-[0.4em] text-white/75">
           {p.label}
         </span>
       </div>
@@ -425,12 +425,12 @@ function ProdCard({ p, items = [] }: { p: (typeof PRODUCTS)[0]; items?: NavDropd
           {p.title}
         </h3>
         <div className="max-h-[120px] overflow-hidden opacity-100 transition duration-500 md:max-h-0 md:opacity-0 md:group-hover:max-h-[120px] md:group-hover:opacity-100">
-          <p className="mb-[18px] text-xs leading-[1.8] text-white/75">
+          <p className="mb-[18px] text-detail leading-[1.8] text-white/75">
             {p.desc}
           </p>
         </div>
         <div className="flex items-center gap-2.5">
-          <span className="text-[9px] uppercase tracking-[0.22em] text-terra-light">
+          <span className="text-caption uppercase tracking-[0.22em] text-terra-light">
             {p.cta}
           </span>
           <div className="h-px w-9 bg-terra-light transition-all md:w-[18px] md:group-hover:w-9" />
@@ -453,13 +453,13 @@ function DirCard({ d }: { d: (typeof DIRECTORS)[0] }) {
         />
       </div>
       <div className="px-[26px] pb-[30px] pt-6">
-        <p className="mb-1.5 text-[8px] uppercase tracking-[0.32em] text-terra">
+        <p className="mb-1.5 text-caption uppercase tracking-[0.32em] text-terra">
           {d.title}
         </p>
         <h3 className="mb-3.5 text-xl leading-none tracking-[0.03em]">
           {d.name}
         </h3>
-        <p className="border-l-2 border-terra pl-3 text-xs italic leading-[1.8] text-navy">
+        <p className="border-l-2 border-terra pl-3 text-detail italic leading-[1.8] text-navy">
           {d.quote}
         </p>
       </div>
@@ -481,18 +481,18 @@ function NewsCard({ n }: { n: (typeof NEWS)[0] }) {
       </div>
       <div className="px-[22px] pb-[26px] pt-[22px]">
         <div className="mb-2.5 flex items-center gap-3.5">
-          <span className="text-[8px] uppercase tracking-[0.3em] text-terra">
+          <span className="text-caption uppercase tracking-[0.3em] text-terra">
             {n.cat}
           </span>
-          <span className="text-[8px] text-navy">·</span>
-          <span className="text-[9px] text-navy">{n.date}</span>
+          <span className="text-caption text-navy">·</span>
+          <span className="text-caption text-navy">{n.date}</span>
         </div>
         <h3 className="mb-2.5 text-base leading-snug tracking-[0.02em] decoration-navy/30 underline-offset-4 group-hover:underline">
           {n.title}
         </h3>
-        <p className="text-[11px] leading-[1.8] text-navy">{n.excerpt}</p>
+        <p className="text-detail leading-[1.8] text-navy">{n.excerpt}</p>
         <div className="mt-[18px] flex items-center gap-2">
-          <span className="text-[8px] uppercase tracking-[0.25em] text-terra">
+          <span className="text-caption uppercase tracking-[0.25em] text-terra">
             Ler mais
           </span>
           <div className="h-px w-3.5 bg-terra transition-all group-hover:w-7" />
@@ -505,7 +505,7 @@ function NewsCard({ n }: { n: (typeof NEWS)[0] }) {
 function TerraButton({ label, href }: { label: string; href: string }) {
   return (
     <a
-      className="inline-block bg-terra px-[30px] py-[13px] text-center text-[9px] uppercase tracking-[0.25em] text-white transition hover:bg-[#6b2a0f]"
+      className="inline-block bg-terra px-[30px] py-[13px] text-center text-caption uppercase tracking-[0.25em] text-white transition hover:bg-[#6b2a0f]"
       href={href}
     >
       {label}
@@ -526,11 +526,11 @@ function CaptureForm() {
         <Field label="Bairro / localização" placeholder="Onde fica?" />
       </div>
       <label>
-        <span className="mb-1 block text-[7px] uppercase tracking-[0.35em] text-navy">
+        <span className="mb-1 block text-caption uppercase tracking-[0.35em] text-navy">
           Observações
         </span>
         <textarea
-          className="h-24 w-full resize-none border border-navy/15 bg-transparent px-3 py-2.5 text-[13px] text-navy outline-none placeholder:text-navy/35"
+          className="h-24 w-full resize-none border border-navy/15 bg-transparent px-3 py-2.5 text-copy text-navy outline-none placeholder:text-navy/35"
           placeholder="Conte mais sobre o imóvel..."
         />
       </label>
@@ -550,11 +550,11 @@ function Field({
 }) {
   return (
     <label>
-      <span className="mb-1 block text-[7px] uppercase tracking-[0.35em] text-navy">
+      <span className="mb-1 block text-caption uppercase tracking-[0.35em] text-navy">
         {label}
       </span>
       <input
-        className="w-full border-0 border-b border-navy/15 bg-transparent py-2.5 text-[13px] text-navy outline-none placeholder:text-navy/35"
+        className="w-full border-0 border-b border-navy/15 bg-transparent py-2.5 text-copy text-navy outline-none placeholder:text-navy/35"
         placeholder={placeholder}
         type={type}
       />
@@ -566,7 +566,7 @@ function NewsletterBlock() {
   return (
     <section id="newsletter" className="site-container grid grid-cols-1 items-center gap-8 bg-terra py-12 md:grid-cols-2 md:gap-16 md:py-16">
       <div>
-        <p className="mb-3.5 text-[8px] uppercase tracking-[0.45em] text-white/75">
+        <p className="mb-3.5 text-caption uppercase tracking-[0.45em] text-white/75">
           Newsletter
         </p>
         <h2 className="mb-3.5 text-[clamp(24px,6.5vw,38px)] font-light leading-tight tracking-[0.04em] text-white">
@@ -574,7 +574,7 @@ function NewsletterBlock() {
           <br />
           direto no seu e-mail
         </h2>
-        <p className="max-w-[340px] text-xs leading-[1.9] text-white/75">
+        <p className="max-w-[340px] text-detail leading-[1.9] text-white/75">
           Lançamentos exclusivos, análises de mercado e seleções da nossa
           curadoria — antes de todo mundo.
         </p>
@@ -626,7 +626,7 @@ export default async function Home() {
         <div className="absolute inset-0 bg-gradient-to-b from-navy/30 via-navy/20 to-navy/75" />
         <div className="site-container absolute inset-x-0 top-[74px] flex items-center gap-3.5 md:top-[100px]">
           <div className="h-px w-6 shrink-0 bg-terra-light" />
-          <span className="text-[8px] uppercase tracking-[0.3em] text-white/75 md:text-[9px]">
+          <span className="text-caption uppercase tracking-[0.3em] text-white/75 md:text-caption">
             Imóvel em destaque — Londrina, Paraná
           </span>
         </div>
@@ -641,7 +641,7 @@ export default async function Home() {
           </p>
           <HomeHeroSearch filterOptions={filterOptions} />
         </div>
-        <div className="absolute bottom-12 right-16 hidden flex-col items-center gap-2 text-[8px] uppercase tracking-[0.35em] text-white/75 [writing-mode:vertical-rl] md:flex">
+        <div className="absolute bottom-12 right-16 hidden flex-col items-center gap-2 text-caption uppercase tracking-[0.35em] text-white/75 [writing-mode:vertical-rl] md:flex">
           Rolar
           <div className="mt-1 h-8 w-px bg-white/25" />
         </div>
@@ -651,7 +651,7 @@ export default async function Home() {
         <div className="animate-marquee flex whitespace-nowrap">
           {[...TICKER, ...TICKER, ...TICKER, ...TICKER].map((item, index) => (
             <span
-              className="pr-12 text-[8px] uppercase tracking-[0.38em] text-navy"
+              className="pr-12 text-caption uppercase tracking-[0.38em] text-navy"
               key={`${item}-${index}`}
             >
               {item} ·
@@ -704,7 +704,7 @@ export default async function Home() {
           <div>
             <div className="mb-4 flex items-center gap-3.5">
               <div className="h-px w-6 bg-terra-light" />
-              <span className="text-[8px] uppercase tracking-[0.35em] text-terra-light">
+              <span className="text-caption uppercase tracking-[0.35em] text-terra-light">
                 Nossos Produtos
               </span>
             </div>
@@ -714,7 +714,7 @@ export default async function Home() {
               <span className="text-white/75">ou entre antes de todo mundo</span>
             </h2>
           </div>
-          <p className="max-w-[280px] text-xs leading-[1.9] text-white/75">
+          <p className="max-w-[280px] text-detail leading-[1.9] text-white/75">
             Três caminhos para comprar, construir ou investir em Londrina —
             escolha o que faz sentido para você e sua família.
           </p>
@@ -738,7 +738,7 @@ export default async function Home() {
                 {stat.value}
                 <span className="text-[0.4em] text-terra">{stat.suffix}</span>
               </p>
-              <p className="text-[11px] leading-[1.6] text-navy">{stat.label}</p>
+              <p className="text-detail leading-[1.6] text-navy">{stat.label}</p>
             </div>
           ))}
         </div>
@@ -752,7 +752,7 @@ export default async function Home() {
             <br />
             da Inglaterra Premium
           </h2>
-          <p className="max-w-[280px] text-xs leading-[1.9] text-navy">
+          <p className="max-w-[280px] text-detail leading-[1.9] text-navy">
             Três décadas de mercado imobiliário de alto padrão concentradas em
             uma liderança que conhece cada detalhe.
           </p>
@@ -786,7 +786,7 @@ export default async function Home() {
           <div>
             <div className="mb-5 flex items-center gap-3.5">
               <div className="h-px w-6 bg-terra-light" />
-              <span className="text-[8px] uppercase tracking-[0.4em] text-terra-light">
+              <span className="text-caption uppercase tracking-[0.4em] text-terra-light">
                 Carreiras
               </span>
             </div>
@@ -795,7 +795,7 @@ export default async function Home() {
               <br />
               Inglaterra Premium
             </h2>
-            <p className="mb-8 max-w-[360px] text-[13px] leading-[1.9] text-white/75">
+            <p className="mb-8 max-w-[360px] text-copy leading-[1.9] text-white/75">
               Trabalhe como corretor de imóveis de alto padrão em Londrina.
               Represente clientes exigentes com o suporte de uma marca
               consolidada há 25 anos na cidade.
@@ -808,10 +808,10 @@ export default async function Home() {
                 <p className="mb-2 text-[22px] font-light text-white/15 md:text-[28px]">
                   {diff.num}
                 </p>
-                <h3 className="mb-2 text-[13px] tracking-[0.03em] text-white md:text-[15px]">
+                <h3 className="mb-2 text-copy tracking-[0.03em] text-white md:text-[15px]">
                   {diff.title}
                 </h3>
-                <p className="text-[11px] leading-[1.7] text-white/75">
+                <p className="text-detail leading-[1.7] text-white/75">
                   {diff.text}
                 </p>
               </div>
@@ -825,7 +825,7 @@ export default async function Home() {
         <div>
           <div className="mb-5 flex items-center gap-3.5">
             <div className="h-px w-6 bg-terra" />
-            <span className="text-[8px] uppercase tracking-[0.4em] text-terra">
+            <span className="text-caption uppercase tracking-[0.4em] text-terra">
               Captação de Imóveis
             </span>
           </div>
@@ -834,7 +834,7 @@ export default async function Home() {
             <br />
             está na Inglaterra?
           </h2>
-          <p className="mb-7 max-w-[380px] text-[13px] leading-[1.9] text-navy">
+          <p className="mb-7 max-w-[380px] text-copy leading-[1.9] text-navy">
             Apresente seu imóvel de alto padrão em Londrina à nossa equipe de
             curadoria. Avaliamos gratuitamente e conectamos seu patrimônio aos
             compradores certos — com discrição e eficiência.
@@ -847,7 +847,7 @@ export default async function Home() {
           ].map((item) => (
             <div className="mb-3 flex items-center gap-3" key={item}>
               <div className="h-1 w-1 shrink-0 bg-terra" />
-              <span className="text-xs text-navy">{item}</span>
+              <span className="text-detail text-navy">{item}</span>
             </div>
           ))}
         </div>
@@ -857,7 +857,7 @@ export default async function Home() {
       {instagramPosts.length > 0 ? (
         <section className="site-container border-t border-navy/10 bg-offwhite py-14">
           <div className="mb-6">
-            <p className="mb-1.5 text-[8px] uppercase tracking-[0.4em] text-navy">
+            <p className="mb-1.5 text-caption uppercase tracking-[0.4em] text-navy">
               Siga no Instagram
             </p>
             <h2 className="text-xl tracking-[0.06em] md:text-[26px]">
@@ -868,7 +868,7 @@ export default async function Home() {
           <InstagramGallery posts={instagramPosts} />
 
           <a
-            className="mt-6 inline-block border-b border-terra pb-0.5 text-[9px] uppercase tracking-[0.3em] text-terra"
+            className="mt-6 inline-block border-b border-terra pb-0.5 text-caption uppercase tracking-[0.3em] text-terra"
             href="https://www.instagram.com/inglaterrapremium/"
             rel="noreferrer"
             target="_blank"

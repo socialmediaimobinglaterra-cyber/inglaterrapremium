@@ -60,7 +60,7 @@ export function HomeHeroSearch({ searchPath = "/imoveis", filterOptions }: {
             <button key={value} id={`${id}-${value}-tab`} type="button" role="tab"
               aria-selected={mode === value} aria-controls={`${id}-${value}-panel`}
               tabIndex={mode === value ? 0 : -1}
-              className={`min-h-11 border-b-2 text-xs transition-colors motion-reduce:transition-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-terra ${mode === value ? "border-terra font-semibold text-terra" : "border-transparent text-navy/70 hover:text-navy"}`}
+              className={`min-h-11 border-b-2 text-detail transition-colors motion-reduce:transition-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-terra ${mode === value ? "border-terra font-semibold text-terra" : "border-transparent text-navy/70 hover:text-navy"}`}
               onClick={() => setMode(value)}
               onKeyDown={(event) => {
                 if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
@@ -75,7 +75,7 @@ export function HomeHeroSearch({ searchPath = "/imoveis", filterOptions }: {
       <div hidden={mode !== "ai"} id={`${id}-ai-panel`} role={filterOptions ? "tabpanel" : undefined} aria-labelledby={filterOptions ? `${id}-ai-tab` : undefined}>
       <div className="mb-3.5 flex items-center gap-2">
         <div className="h-1.5 w-1.5 rounded-full bg-terra" />
-        <span className="text-[9px] font-semibold uppercase tracking-[0.28em] text-terra">
+        <span className="text-caption font-semibold uppercase tracking-[0.28em] text-terra">
           Busca inteligente · Inglaterra AI
         </span>
       </div>
@@ -96,7 +96,7 @@ export function HomeHeroSearch({ searchPath = "/imoveis", filterOptions }: {
           value={query}
         />
         <button
-          className="py-1 text-left text-[10px] font-semibold uppercase tracking-[0.2em] text-terra disabled:cursor-wait disabled:opacity-70 md:py-2.5 md:pl-5 md:text-right"
+          className="py-1 text-left text-caption font-semibold uppercase tracking-[0.2em] text-terra disabled:cursor-wait disabled:opacity-70 md:py-2.5 md:pl-5 md:text-right"
           disabled={isBusy}
           type="submit"
         >
@@ -106,7 +106,7 @@ export function HomeHeroSearch({ searchPath = "/imoveis", filterOptions }: {
       <div className="mt-4 flex flex-wrap gap-2">
         {EXAMPLES.map((example) => (
           <button
-            className="rounded-full border border-navy/10 px-3 py-1.5 text-[10.5px] text-navy disabled:cursor-wait disabled:opacity-70"
+            className="rounded-full border border-navy/10 px-3 py-1.5 text-caption text-navy disabled:cursor-wait disabled:opacity-70"
             disabled={isBusy}
             key={example}
             onClick={() => {
@@ -124,31 +124,31 @@ export function HomeHeroSearch({ searchPath = "/imoveis", filterOptions }: {
         <div hidden={mode !== "filters"} id={`${id}-filters-panel`} role="tabpanel" aria-labelledby={`${id}-filters-tab`}>
           <form aria-busy={isBusy} onSubmit={(event) => { event.preventDefault(); submitFilters(); }}>
             <div className="grid grid-cols-2 gap-x-4 gap-y-3">
-              <label className="min-w-0 text-[11px] text-navy">Finalidade
+              <label className="min-w-0 text-detail text-navy">Finalidade
                 <select aria-label="Finalidade" className="mt-1 min-h-11 w-full border-0 border-b border-navy/20 bg-transparent text-sm text-navy focus-visible:outline-terra" value={negocio} onChange={(event) => setNegocio(event.target.value)}>
                   {NEGOCIO_OPTIONS.map((value) => <option key={value}>{value}</option>)}
                 </select>
               </label>
-              <label className="min-w-0 text-[11px] text-navy">Tipo de imóvel
+              <label className="min-w-0 text-detail text-navy">Tipo de imóvel
                 <select aria-label="Tipo de imóvel" className="mt-1 min-h-11 w-full border-0 border-b border-navy/20 bg-transparent text-sm text-navy focus-visible:outline-terra" value={tipo} onChange={(event) => setTipo(event.target.value)}>
                   <option value="">Todos os tipos</option>
                   {filterOptions.tipos.map((value) => <option key={value}>{value}</option>)}
                 </select>
               </label>
-              <label className="min-w-0 text-[11px] text-navy">Localização
+              <label className="min-w-0 text-detail text-navy">Localização
                 <select aria-label="Localização" className="mt-1 min-h-11 w-full border-0 border-b border-navy/20 bg-transparent text-sm text-navy focus-visible:outline-terra" value={location} onChange={(event) => setLocation(event.target.value)}>
                   <option value="">Todas as localizações</option>
                   <optgroup label="Bairros">{filterOptions.bairros.map((value) => <option key={value} value={`bairro:${value}`}>{value}</option>)}</optgroup>
                   <optgroup label="Condomínios">{filterOptions.condominios.map((value) => <option key={value} value={`condominio:${value}`}>{value}</option>)}</optgroup>
                 </select>
               </label>
-              <label className="min-w-0 text-[11px] text-navy">Faixa de valor
+              <label className="min-w-0 text-detail text-navy">Faixa de valor
                 <select aria-label="Faixa de valor" className="mt-1 min-h-11 w-full border-0 border-b border-navy/20 bg-transparent text-sm text-navy focus-visible:outline-terra" value={price} onChange={(event) => setPrices(current => ({ ...current, [negocio]: event.target.value }))}>
                   {valorOptions.map((value, index) => <option key={value.label} value={index}>{value.label}</option>)}
                 </select>
               </label>
             </div>
-            <button type="submit" disabled={isBusy} className="mt-3 min-h-11 text-[10px] font-semibold uppercase tracking-[0.2em] text-terra disabled:cursor-wait disabled:opacity-70">
+            <button type="submit" disabled={isBusy} className="mt-3 min-h-11 text-caption font-semibold uppercase tracking-[0.2em] text-terra disabled:cursor-wait disabled:opacity-70">
               {isBusy ? "Abrindo busca..." : "Buscar imóveis →"}
             </button>
           </form>

@@ -76,13 +76,13 @@ export function GalleryLightbox({
       role="dialog"
     >
       <div className="flex items-center justify-between border-b border-white/10 px-4 py-3 md:px-6">
-            <p className="text-[10px] uppercase tracking-[0.18em] text-white/75">
+            <p className="text-caption uppercase tracking-[0.18em] text-white/75">
           {safeIndex + 1} / {images.length}
         </p>
         <button
           aria-label="Fechar"
           title="Fechar"
-          className="border border-white/20 px-4 py-2 text-[10px] uppercase tracking-[0.16em] text-white transition hover:border-terra-light hover:text-terra-light"
+          className="border border-white/20 px-4 py-2 text-caption uppercase tracking-[0.16em] text-white transition hover:border-terra-light hover:text-terra-light"
           onClick={onClose}
           type="button"
         >
@@ -103,7 +103,7 @@ export function GalleryLightbox({
         {hasMultiple ? (
           <button
             aria-label="Foto anterior"
-            className="absolute left-4 top-1/2 z-10 -translate-y-1/2 border border-white/20 bg-navy/60 px-3 py-3 text-[10px] uppercase tracking-[0.14em] text-white transition hover:border-terra-light hover:text-terra-light md:left-6"
+            className="absolute left-4 top-1/2 z-10 -translate-y-1/2 border border-white/20 bg-navy/60 px-3 py-3 text-caption uppercase tracking-[0.14em] text-white transition hover:border-terra-light hover:text-terra-light md:left-6"
             onClick={previousImage}
             type="button"
           >
@@ -120,7 +120,7 @@ export function GalleryLightbox({
         {hasMultiple ? (
           <button
             aria-label="Próxima foto"
-            className="absolute right-4 top-1/2 z-10 -translate-y-1/2 border border-white/20 bg-navy/60 px-3 py-3 text-[10px] uppercase tracking-[0.14em] text-white transition hover:border-terra-light hover:text-terra-light md:right-6"
+            className="absolute right-4 top-1/2 z-10 -translate-y-1/2 border border-white/20 bg-navy/60 px-3 py-3 text-caption uppercase tracking-[0.14em] text-white transition hover:border-terra-light hover:text-terra-light md:right-6"
             onClick={nextImage}
             type="button"
           >
@@ -128,7 +128,7 @@ export function GalleryLightbox({
           </button>
         ) : null}
       </div>
-      <p aria-live="polite" className="px-4 text-center text-xs text-white/75">{activeImage.alt}</p>
+      <p aria-live="polite" className="px-4 text-center text-detail text-white/75">{activeImage.alt}</p>
 
       {hasMultiple ? (
         <div className="border-t border-white/10 px-4 py-3 md:px-6">
