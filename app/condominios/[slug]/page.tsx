@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CondominioGallery } from "@/components/condominios/CondominioGallery";
+import { DevelopmentContact } from "@/components/contact/DevelopmentContact";
 import {
   getCondominioBySlug,
   getCondominioImoveis,
@@ -62,16 +63,6 @@ function EmptyImage({ nome }: { nome: string }) {
     <div className="flex h-full min-h-[260px] items-center justify-center border border-dashed border-navy/10 bg-white text-center text-xs leading-relaxed text-navy">
       Imagem do condomínio {nome} aguardando cadastro.
     </div>
-  );
-}
-
-function ContactField({ placeholder }: { placeholder: string }) {
-  return (
-    <input
-      aria-label={placeholder}
-      className="min-w-0 w-full border border-white/20 bg-white/10 px-3.5 py-3 text-[13px] text-white outline-none placeholder:text-white/75"
-      placeholder={placeholder}
-    />
   );
 }
 
@@ -331,17 +322,7 @@ export default async function CondominioPage({ params }: PageProps) {
           <p className="mb-5 text-[10px] font-semibold uppercase tracking-[0.16em] text-terra-light">
             Quero receber informações
           </p>
-          <form className="flex flex-col gap-3.5">
-            <ContactField placeholder="Seu nome" />
-            <ContactField placeholder="WhatsApp" />
-            <ContactField placeholder="E-mail" />
-            <button
-              className="mt-1 bg-terra p-3.5 text-[10px] uppercase tracking-[0.2em] text-white"
-              type="button"
-            >
-              Quero saber mais
-            </button>
-          </form>
+          <DevelopmentContact nome={condominio.nome} />
         </div>
       </section>
 

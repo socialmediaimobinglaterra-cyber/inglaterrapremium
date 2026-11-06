@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { LancamentoGallery } from "@/components/lancamentos/LancamentoGallery";
+import { DevelopmentContact } from "@/components/contact/DevelopmentContact";
 import {
   getLancamentoBySlug,
   getRelatedLancamentos,
@@ -103,15 +104,6 @@ function RelatedCard({ lancamento }: { lancamento: LancamentoResumo }) {
         </h3>
       </div>
     </Link>
-  );
-}
-
-function ContactField({ placeholder }: { placeholder: string }) {
-  return (
-    <input
-        className="border border-white/20 bg-white/10 px-3.5 py-3 text-[13px] text-white outline-none placeholder:text-white/75"
-      placeholder={placeholder}
-    />
   );
 }
 
@@ -294,17 +286,7 @@ export default async function LancamentoPage({ params }: PageProps) {
           <p className="mb-5 text-[10px] font-semibold uppercase tracking-[0.16em] text-terra-light">
             Quero receber informações
           </p>
-          <form className="flex flex-col gap-3.5">
-            <ContactField placeholder="Seu nome" />
-            <ContactField placeholder="WhatsApp" />
-            <ContactField placeholder="E-mail" />
-            <button
-              className="mt-1 bg-terra p-3.5 text-[10px] uppercase tracking-[0.2em] text-white"
-              type="button"
-            >
-              Quero saber mais
-            </button>
-          </form>
+          <DevelopmentContact nome={lancamento.nome} />
         </div>
       </section>
 
