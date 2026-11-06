@@ -38,6 +38,10 @@ export default async function AdminPage() {
         </div>
 
         <div className="grid gap-4 md:grid-cols-2">
+          <Link className="border border-navy/10 bg-offwhite p-5 transition hover:border-terra" href="/admin/banners">
+            <h2 className="mb-2 text-sm font-semibold">Banners da Home</h2>
+            <p className="text-sm leading-relaxed text-sand">Gerenciar imagens, links e ordem de exibição.</p>
+          </Link>
           <div className="border border-navy/10 bg-offwhite p-5">
             <h2 className="mb-2 text-sm font-semibold">Conteúdo</h2>
             <p className="text-sm leading-relaxed text-sand">
