@@ -14,6 +14,7 @@ import MobiliaTag from "@/components/MobiliaTag";
 import { IntelligentSearchPanel } from "@/components/search/IntelligentSearchPanel";
 import { NEGOCIO_OPTIONS, VALOR_OPTIONS } from "@/lib/search-options";
 import { SaveSearchDialog } from "@/components/search/SaveSearchDialog";
+import { filtersToSearchParams } from "@/lib/search-url";
 
 type Props = {
   initialSearchPage: ImovelSearchPage;
@@ -197,7 +198,7 @@ export function BuscaImoveisClient({
   const [total, setTotal] = useState(initialSearchPage.total);
   const [page, setPage] = useState(initialSearchPage.page);
   const [hasMore, setHasMore] = useState(initialSearchPage.hasMore);
-  const [currentFilters, setCurrentFilters] = useState<ImovelSearchFilters>({ ...initialFilters, negocio: initialNegocio, order: "relevancia", mapSelection: initialMapSelection });
+  const [currentFilters, setCurrentFilters] = useState<ImovelSearchFilters>({ ...initialFilters, negocio: initialNegocio, order: initialFilters?.order ?? "relevancia", mapSelection: initialMapSelection ?? initialFilters?.mapSelection });
   const filtersRef = useRef(currentFilters);
   const [savedSearchFilters, setSavedSearchFilters] = useState<ImovelSearchFilters | null>(null);
   const requestSequence = useRef(0);
@@ -242,6 +243,12 @@ export function BuscaImoveisClient({
   function saveFilters(filters: ImovelSearchFilters) {
     filtersRef.current = filters;
     setCurrentFilters(filters);
+    if (!crmPreview) {
+      const url = new URL(window.location.href);
+      url.search = filtersToSearchParams(filters, url.searchParams).toString();
+      if (url.pathname === "/imoveis/alugar" && filters.negocio === "Comprar") url.pathname = "/imoveis";
+      window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
+    }
   }
   async function runSearch(filters: ImovelSearchFilters, options: {page?: number; append?: boolean} = {}) {
     const sequence = ++requestSequence.current;

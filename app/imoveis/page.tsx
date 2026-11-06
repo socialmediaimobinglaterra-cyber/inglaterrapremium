@@ -12,16 +12,7 @@ export const metadata: Metadata = {
 };
 
 type PageProps = {
-  searchParams: Promise<{
-    q?: string;
-    mapa?: string;
-    negocio?: string;
-    tipo?: string;
-    bairro?: string;
-    condominio?: string;
-    valorMinimo?: string;
-    valorMaximo?: string;
-  }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 };
 
 export default async function ImoveisPage({ searchParams }: PageProps) {
@@ -31,7 +22,7 @@ export default async function ImoveisPage({ searchParams }: PageProps) {
   const mapSelection = typeof params.mapa === "string" ? params.mapa.slice(0, 120) : undefined;
   const [options, initialSearchPage] = await Promise.all([
     getImoveisFilterOptions(),
-    searchImoveis({ ...initialFilters, negocio, order: "relevancia", mapSelection }),
+    searchImoveis({ ...initialFilters, negocio, mapSelection }),
   ]);
 
   return (
@@ -43,7 +34,7 @@ export default async function ImoveisPage({ searchParams }: PageProps) {
       initialFilters={initialFilters}
       initialNegocio={negocio}
       initialMapSelection={mapSelection}
-      initialNaturalQuery={params.q}
+      initialNaturalQuery={typeof params.q === "string" ? params.q : undefined}
       tipos={options.tipos}
     />
   );
