@@ -680,6 +680,7 @@ export default async function Home() {
         </div>
       </section>
 
+      {bairros.length > 0 ? <>
       <Rule label="Explorar por Localização" />
       <section className="site-container py-14">
         <div className="mb-8 flex flex-col items-start justify-between gap-3.5 md:flex-row md:items-end md:gap-0">
@@ -696,6 +697,8 @@ export default async function Home() {
           ))}
         </div>
       </section>
+
+      </> : null}
 
       <PropertyMap />
 
