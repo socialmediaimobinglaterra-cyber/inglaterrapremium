@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { contactSettings } from "@/lib/contact-settings";
+import { NewsletterForm } from "@/components/home/NewsletterForm";
 import Image from "next/image";
 import Link from "next/link";
 import { InstagramGallery } from "@/components/home/InstagramGallery";
@@ -500,20 +502,20 @@ function NewsCard({ n }: { n: (typeof NEWS)[0] }) {
   );
 }
 
-function TerraButton({ label }: { label: string }) {
+function TerraButton({ label, href }: { label: string; href: string }) {
   return (
-    <button
-      className="bg-terra px-[30px] py-[13px] text-[9px] uppercase tracking-[0.25em] text-white transition hover:bg-[#6b2a0f]"
-      type="button"
+    <a
+      className="inline-block bg-terra px-[30px] py-[13px] text-center text-[9px] uppercase tracking-[0.25em] text-white transition hover:bg-[#6b2a0f]"
+      href={href}
     >
       {label}
-    </button>
+    </a>
   );
 }
 
 function CaptureForm() {
   return (
-    <form className="flex flex-col gap-4 md:gap-5">
+    <div className="flex flex-col gap-4 md:gap-5">
       <div className="grid grid-cols-1 gap-3.5 md:grid-cols-2 md:gap-5">
         <Field label="Nome completo" placeholder="Seu nome" />
         <Field label="Telefone" placeholder="(43) 9 9999-9999" />
@@ -532,8 +534,8 @@ function CaptureForm() {
           placeholder="Conte mais sobre o imóvel..."
         />
       </label>
-      <TerraButton label="Solicitar Avaliação Gratuita" />
-    </form>
+      <TerraButton label="Solicitar Avaliação Gratuita" href={contactSettings.appraisal} />
+    </div>
   );
 }
 
@@ -562,7 +564,7 @@ function Field({
 
 function NewsletterBlock() {
   return (
-    <section className="site-container grid grid-cols-1 items-center gap-8 bg-terra py-12 md:grid-cols-2 md:gap-16 md:py-16">
+    <section id="newsletter" className="site-container grid grid-cols-1 items-center gap-8 bg-terra py-12 md:grid-cols-2 md:gap-16 md:py-16">
       <div>
         <p className="mb-3.5 text-[8px] uppercase tracking-[0.45em] text-white/75">
           Newsletter
@@ -577,25 +579,7 @@ function NewsletterBlock() {
           curadoria — antes de todo mundo.
         </p>
       </div>
-      <form className="flex flex-col gap-3">
-        <p className="text-[11px] leading-[1.7] text-white/75">
-          Sem spam. Conteúdo com real valor para quem vive ou investe em imóveis
-          de alto padrão. Cancele a qualquer momento.
-        </p>
-        <div className="flex">
-          <input
-            className="min-w-0 flex-1 border border-r-0 border-white/25 bg-white/10 px-[18px] py-[13px] text-xs text-white outline-none placeholder:text-white/75"
-            placeholder="seu@email.com"
-            type="email"
-          />
-          <button
-            className="bg-navy px-6 py-[13px] text-[9px] uppercase tracking-[0.28em] text-white transition hover:bg-[#1d2e42] md:px-[26px]"
-            type="button"
-          >
-            Assinar
-          </button>
-        </div>
-      </form>
+      <NewsletterForm />
     </section>
   );
 }
@@ -816,7 +800,7 @@ export default async function Home() {
               Represente clientes exigentes com o suporte de uma marca
               consolidada há 25 anos na cidade.
             </p>
-            <TerraButton label="Quero me candidatar" />
+            <TerraButton label="Quero me candidatar" href={contactSettings.careers} />
           </div>
           <div className="grid grid-cols-2 gap-5 md:gap-7">
             {DIFFS.map((diff) => (
