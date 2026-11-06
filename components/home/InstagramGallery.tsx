@@ -36,7 +36,7 @@ export function InstagramGallery({ posts }: { posts: InstagramPost[] }) {
           <div className="absolute inset-0 flex flex-col justify-end bg-navy/0 p-4 text-white opacity-0 transition duration-300 group-hover:bg-navy/58 group-hover:opacity-100">
             <InstagramMark />
             {post.legenda ? (
-              <p className="mt-3 line-clamp-3 text-xs leading-relaxed text-white/90">
+              <p className="mt-3 line-clamp-3 text-detail leading-relaxed text-white/90">
                 {post.legenda}
               </p>
             ) : null}

@@ -28,7 +28,7 @@ export function PropertyGallery({ photos, commonPhotos = [], title }: {
           {images.slice(1, 5).map((photo, index) => (
             <button type="button" aria-label={`Abrir foto ${index + 2} do imóvel`} onClick={() => setActiveIndex(index + 1)} className="relative aspect-[4/3] overflow-hidden focus-visible:outline focus-visible:outline-2 focus-visible:outline-terra md:aspect-auto" key={photo.url}>
               <Image alt={photo.alt} className="h-full w-full object-cover" fill sizes="(min-width: 768px) 19vw, 25vw" src={photo.url} />
-              {index === 3 && images.length > 5 ? <span className="absolute inset-0 flex items-center justify-center bg-navy/60 text-[13px] font-medium text-white">+ {images.length - 5} fotos</span> : null}
+              {index === 3 && images.length > 5 ? <span className="absolute inset-0 flex items-center justify-center bg-navy/60 text-copy font-medium text-white">+ {images.length - 5} fotos</span> : null}
             </button>
           ))}
         </div>

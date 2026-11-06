@@ -51,7 +51,7 @@ export function IntelligentSearchPanel({
         ref={sectionRef}
       >
         <div className="site-container py-5 md:py-6">
-          <p className="mb-1 text-xs font-medium text-terra">Busca inteligente</p>
+          <p className="mb-1 text-detail font-medium text-terra">Busca inteligente</p>
           <h2 className="text-xl font-light leading-tight md:text-2xl" id="intelligent-search-title">
             {refined ? "Vamos refinar sua busca?" : "Descreva o imóvel que você procura"}
           </h2>
@@ -88,7 +88,7 @@ export function IntelligentSearchPanel({
           <div aria-label="Sugestões de busca" className="mt-2 flex flex-col items-start gap-x-6 sm:flex-row sm:flex-wrap">
             {suggestions.map((suggestion) => (
               <button
-                className="min-h-11 max-w-full py-2 text-left text-xs leading-relaxed text-navy underline decoration-sand/60 underline-offset-4 hover:text-terra focus-visible:outline focus-visible:outline-2 focus-visible:outline-terra disabled:cursor-wait disabled:opacity-60"
+                className="min-h-11 max-w-full py-2 text-left text-detail leading-relaxed text-navy underline decoration-sand/60 underline-offset-4 hover:text-terra focus-visible:outline focus-visible:outline-2 focus-visible:outline-terra disabled:cursor-wait disabled:opacity-60"
                 disabled={busy}
                 key={suggestion}
                 onClick={() => { onQueryChange(suggestion); onSearch(suggestion); }}
@@ -106,8 +106,8 @@ export function IntelligentSearchPanel({
         <div aria-label="Resumo da busca" className="sticky top-16 z-30 border-b border-navy/15 bg-offwhite shadow-sm">
           <div className="site-container flex h-14 min-w-0 items-center gap-3">
             <div className="min-w-0 flex-1">
-              <p className="text-[11px] font-medium text-terra">{interpreting ? "Interpretando sua busca..." : "Sua seleção"}</p>
-              <p className="truncate text-xs text-navy" title={message || summary}>
+              <p className="text-detail font-medium text-terra">{interpreting ? "Interpretando sua busca..." : "Sua seleção"}</p>
+              <p className="truncate text-detail text-navy" title={message || summary}>
                 {message || summary || "Imóveis em Londrina"}
               </p>
             </div>

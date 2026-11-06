@@ -25,9 +25,9 @@ export function SaveSearchDialog({ filters, onClose }: { filters: ImovelSearchFi
     className="m-auto max-h-[90dvh] w-[calc(100%_-_32px)] max-w-lg overflow-y-auto border border-navy/15 bg-offwhite p-6 text-navy backdrop:bg-navy/50 md:p-8">
     <div className="mb-5 flex items-center justify-between gap-4">
       <h2 id="save-search-title" className="text-2xl font-light">Salva busca</h2>
-      <button type="button" disabled={busy} onClick={onClose} className="min-h-11 px-2 text-xs text-terra underline disabled:opacity-50">Fechar</button>
+      <button type="button" disabled={busy} onClick={onClose} className="min-h-11 px-2 text-detail text-terra underline disabled:opacity-50">Fechar</button>
     </div>
-    <ul aria-label="Critérios da busca" className="mb-5 flex flex-wrap gap-x-4 gap-y-1 border-y border-navy/10 py-3 text-xs">
+    <ul aria-label="Critérios da busca" className="mb-5 flex flex-wrap gap-x-4 gap-y-1 border-y border-navy/10 py-3 text-detail">
       {searchProfile(filters).map(item => <li key={item}>{item}</li>)}
     </ul>
     {filters.mapSelection ? <p role="status" className="text-sm">Para salvar, escolha um bairro ou condomínio nos filtros no lugar da seleção do mapa.</p> : !finished && <form aria-busy={busy} onSubmit={async event => {
@@ -60,7 +60,7 @@ export function SaveSearchDialog({ filters, onClose }: { filters: ImovelSearchFi
         <label className="block text-sm">WhatsApp com DDD
           <input name="phone" type="tel" required minLength={10} maxLength={30} autoComplete="tel" placeholder="(43) 99999-9999" className="mt-1 min-h-11 w-full border border-navy/25 bg-transparent px-3 text-base focus:outline-terra" />
         </label>
-        <label className="flex items-start gap-3 text-xs leading-relaxed">
+        <label className="flex items-start gap-3 text-detail leading-relaxed">
           <input type="checkbox" name="consent" required className="mt-1 h-5 w-5 shrink-0 accent-terra" />
           <span>{SEARCH_CONSENT}</span>
         </label>
@@ -69,7 +69,7 @@ export function SaveSearchDialog({ filters, onClose }: { filters: ImovelSearchFi
     </form>}
     <div role={error ? "alert" : "status"} aria-live="polite" className="mt-4 text-sm leading-relaxed">
       {message}
-      {reference && <p className="mt-2 break-all text-xs">Protocolo: {reference}</p>}
+      {reference && <p className="mt-2 break-all text-detail">Protocolo: {reference}</p>}
       {finished && !sent && <a href="/contato" className="mt-3 inline-block text-terra underline">Falar com a equipe</a>}
     </div>
   </dialog>;

@@ -16,7 +16,7 @@ export function PropertyContactForm({ imovelId, whatsappHref, context, slug, foc
   const submitting = useRef(false);
   const target = propertyWhatsappTarget(whatsappHref);
   if (!target || !whatsappHref) return <PropertyContactButton imovelId={imovelId} />;
-  const inputClass = "w-full border border-white/20 bg-white/10 px-3.5 py-3 text-[13px] text-white outline-none placeholder:text-white/75 focus-visible:outline focus-visible:outline-2 focus-visible:outline-terra-light";
+  const inputClass = "w-full border border-white/20 bg-white/10 px-3.5 py-3 text-copy text-white outline-none placeholder:text-white/75 focus-visible:outline focus-visible:outline-2 focus-visible:outline-terra-light";
 
   return <form className="flex flex-col gap-3.5" aria-busy={pending} onSubmit={async event => {
     event.preventDefault();
@@ -69,14 +69,14 @@ export function PropertyContactForm({ imovelId, whatsappHref, context, slug, foc
     <label className="block"><span className="sr-only">E-mail</span>
       <input className={inputClass} name="email" type="email" placeholder="E-mail" autoComplete="email" required maxLength={254} />
     </label>
-    <label className="flex items-start gap-2 text-xs leading-relaxed text-white/75">
+    <label className="flex items-start gap-2 text-detail leading-relaxed text-white/75">
       <input className="mt-1 shrink-0 accent-terra" name="consent" type="checkbox" required />
       <span>{INQUIRY_CONSENT.slice(0, -(`${PRIVACY_POLICY_TITLE}.`.length))}<a className="underline underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-terra-light" href={PRIVACY_POLICY_PATH} target="_blank" rel="noopener noreferrer">{PRIVACY_POLICY_TITLE}</a>.</span>
     </label>
-    <button className="mt-1 min-h-11 bg-terra p-3.5 text-[10px] uppercase tracking-[0.2em] text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-terra-light" type="submit">{pending ? "Enviando" : "Continuar no WhatsApp"}</button>
+    <button className="mt-1 min-h-11 bg-terra p-3.5 text-caption uppercase tracking-[0.2em] text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-terra-light" type="submit">{pending ? "Enviando" : "Continuar no WhatsApp"}</button>
     </fieldset>
-    {error && <p role="alert" className="text-xs text-white">{error}</p>}
-    {success && <p role="status" className="text-xs text-white">{success}</p>}
-    {continuation && <a className="text-xs text-white underline underline-offset-4" href={continuation} target="_blank" rel="noopener noreferrer">Abrir conversa no WhatsApp</a>}
+    {error && <p role="alert" className="text-detail text-white">{error}</p>}
+    {success && <p role="status" className="text-detail text-white">{success}</p>}
+    {continuation && <a className="text-detail text-white underline underline-offset-4" href={continuation} target="_blank" rel="noopener noreferrer">Abrir conversa no WhatsApp</a>}
   </form>;
 }
