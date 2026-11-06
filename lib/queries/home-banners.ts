@@ -1,15 +1,15 @@
 import { unstable_cache } from "next/cache";
-import { sanity, projectId, dataset } from "@/lib/sanity";
-import { normalizeHomeBanners, type HomeBannerRow } from "@/lib/home-banners";
+import { listBanners } from "@/lib/admin/banners";
 
-export const getHomeBanners = unstable_cache(async () => {
-  const rows = await sanity.fetch<HomeBannerRow[]>(
-    `*[_type == "homeBanner" && ativo == true && !(_id in path("drafts.**")) && defined(imagem.asset)]
-      | order(ordem asc, _createdAt asc) {
-        _id, titulo, textoAlternativo, link, "imagemUrl": imagem.asset->url,
-        "width": imagem.asset->metadata.dimensions.width,
-        "height": imagem.asset->metadata.dimensions.height
-      }`
-  );
-  return normalizeHomeBanners(rows);
-}, ["home-banners-v1", projectId, dataset], { revalidate: 60 });
+const readBanners = unstable_cache(() => listBanners(true), ["admin-home-banners-v1"], {
+  revalidate: 60, tags: ["home-banners"],
+});
+
+export async function getHomeBanners() {
+  try { return await readBanners(); }
+  catch (error) {
+    // An optional banner must not take the public Home offline before setup.
+    console.error("home_banners_unavailable", { code: (error as { code?: string }).code ?? "configuration" });
+    return [];
+  }
+}

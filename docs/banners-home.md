@@ -1,12 +1,14 @@
 # Banners da Home
 
-O site consulta documentos `homeBanner` publicados e ativos, no mesmo projeto/dataset Sanity ja configurado. A secao fica imediatamente abaixo dos imoveis em destaque e desaparece completamente quando nao ha banners validos. A consulta usa cache de 60 segundos.
+O site consulta banners ativos da tabela Postgres `home_banners`. A secao fica imediatamente abaixo dos imoveis em destaque e desaparece completamente quando nao ha banners. A consulta usa cache de 60 segundos, invalidado ao salvar ou remover pelo admin.
 
-## Cadastro no Studio
+## Cadastro no admin
 
-O codigo do Sanity Studio nao esta neste repositorio. Para disponibilizar o cadastro no Studio existente, registrar a definicao de `docs/sanity/homeBanner.js` no array `schemaTypes` daquele projeto e publicar o Studio pelo fluxo habitual. Se houver menu personalizado, incluir o tipo `homeBanner` nele tambem. Este arquivo nao registra o schema remotamente nem cria outro Studio.
+Em `/admin`, acessar **Banners da Home** (`/admin/banners`). Disponivel para admin e editor, com verificacao de sessao em todas as alteracoes. A tabela e criada automaticamente no primeiro acesso autenticado, reutilizando o padrao dos formularios do projeto.
 
-Campos: nome interno, imagem, descricao acessivel, link opcional HTTPS ou caminho interno, ordem e ativo. Publicar o documento depois de ativar. Nao foram criados documentos ou imagens ficticias.
+Campos: imagem, descricao acessivel, link opcional HTTPS ou caminho interno, ordem numerica e ativo. Editar permite substituir a imagem ou preservar a atual, ativar/desativar e alterar a ordem. A remocao pede confirmacao. Novos banners ficam inativos por padrao.
+
+Requer `DATABASE_URL` e `BLOB_READ_WRITE_TOKEN` no ambiente Vercel. Upload privado no Vercel Blob, servido pela rota existente `/api/blob-image`. Imagens JPG/PNG/WebP de ate 8 MB sao decodificadas e otimizadas para WebP de ate 2400px; SVG nao e aceito. Arquivos antigos sao mantidos no Blob para evitar quebrar paginas em cache. Nao ha mais dependencia do Studio para banners; os demais conteudos continuam no Sanity. Nao foram migrados documentos homeBanner eventualmente criados no Sanity.
 
 ## Exibicao
 
