@@ -3,7 +3,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { after } from "next/server";
 import { notFound } from "next/navigation";
-import { PropertyContactButton } from "@/components/analytics/PropertyContactButton";
+import { PropertyContactForm } from "@/components/imoveis/PropertyContactForm";
+import { brazilianPhone } from "@/lib/property-contact";
 import { recordAnalyticsEvent } from "@/lib/analytics";
 import { imageUrlOrFallback } from "@/lib/images";
 import { absoluteUrl } from "@/lib/site";
@@ -90,10 +91,8 @@ function plainDescription(imovel: ImovelDetail) {
 }
 
 function whatsappHref(imovel: ImovelDetail, foco: Foco = null) {
-  const phone = (imovel.corretor.celular ?? imovel.corretor.telefone ?? "").replace(/\D/g, "");
-  if (!phone) return null;
-
-  const number = phone.startsWith("55") ? phone : `55${phone}`;
+  const number = brazilianPhone(imovel.corretor.celular) ?? brazilianPhone(imovel.corretor.telefone);
+  if (!number) return null;
   // Imóvel de venda e locação aberto numa carteira: a mensagem diz qual (quem atende precisa saber).
   const carteira = imovel.precoVenda && imovel.precoLocacao && foco ? (foco === "rent" ? " (locação)" : " (venda)") : "";
   const message = encodeURIComponent(
@@ -198,18 +197,6 @@ function SimilarCard({ imovel, foco }: { imovel: ImovelSearchResult; foco: Foco 
         <p className="text-base font-medium text-navy">{currency(price)}</p>
       </div>
     </Link>
-  );
-}
-
-function Field({ label, placeholder }: { label: string; placeholder: string }) {
-  return (
-    <label className="block">
-      <span className="sr-only">{label}</span>
-      <input
-        className="w-full border border-white/20 bg-white/10 px-3.5 py-3 text-[13px] text-white outline-none placeholder:text-white/75"
-        placeholder={placeholder}
-      />
-    </label>
   );
 }
 
@@ -428,22 +415,11 @@ export default async function ImovelPage({ params, searchParams }: PageProps) {
                 </p>
               </div>
             </div>
-            <form className="flex flex-col gap-3.5">
-              <Field label="Seu nome" placeholder="Seu nome" />
-              <Field label="WhatsApp" placeholder="WhatsApp" />
-              <label className="block">
-                <span className="sr-only">Mensagem</span>
-                <textarea
-                  className="w-full resize-none border border-white/20 bg-white/10 px-3.5 py-3 text-[13px] text-white outline-none"
-                  defaultValue={`Tenho interesse no imóvel "${imovel.titulo}". Gostaria de agendar uma visita.`}
-                  rows={3}
-                />
-              </label>
-              <PropertyContactButton
-                imovelId={imovel.id}
-                whatsappHref={contactWhatsappHref}
-              />
-            </form>
+            <PropertyContactForm
+              imovelId={imovel.id}
+              whatsappHref={contactWhatsappHref}
+              context={`Referência: ${imovel.codigo || imovel.slug}\n${absoluteUrl(`/imoveis/${imovel.slug}${foco ? `?foco=${foco === "rent" ? "locacao" : "venda"}` : ""}`)}`}
+            />
           </div>
         </aside>
       </div>
