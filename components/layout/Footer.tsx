@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { organization } from "@/lib/site";
+import { contactSettings } from "@/lib/contact-settings";
 
 const footerColumns = [
   { title: "Comprar", links: ["Apartamentos", "Casas", "Coberturas", "Terrenos"] },
@@ -29,7 +30,7 @@ export function Footer() {
           </p>
           <div className="mt-5 flex flex-col gap-1.5">
             <p className="text-[10px] text-white/75">CRECI-PR 12.345</p>
-            <p className="text-[10px] text-white/75">(43) 3343-3010</p>
+            <p className="text-[10px] text-white/75"><a href={contactSettings.phoneHref}>{contactSettings.phone}</a></p>
             <p className="text-[10px] text-white/75">{organization.email}</p>
             <p className="text-[10px] text-white/75">
               Av. Duque de Caxias, 1726 · Londrina, PR
@@ -46,7 +47,7 @@ export function Footer() {
               {column.links.map((link) => (
                 <Link
                   className="nav-focus text-[11px] text-white/75 transition duration-200 hover:text-white"
-                  href="#"
+                  href={link === "Seja Corretor" ? contactSettings.careers : link === "Newsletter" ? "/#newsletter" : "#"}
                   key={link}
                 >
                   {link}

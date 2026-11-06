@@ -5,6 +5,7 @@ import { after } from "next/server";
 import { notFound } from "next/navigation";
 import { PropertyContactForm } from "@/components/imoveis/PropertyContactForm";
 import { brazilianPhone } from "@/lib/property-contact";
+import { contactSettings } from "@/lib/contact-settings";
 import { recordAnalyticsEvent } from "@/lib/analytics";
 import { imageUrlOrFallback } from "@/lib/images";
 import { absoluteUrl } from "@/lib/site";
@@ -411,12 +412,14 @@ export default async function ImovelPage({ params, searchParams }: PageProps) {
                   {corretor.nome ?? "Inglaterra Premium"}
                 </p>
                 <p className="text-[11.5px] text-white/75">
-                  {corretor.telefone || corretor.celular || corretor.email || imovel.bairro}
+                  <a href={contactSettings.phoneHref}>{contactSettings.phone}</a>
                 </p>
               </div>
             </div>
             <PropertyContactForm
               imovelId={imovel.id}
+              slug={imovel.slug}
+              foco={foco ? (foco === "rent" ? "locacao" : "venda") : null}
               whatsappHref={contactWhatsappHref}
               context={`Referência: ${imovel.codigo || imovel.slug}\n${absoluteUrl(`/imoveis/${imovel.slug}${foco ? `?foco=${foco === "rent" ? "locacao" : "venda"}` : ""}`)}`}
             />
