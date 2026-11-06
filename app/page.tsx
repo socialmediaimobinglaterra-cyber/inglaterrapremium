@@ -1,4 +1,7 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
+import { getBlogPosts } from "@/lib/queries/blog-posts";
+import { BlogNews } from "@/components/home/BlogNews";
 import { contactSettings } from "@/lib/contact-settings";
 import { NewsletterForm } from "@/components/home/NewsletterForm";
 import Image from "next/image";
@@ -101,33 +104,6 @@ const DIRECTORS = [
     quote:
       '"Entrei para o mercado imobiliário ao perceber que minha vocação sempre foi entender pessoas antes de entender imóveis. A essência da Inglaterra Premium, na minha visão, é nunca vender um imóvel sem antes entender o que aquele cliente realmente está construindo."',
     image: "/images/diretoria/vanderson.jpg",
-  },
-];
-
-const NEWS = [
-  {
-    cat: "Mercado",
-    date: "08 Ago 2026",
-    title: "Alto padrão registra recorde de valorização em Londrina no 1º semestre",
-    excerpt:
-      "Imóveis de luxo em Londrina lideraram a valorização imobiliária da cidade, com alta de até 18% em 12 meses nos bairros Gleba Palhano e Bela Suíça, segundo levantamento da Inglaterra Premium.",
-    image: "/images/capa-hero.jpg",
-  },
-  {
-    cat: "Tendências",
-    date: "01 Ago 2026",
-    title: "Build to Suit: a nova fronteira para quem não abre mão da exclusividade",
-    excerpt:
-      "Clientes de alta renda de Londrina migram para imóveis 100% personalizados. Entenda como funciona o modelo Build to Suit da Inglaterra Premium, do terreno ao projeto pronto.",
-    image: "/images/capa-hero.jpg",
-  },
-  {
-    cat: "Legislação",
-    date: "24 Jul 2026",
-    title: "Novas regras para condomínios de luxo: o que muda em 2026",
-    excerpt:
-      "As alterações aprovadas no código civil afetam cláusulas de convenção em empreendimentos verticais de alto padrão em todo o Brasil, incluindo os condomínios de Londrina.",
-    image: "/images/capa-hero.jpg",
   },
 ];
 
@@ -469,39 +445,10 @@ function DirCard({ d }: { d: (typeof DIRECTORS)[0] }) {
   );
 }
 
-function NewsCard({ n }: { n: (typeof NEWS)[0] }) {
-  return (
-    <article className="group cursor-pointer bg-white">
-      <div className="relative h-[200px] overflow-hidden bg-[#c8bdb6]">
-        <Image
-          alt={n.title}
-          fill
-          sizes="(min-width: 768px) 33vw, 100vw"
-          className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
-          src={n.image}
-        />
-      </div>
-      <div className="px-[22px] pb-[26px] pt-[22px]">
-        <div className="mb-2.5 flex items-center gap-3.5">
-          <span className="text-caption uppercase tracking-[0.3em] text-terra">
-            {n.cat}
-          </span>
-          <span className="text-caption text-navy">·</span>
-          <span className="text-caption text-navy">{n.date}</span>
-        </div>
-        <h3 className="mb-2.5 text-base leading-snug tracking-[0.02em] decoration-navy/30 underline-offset-4 group-hover:underline">
-          {n.title}
-        </h3>
-        <p className="text-detail leading-[1.8] text-navy">{n.excerpt}</p>
-        <div className="mt-[18px] flex items-center gap-2">
-          <span className="text-caption uppercase tracking-[0.25em] text-terra">
-            Ler mais
-          </span>
-          <div className="h-px w-3.5 bg-terra transition-all group-hover:w-7" />
-        </div>
-      </div>
-    </article>
-  );
+async function BlogSection() {
+  const posts = await getBlogPosts();
+  if (!posts.length) return null;
+  return <><Rule label="Notícias & Mercado" /><BlogNews posts={posts} /></>;
 }
 
 function TerraButton({ label, href }: { label: string; href: string }) {
@@ -772,22 +719,7 @@ export default async function Home() {
         </div>
       </section>
 
-      <Rule label="Notícias & Mercado" />
-      <section className="site-container bg-offwhite py-16">
-        <div className="mb-8 flex flex-col items-start justify-between gap-3.5 md:flex-row md:items-end md:gap-0">
-          <h2 className="text-[clamp(22px,5.5vw,38px)] font-light leading-tight tracking-[0.04em]">
-            O mercado de alto padrão
-            <br />
-            de Londrina, em perspectiva
-          </h2>
-          <Anchor label="Ver todas as notícias" />
-        </div>
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-3 md:gap-[5px]">
-          {NEWS.map((news) => (
-            <NewsCard key={news.title} n={news} />
-          ))}
-        </div>
-      </section>
+      <Suspense fallback={null}><BlogSection /></Suspense>
 
       <section className="relative min-h-[520px] overflow-hidden bg-navy">
         <div className="site-container relative z-10 grid min-h-[520px] grid-cols-1 items-center gap-10 py-14 md:grid-cols-2 md:gap-20 md:py-20">
