@@ -643,7 +643,7 @@ export default async function Home() {
         <div className="site-container absolute inset-x-0 top-[74px] flex items-center gap-3.5 md:top-[100px]">
           <div className="h-px w-6 shrink-0 bg-terra-light" />
           <span className="text-[8px] uppercase tracking-[0.3em] text-white/75 md:text-[9px]">
-            Imóvel em destaque — Londrina, Paraná
+            LONDRINA, PARANÁ
           </span>
         </div>
         <div className="site-container absolute inset-x-0 bottom-6 md:bottom-[130px]">
