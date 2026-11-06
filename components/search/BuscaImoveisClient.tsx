@@ -12,7 +12,7 @@ import { imageUrlOrFallback } from "@/lib/images";
 import type { CrmConversationListing } from "@/lib/crm-conversation";
 import MobiliaTag from "@/components/MobiliaTag";
 import { IntelligentSearchPanel } from "@/components/search/IntelligentSearchPanel";
-import { NEGOCIO_OPTIONS, VALOR_OPTIONS } from "@/lib/search-options";
+import { NEGOCIO_OPTIONS, getValorOptions } from "@/lib/search-options";
 import { SaveSearchDialog } from "@/components/search/SaveSearchDialog";
 import { filtersToSearchParams } from "@/lib/search-url";
 
@@ -222,7 +222,7 @@ export function BuscaImoveisClient({
   const condominio = currentFilters.condominio ?? "Todos os condomínios";
   const condominioOptions = [...new Set(["Todos os condomínios", ...condominios, ...(currentFilters.condominio ? [currentFilters.condominio] : [])])];
   const tipoOptions = [...new Set(["Todos os tipos", ...tipos, ...(currentFilters.tipo ? [currentFilters.tipo] : [])])];
-  const valorOptions = [...VALOR_OPTIONS];
+  const valorOptions = [...getValorOptions(negocio)];
   let valorOption = valorOptions.find(v => v.valorMinimo === (currentFilters.valorMinimo ?? null) && v.valorMaximo === (currentFilters.valorMaximo ?? null));
   if (!valorOption) {
     valorOption = {

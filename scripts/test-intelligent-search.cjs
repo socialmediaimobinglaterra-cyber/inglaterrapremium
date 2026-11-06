@@ -94,6 +94,10 @@ async function main() {
       assert.equal(await page.getByRole('combobox',{name:'Localização',exact:true}).inputValue(),'Gleba Palhano');
       await page.getByRole('combobox',{name:'Negócio',exact:true}).selectOption('Alugar');
       await page.waitForFunction(()=>document.querySelector('#filtro-negocio').value === 'Alugar');
+      const priceOptions = await page.getByRole('combobox',{name:'Valor',exact:true}).innerText();
+      assert.match(priceOptions,/Até R\$ 5\.000\/mês/);
+      assert(!priceOptions.includes('Até R$ 6.000.000'));
+      assert.match(await page.getByRole('combobox',{name:'Valor',exact:true}).inputValue(),/3\.000\.000/);
       assert.match(await cardPrice('apartamento-0').innerText(), /3\.316/);
       await page.getByRole('button',{name:'Agora quero com 3 suítes',exact:true}).click();
       await page.waitForFunction(()=>document.querySelector('#filtro-suites').value === '3+ suítes');
