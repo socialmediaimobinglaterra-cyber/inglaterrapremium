@@ -2,6 +2,7 @@
 
 import { useRef, useState, type FormEvent } from "react";
 import { NEWSLETTER_CONSENT } from "@/lib/newsletter";
+import { getVisitAttribution } from "@/lib/lead-attribution";
 
 export function NewsletterForm() {
   const submitting = useRef(false);
@@ -19,7 +20,7 @@ export function NewsletterForm() {
     try {
       const response = await fetch("/api/newsletter", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: data.get("email"), consent: data.get("consent") === "on" }),
+        body: JSON.stringify({ email: data.get("email"), consent: data.get("consent") === "on", attribution: getVisitAttribution() }),
       });
       const body = await response.json().catch(() => null);
       const ok = response.status === 200 && body?.ok === true;

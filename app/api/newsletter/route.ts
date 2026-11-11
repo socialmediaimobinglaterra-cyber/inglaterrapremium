@@ -29,7 +29,7 @@ export async function POST(request: Request) {
     return reply(error instanceof SyntaxError ? "Formato inválido." : error instanceof Error ? error.message : "Revise seus dados.", 400);
   }
   try {
-    const result = await subscribeNewsletter(request, lead.email, apiKey);
+    const result = await subscribeNewsletter(request, lead.email, apiKey, lead.attribution);
     return NextResponse.json({ ok: result.status === 200, pending: result.status === 202, message: result.message }, {
       status: result.status, headers: { "Cache-Control": "no-store", ...(result.retry ? { "Retry-After": String(result.retry) } : {}) },
     });
