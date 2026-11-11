@@ -4,6 +4,7 @@ import { DM_Sans } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { Footer } from "@/components/layout/Footer";
 import { Header } from "@/components/layout/Header";
+import { LeadAttributionCapture } from "@/components/layout/LeadAttributionCapture";
 import { absoluteUrl, organization } from "@/lib/site";
 import "./globals.css";
 
@@ -75,6 +76,7 @@ export default async function RootLayout({
           type="application/ld+json"
         />
         {isAdmin || isCrmPreview ? null : <Header />}
+        {isAdmin || isCrmPreview ? null : <LeadAttributionCapture />}
         {children}
         {isAdmin || isCrmPreview ? null : <Footer />}
         {isCrmPreview ? null : <Analytics />}

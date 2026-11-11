@@ -96,7 +96,7 @@ function routeHarness(configured = true, status = 200) {
     require(name: string) {
       if (name === "next/server") return { NextResponse: { json: Response.json } };
       if (name === "@/lib/newsletter") return newsletter;
-      if (name === "@/lib/newsletter-store") return { subscribeNewsletter: async (_request: Request, email: string) => { calls.push(email); return { status, message: "test" }; } };
+      if (name === "@/lib/newsletter-store") return { subscribeNewsletter: async (_request: Request, email: string, _key: string, attribution: unknown) => { calls.push({ email, attribution }); return { status, message: "test" }; } };
       throw new Error(name);
     },
   });
@@ -119,4 +119,16 @@ test("newsletter endpoint rejects missing config, foreign origin, invalid consen
   assert.equal(h.calls.length, 1);
   const pending = await routeHarness(true, 202).run(body);
   assert.equal((await pending.json()).ok, false);
+});
+
+test("newsletter endpoint forwards only validated attribution to delivery", async () => {
+  const h = routeHarness();
+  const result = await h.run(JSON.stringify({ email: "teste@example.com", consent: true, attribution: {
+    traffic_source: "instagram", traffic_medium: "paid_social", traffic_campaign: "premium",
+    conversion_identifier: "site-matriz-newsletter", url: "https://private.example/",
+  } }));
+  assert.equal(result.status, 200);
+  assert.deepEqual(JSON.parse(JSON.stringify(h.calls)), [{ email: "teste@example.com", attribution: {
+    traffic_source: "instagram", traffic_medium: "paid_social", traffic_campaign: "premium",
+  } }]);
 });
