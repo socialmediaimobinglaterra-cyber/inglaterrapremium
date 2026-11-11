@@ -91,7 +91,7 @@ function FeatureList({ items }: { items: string[] }) {
     <div className="flex flex-col gap-2.5">
       {items.map((item) => (
         <div
-          className="flex items-center gap-2.5 border-b border-navy/10 pb-2.5 text-[13px] text-navy"
+          className="flex items-center gap-2.5 border-b border-navy/10 pb-2.5 text-copy text-navy"
           key={item}
         >
           <div className="h-1 w-1 shrink-0 bg-terra" />
@@ -114,12 +114,12 @@ function CaseCard({ item }: { item: (typeof cases)[number] }) {
       </div>
       <div className="px-1 py-5 md:pb-0 md:pt-6">
         <h3 className="mb-2.5 text-[18px] font-normal text-navy">{item.nome}</h3>
-        <p className="mb-4 text-[13px] leading-[1.75] text-[#4a4a48]">{item.desc}</p>
+        <p className="mb-4 text-copy leading-[1.75] text-[#4a4a48]">{item.desc}</p>
         <div className="flex gap-7">
           {[item.stat1, item.stat2].map((stat) => (
             <div key={stat.l}>
               <p className="text-[20px] font-medium text-terra">{stat.v}</p>
-              <p className="text-[9.5px] uppercase tracking-[0.05em] text-navy">
+              <p className="text-caption uppercase tracking-[0.05em] text-navy">
                 {stat.l}
               </p>
             </div>
@@ -164,8 +164,8 @@ export default function BtsPage() {
       <BreadcrumbJsonLd />
 
       <section className="site-container pt-[88px] md:pt-[108px]">
-        <p className="mb-4 text-[11px] text-navy">Início / Inglaterra BTS</p>
-        <span className="mb-4 inline-block bg-terra px-3 py-1.5 text-[9px] font-semibold uppercase tracking-[0.15em] text-white">
+        <p className="mb-4 text-detail text-navy">Início / Inglaterra BTS</p>
+        <span className="mb-4 inline-block bg-terra px-3 py-1.5 text-caption font-semibold uppercase tracking-[0.15em] text-white">
           Built to Suit Corporativo
         </span>
         <h1 className="mb-3.5 max-w-[720px] text-[clamp(26px,8vw,34px)] font-light leading-[1.15] tracking-[0.01em] md:text-[clamp(32px,3.6vw,50px)]">
@@ -177,13 +177,13 @@ export default function BtsPage() {
         </p>
         <div className="flex flex-wrap gap-3">
           <Link
-            className="bg-terra px-6 py-3.5 text-[10px] uppercase tracking-[0.2em] text-white"
+            className="bg-terra px-6 py-3.5 text-caption uppercase tracking-[0.2em] text-white"
             href="#contato-bts"
           >
             Tenho um terreno
           </Link>
           <Link
-            className="border border-navy px-6 py-3.5 text-[10px] uppercase tracking-[0.2em] text-navy"
+            className="border border-navy px-6 py-3.5 text-caption uppercase tracking-[0.2em] text-navy"
             href="#contato-bts"
           >
             Preciso de um espaço sob medida
@@ -202,7 +202,7 @@ export default function BtsPage() {
       </div>
 
       <section className="site-container py-8 md:py-12">
-        <p className="mb-5 text-[9px] font-semibold uppercase tracking-[0.25em] text-terra">
+        <p className="mb-5 text-caption font-semibold uppercase tracking-[0.25em] text-terra">
           Inglaterra BTS em números
         </p>
         <div className="grid grid-cols-3 gap-2 md:gap-4">
@@ -211,7 +211,7 @@ export default function BtsPage() {
               <p className="mb-1 text-[15px] font-medium text-navy md:text-2xl">
                 {numero.v}
               </p>
-              <p className="text-[8.5px] uppercase tracking-[0.04em] text-navy md:text-[10.5px]">
+              <p className="text-caption uppercase tracking-[0.04em] text-navy md:text-caption">
                 {numero.l}
               </p>
             </div>
@@ -224,7 +224,7 @@ export default function BtsPage() {
           <h2 className="mb-2 text-[19px] font-normal text-navy md:text-[22px]">
             Você tem um terreno?
           </h2>
-          <p className="mb-5 text-[13px] text-navy">
+          <p className="mb-5 text-copy text-navy">
             Transforme seu terreno em renda garantida, sem construir nada
           </p>
           <FeatureList items={paraProprietarios} />
@@ -233,7 +233,7 @@ export default function BtsPage() {
           <h2 className="mb-2 text-[19px] font-normal text-navy md:text-[22px]">
             Sua empresa precisa de um espaço sob medida?
           </h2>
-          <p className="mb-5 text-[13px] text-navy">
+          <p className="mb-5 text-copy text-navy">
             Um imóvel projetado para a sua operação, sem investir em construção
           </p>
           <FeatureList items={paraEmpresas} />
@@ -241,7 +241,7 @@ export default function BtsPage() {
       </section>
 
       <section className="site-container py-12 md:py-[72px]">
-        <p className="mb-2 text-[9px] font-semibold uppercase tracking-[0.25em] text-terra">
+        <p className="mb-2 text-caption font-semibold uppercase tracking-[0.25em] text-terra">
           O processo
         </p>
         <h2 className="mb-7 max-w-[500px] text-[22px] font-light tracking-[0.01em] text-navy md:mb-10 md:text-[30px]">
@@ -259,7 +259,7 @@ export default function BtsPage() {
               <h3 className="mb-2.5 text-[15px] font-semibold text-navy">
                 {etapa.titulo}
               </h3>
-              <p className="text-[13px] leading-[1.75] text-[#4a4a48]">
+              <p className="text-copy leading-[1.75] text-[#4a4a48]">
                 {etapa.texto}
               </p>
             </div>
@@ -268,7 +268,7 @@ export default function BtsPage() {
       </section>
 
       <section className="site-container bg-white py-12 md:py-[72px]">
-        <p className="mb-2 text-[9px] font-semibold uppercase tracking-[0.25em] text-terra">
+        <p className="mb-2 text-caption font-semibold uppercase tracking-[0.25em] text-terra">
           Cases de sucesso
         </p>
         <h2 className="mb-6 text-[22px] font-light tracking-[0.01em] text-navy md:mb-8 md:text-[30px]">
@@ -283,7 +283,7 @@ export default function BtsPage() {
 
       <section className="site-container grid grid-cols-1 gap-8 py-12 md:grid-cols-[1fr_420px] md:gap-16 md:py-[72px]" id="contato-bts">
         <div>
-          <p className="mb-2 text-[9px] font-semibold uppercase tracking-[0.25em] text-terra">
+          <p className="mb-2 text-caption font-semibold uppercase tracking-[0.25em] text-terra">
             Fale com nosso especialista
           </p>
           <h2 className="mb-7 max-w-[480px] text-[22px] font-light tracking-[0.01em] text-navy md:mb-10 md:text-[30px]">
@@ -303,11 +303,11 @@ export default function BtsPage() {
               <p className="mb-0.5 text-[17px] font-medium text-navy">
                 Wagner Lopes Redon
               </p>
-              <p className="mb-2 text-xs text-navy">
+              <p className="mb-2 text-detail text-navy">
                 Diretor de Locação · Inglaterra BTS
               </p>
               <a
-                className="inline-block border-b border-terra pb-0.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-terra"
+                className="inline-block border-b border-terra pb-0.5 text-caption font-semibold uppercase tracking-[0.16em] text-terra"
                 href="#formulario-bts"
               >
                 Entrar em contato
@@ -317,7 +317,7 @@ export default function BtsPage() {
         </div>
 
         <div className="bg-navy p-6 md:p-8" id="formulario-bts">
-          <p className="mb-5 text-[10px] font-semibold uppercase tracking-[0.16em] text-terra-light">
+          <p className="mb-5 text-caption font-semibold uppercase tracking-[0.16em] text-terra-light">
             Quero falar sobre BTS
           </p>
           <BtsContactForm />

@@ -1,5 +1,6 @@
-import { sanity } from "@/lib/sanity";
+import { sanity, projectId, dataset } from "@/lib/sanity";
 import { cache } from "react";
+import { unstable_cache } from "next/cache";
 import { imageUrlOrFallback } from "@/lib/images";
 import { resolveMapSelection, validMapSelection } from "@/lib/property-map";
 import { getPropertyMapData } from "@/lib/queries/property-map";
@@ -147,13 +148,18 @@ export function normalizeSearchFilters(filters: ImovelSearchFilters) {
 
 const byPtBr = (a: string, b: string) => a.localeCompare(b, "pt-BR");
 
+// Cache only public option rows, keyed by the current premium rule as well as the dataset.
+// Availability, prices and search results remain live.
+const getFilterOptionRows = unstable_cache(async (filter: string) =>
+  sanity.fetch<Array<{ cep?: string | null; neighborhood?: string | null; type?: string | null; cond?: string | null; condId?: string | null }>>(
+    `*[_type == "property" && ${filter}] { cep, neighborhood, type, "cond": condominioRef->nome, "condId": condominioRef._ref }`
+  ), ["public-filter-options-v1", projectId, dataset], { revalidate: 60 });
+
 // Opções dos filtros: só o que existe entre os imóveis que o Premium realmente mostra.
 // Bairro é o oficial pelo CEP (o do CRM vem com nome de condomínio); condomínio só os premium.
 export async function getImoveisFilterOptions() {
   const [filter, config] = await Promise.all([premiumFilter(), getPremiumConfig()]);
-  const rows = await sanity.fetch<Array<{ cep?: string | null; neighborhood?: string | null; type?: string | null; cond?: string | null; condId?: string | null }>>(
-    `*[_type == "property" && ${filter}] { cep, neighborhood, type, "cond": condominioRef->nome, "condId": condominioRef._ref }`
-  );
+  const rows = await getFilterOptionRows(filter);
 
   const bairros = new Set<string>();
   const tipos = new Set<string>();

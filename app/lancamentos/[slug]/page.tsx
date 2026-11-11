@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { LancamentoGallery } from "@/components/lancamentos/LancamentoGallery";
+import { DevelopmentContact } from "@/components/contact/DevelopmentContact";
 import {
   getLancamentoBySlug,
   getRelatedLancamentos,
@@ -61,7 +62,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 function EmptyImage({ nome }: { nome: string }) {
   return (
-    <div className="flex h-full min-h-[260px] items-center justify-center border border-dashed border-navy/10 bg-white text-center text-xs leading-relaxed text-navy">
+    <div className="flex h-full min-h-[260px] items-center justify-center border border-dashed border-navy/10 bg-white text-center text-detail leading-relaxed text-navy">
       Imagem de {nome} aguardando cadastro.
     </div>
   );
@@ -86,7 +87,7 @@ function RelatedCard({ lancamento }: { lancamento: LancamentoResumo }) {
         )}
         {lancamento.status ? (
           <span
-            className={`absolute left-3.5 top-3.5 px-2.5 py-[5px] text-[8px] font-semibold uppercase tracking-[0.2em] text-white ${statusClass(
+            className={`absolute left-3.5 top-3.5 px-2.5 py-[5px] text-caption font-semibold uppercase tracking-[0.2em] text-white ${statusClass(
               lancamento.status
             )}`}
           >
@@ -95,7 +96,7 @@ function RelatedCard({ lancamento }: { lancamento: LancamentoResumo }) {
         ) : null}
       </div>
       <div className="pt-3.5">
-        <p className="mb-1 text-[11px] tracking-[0.06em] text-navy">
+        <p className="mb-1 text-detail tracking-[0.06em] text-navy">
           {lancamento.bairro}, Londrina
         </p>
         <h3 className="text-[15px] font-normal leading-[1.3] text-navy">
@@ -103,15 +104,6 @@ function RelatedCard({ lancamento }: { lancamento: LancamentoResumo }) {
         </h3>
       </div>
     </Link>
-  );
-}
-
-function ContactField({ placeholder }: { placeholder: string }) {
-  return (
-    <input
-        className="border border-white/20 bg-white/10 px-3.5 py-3 text-[13px] text-white outline-none placeholder:text-white/75"
-      placeholder={placeholder}
-    />
   );
 }
 
@@ -157,12 +149,12 @@ export default async function LancamentoPage({ params }: PageProps) {
       <JsonLd lancamento={lancamento} />
 
       <div className="site-container pt-[88px] md:pt-[108px]">
-        <p className="mb-4 text-[11px] text-navy">
+        <p className="mb-4 text-detail text-navy">
           Início / Lançamentos / {lancamento.nome}
         </p>
         {lancamento.status ? (
           <span
-            className={`mb-4 inline-block px-3 py-1.5 text-[9px] font-semibold uppercase tracking-[0.15em] text-white ${statusClass(
+            className={`mb-4 inline-block px-3 py-1.5 text-caption font-semibold uppercase tracking-[0.15em] text-white ${statusClass(
               lancamento.status
             )}`}
           >
@@ -173,7 +165,7 @@ export default async function LancamentoPage({ params }: PageProps) {
           {lancamento.nome} - Lançamento em {lancamento.bairro}, Londrina
         </h1>
         {lancamento.entrega ? (
-              <p className="text-[13px] text-navy">{lancamento.entrega}</p>
+              <p className="text-copy text-navy">{lancamento.entrega}</p>
         ) : null}
         {(lancamento.construtoraNome || lancamento.construtoraLogo) ? (
           <div className="mt-5 flex flex-wrap items-center gap-3">
@@ -187,7 +179,7 @@ export default async function LancamentoPage({ params }: PageProps) {
               </div>
             ) : null}
             {lancamento.construtoraNome ? (
-                    <p className="text-[11px] uppercase tracking-[0.14em] text-navy">
+                    <p className="text-detail uppercase tracking-[0.14em] text-navy">
                 Construtora · {lancamento.construtoraNome}
               </p>
             ) : null}
@@ -215,10 +207,10 @@ export default async function LancamentoPage({ params }: PageProps) {
           <div className="grid grid-cols-1 gap-2 md:grid-cols-3 md:gap-4">
             {facts.map((fact) => (
               <div className="bg-white px-2 py-3.5 text-center md:px-4 md:py-5" key={fact.label}>
-                <p className="mb-1 text-[13px] font-medium text-navy md:text-[17px]">
+                <p className="mb-1 text-copy font-medium text-navy md:text-[17px]">
                   {fact.value}
                 </p>
-                <p className="text-[8.5px] uppercase tracking-[0.05em] text-navy md:text-[10px]">
+                <p className="text-caption uppercase tracking-[0.05em] text-navy md:text-caption">
                   {fact.label}
                 </p>
               </div>
@@ -231,7 +223,7 @@ export default async function LancamentoPage({ params }: PageProps) {
         <section className="site-container grid grid-cols-1 gap-7 py-10 md:grid-cols-[1.6fr_1fr] md:gap-16 md:py-16">
           {(lancamento.descricao || lancamento.descricao2) ? (
             <div>
-              <h2 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.16em]">
+              <h2 className="mb-4 text-detail font-semibold uppercase tracking-[0.16em]">
                 Sobre o lançamento
               </h2>
               {lancamento.descricao ? (
@@ -249,13 +241,13 @@ export default async function LancamentoPage({ params }: PageProps) {
 
           {lancamento.diferenciais.length > 0 ? (
             <div>
-              <h2 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.16em]">
+              <h2 className="mb-4 text-detail font-semibold uppercase tracking-[0.16em]">
                 Diferenciais
               </h2>
               <div className="flex flex-col gap-2.5">
                 {lancamento.diferenciais.map((item) => (
                   <div
-                    className="flex items-center gap-2.5 border-b border-navy/10 pb-2.5 text-[13px] text-navy"
+                    className="flex items-center gap-2.5 border-b border-navy/10 pb-2.5 text-copy text-navy"
                     key={item}
                   >
                     <div className="h-1 w-1 shrink-0 bg-terra" />
@@ -269,7 +261,7 @@ export default async function LancamentoPage({ params }: PageProps) {
       ) : null}
 
       <section className="site-container pb-10 pt-10 md:pb-16 md:pt-16">
-        <h2 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.16em]">
+        <h2 className="mb-4 text-detail font-semibold uppercase tracking-[0.16em]">
           Galeria de fotos
         </h2>
         <LancamentoGallery images={lancamento.galeria} nome={lancamento.nome} />
@@ -277,13 +269,13 @@ export default async function LancamentoPage({ params }: PageProps) {
 
       <section className="site-container grid grid-cols-1 gap-7 bg-white py-10 md:grid-cols-[1.6fr_1fr] md:gap-16 md:py-16">
         <div>
-          <h2 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.16em]">
+          <h2 className="mb-4 text-detail font-semibold uppercase tracking-[0.16em]">
             Localização
           </h2>
-            <p className="mb-4 text-[13px] text-navy">
+            <p className="mb-4 text-copy text-navy">
             {lancamento.bairro}, Londrina - PR
           </p>
-            <div className="flex h-[200px] items-center justify-center border border-dashed border-navy/10 bg-offwhite text-center text-xs leading-relaxed text-navy md:h-[300px]">
+            <div className="flex h-[200px] items-center justify-center border border-dashed border-navy/10 bg-offwhite text-center text-detail leading-relaxed text-navy md:h-[300px]">
             {lancamento.latitude && lancamento.longitude
               ? `${lancamento.latitude}, ${lancamento.longitude} - ${lancamento.bairro}, Londrina`
               : `${lancamento.bairro}, Londrina - PR`}
@@ -291,26 +283,16 @@ export default async function LancamentoPage({ params }: PageProps) {
         </div>
 
         <div className="bg-navy p-6 md:p-8">
-          <p className="mb-5 text-[10px] font-semibold uppercase tracking-[0.16em] text-terra-light">
+          <p className="mb-5 text-caption font-semibold uppercase tracking-[0.16em] text-terra-light">
             Quero receber informações
           </p>
-          <form className="flex flex-col gap-3.5">
-            <ContactField placeholder="Seu nome" />
-            <ContactField placeholder="WhatsApp" />
-            <ContactField placeholder="E-mail" />
-            <button
-              className="mt-1 bg-terra p-3.5 text-[10px] uppercase tracking-[0.2em] text-white"
-              type="button"
-            >
-              Quero saber mais
-            </button>
-          </form>
+          <DevelopmentContact nome={lancamento.nome} />
         </div>
       </section>
 
       {relacionados.length > 0 ? (
         <section className="site-container py-12 md:py-[72px]">
-          <p className="mb-2 text-[9px] font-semibold uppercase tracking-[0.25em] text-terra">
+          <p className="mb-2 text-caption font-semibold uppercase tracking-[0.25em] text-terra">
             Continue explorando
           </p>
           <h2 className="mb-6 text-[22px] font-light tracking-[0.01em] md:mb-8 md:text-[28px]">

@@ -3,7 +3,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { after } from "next/server";
 import { notFound } from "next/navigation";
-import { PropertyContactButton } from "@/components/analytics/PropertyContactButton";
+import { PropertyContactForm } from "@/components/imoveis/PropertyContactForm";
+import { brazilianPhone } from "@/lib/property-contact";
+import { contactSettings } from "@/lib/contact-settings";
 import { recordAnalyticsEvent } from "@/lib/analytics";
 import { imageUrlOrFallback } from "@/lib/images";
 import { absoluteUrl } from "@/lib/site";
@@ -52,7 +54,7 @@ function area(value: number | null) {
   return `${value.toLocaleString("pt-BR", { maximumFractionDigits: 0 })} m²`;
 }
 
-function getPrice(imovel: ImovelDetail, foco: Foco = null) {
+function getPrice(imovel: Pick<ImovelDetail, "precoVenda" | "precoLocacao">, foco: Foco = null) {
   if (foco === "rent" && imovel.precoLocacao) return imovel.precoLocacao;
   if (foco === "sale" && imovel.precoVenda) return imovel.precoVenda;
   return imovel.precoVenda ?? imovel.precoLocacao;
@@ -90,10 +92,8 @@ function plainDescription(imovel: ImovelDetail) {
 }
 
 function whatsappHref(imovel: ImovelDetail, foco: Foco = null) {
-  const phone = (imovel.corretor.celular ?? imovel.corretor.telefone ?? "").replace(/\D/g, "");
-  if (!phone) return null;
-
-  const number = phone.startsWith("55") ? phone : `55${phone}`;
+  const number = brazilianPhone(imovel.corretor.celular) ?? brazilianPhone(imovel.corretor.telefone);
+  if (!number) return null;
   // Imóvel de venda e locação aberto numa carteira: a mensagem diz qual (quem atende precisa saber).
   const carteira = imovel.precoVenda && imovel.precoLocacao && foco ? (foco === "rent" ? " (locação)" : " (venda)") : "";
   const message = encodeURIComponent(
@@ -169,12 +169,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
-function SimilarCard({ imovel }: { imovel: ImovelSearchResult }) {
-  const price = imovel.precoVenda ?? imovel.precoLocacao;
+function SimilarCard({ imovel, foco }: { imovel: ImovelSearchResult; foco: Foco }) {
+  const price = getPrice(imovel, foco);
   const image = imageUrlOrFallback(imovel.image);
 
   return (
-    <Link className="group block text-inherit no-underline" href={`/imoveis/${imovel.slug}`}>
+    <Link className="group block text-inherit no-underline" href={`/imoveis/${imovel.slug}${foco ? `?foco=${foco === "rent" ? "locacao" : "venda"}` : ""}`}>
       <div className="relative aspect-[5/4] overflow-hidden bg-[#1e1e1e]">
         <Image
           alt={`${imovel.titulo} — ${imovel.bairro}, Londrina`}
@@ -183,38 +183,27 @@ function SimilarCard({ imovel }: { imovel: ImovelSearchResult }) {
           sizes="(min-width: 768px) 33vw, 100vw"
           src={image}
         />
-        <span className="absolute left-3.5 top-3.5 border border-white/40 px-2.5 py-[5px] text-[8px] uppercase tracking-[0.3em] text-white">
+        <span className="absolute left-3.5 top-3.5 border border-white/40 px-2.5 py-[5px] text-caption uppercase tracking-[0.3em] text-white">
           {imovel.tag}
         </span>
       </div>
       <div className="pt-3.5">
-        <p className="mb-1 text-[11px] tracking-[0.06em] text-navy">
+        <p className="mb-1 text-detail tracking-[0.06em] text-navy">
           {imovel.bairro}, Londrina
         </p>
         <h3 className="mb-2 text-[15px] font-normal leading-[1.3] text-navy">
           {imovel.titulo}
         </h3>
-        {imovel.codigo ? <p className="mb-2 text-xs text-navy">Ref. {imovel.codigo}</p> : null}
+        {imovel.codigo ? <p className="mb-2 text-detail text-navy">Ref. {imovel.codigo}</p> : null}
         <p className="text-base font-medium text-navy">{currency(price)}</p>
       </div>
     </Link>
   );
 }
 
-function Field({ label, placeholder }: { label: string; placeholder: string }) {
-  return (
-    <label className="block">
-      <span className="sr-only">{label}</span>
-      <input
-        className="w-full border border-white/20 bg-white/10 px-3.5 py-3 text-[13px] text-white outline-none placeholder:text-white/75"
-        placeholder={placeholder}
-      />
-    </label>
-  );
-}
-
-function jsonLd(imovel: ImovelDetail) {
-  const price = getPrice(imovel);
+function jsonLd(imovel: ImovelDetail, foco: Foco = null) {
+  const price = getPrice(imovel, foco);
+  const renting = foco === "rent" && Boolean(imovel.precoLocacao) || !imovel.precoVenda && Boolean(imovel.precoLocacao);
   const gallery = getGallery(imovel);
 
   return {
@@ -246,7 +235,7 @@ function jsonLd(imovel: ImovelDetail) {
           price,
           priceCurrency: "BRL",
           availability: "https://schema.org/InStock",
-          businessFunction: imovel.precoLocacao
+          businessFunction: renting
             ? "https://purl.org/goodrelations/v1#LeaseOut"
             : "https://purl.org/goodrelations/v1#Sell",
         }
@@ -316,16 +305,16 @@ export default async function ImovelPage({ params, searchParams }: PageProps) {
   return (
     <main className="bg-offwhite text-navy">
       <script
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd(imovel)) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd(imovel, foco)).replace(/</g, "\\u003c") }}
         type="application/ld+json"
       />
       <script
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd(imovel)) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd(imovel)).replace(/</g, "\\u003c") }}
         type="application/ld+json"
       />
 
       <div className="site-container pt-[88px] md:pt-[108px]">
-        <p className="text-[11px] text-navy">
+        <p className="text-detail text-navy">
           Início / Imóveis / {imovel.bairro} / {imovel.titulo}
         </p>
       </div>
@@ -337,7 +326,7 @@ export default async function ImovelPage({ params, searchParams }: PageProps) {
       <div className="site-container grid grid-cols-1 gap-10 py-8 md:grid-cols-[1.6fr_1fr] md:gap-[72px] md:py-14">
         <div>
           <div className="mb-6 border-b border-navy/10 pb-6 md:mb-8 md:pb-8">
-            <p className="mb-3 text-[9px] font-semibold uppercase tracking-[0.3em] text-terra">
+            <p className="mb-3 text-caption font-semibold uppercase tracking-[0.3em] text-terra">
               {imovel.tipo ?? "Imóvel"} · {getTransactionLabel(imovel, foco)}
             </p>
             {imovel.mobilia ? <p className="mb-3"><MobiliaTag mobilia={imovel.mobilia} /></p> : null}
@@ -345,7 +334,7 @@ export default async function ImovelPage({ params, searchParams }: PageProps) {
               {imovel.titulo}
             </h1>
             {imovel.codigo ? <p className="mb-3 text-sm text-navy">Referência: {imovel.codigo}</p> : null}
-            <p className="mb-5 text-[13px] text-navy">{getAddress(imovel)}</p>
+            <p className="mb-5 text-copy text-navy">{getAddress(imovel)}</p>
             <p className="text-2xl font-medium text-navy md:text-3xl">
               {currency(getPrice(imovel, foco))}
             </p>
@@ -360,7 +349,7 @@ export default async function ImovelPage({ params, searchParams }: PageProps) {
             ].map((fact) => (
               <div className="bg-white px-2 py-3.5 text-center md:px-4 md:py-5" key={fact.label}>
                 <p className="mb-1 text-lg font-light text-navy md:text-2xl">{fact.value}</p>
-                <p className="text-[8.5px] uppercase tracking-[0.05em] text-navy md:text-[10px]">
+                <p className="text-caption uppercase tracking-[0.05em] text-navy md:text-caption">
                   {fact.label}
                 </p>
               </div>
@@ -368,7 +357,7 @@ export default async function ImovelPage({ params, searchParams }: PageProps) {
           </div>
 
           <section className="mb-8 md:mb-11">
-            <h2 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.16em]">
+            <h2 className="mb-4 text-detail font-semibold uppercase tracking-[0.16em]">
               Sobre o imóvel
             </h2>
             <p className="max-w-[680px] whitespace-pre-line text-sm leading-[1.85] text-[#4a4a48]">
@@ -378,13 +367,13 @@ export default async function ImovelPage({ params, searchParams }: PageProps) {
 
           {differentials.length > 0 ? (
             <section className="mb-8 md:mb-11">
-              <h2 className="mb-[18px] text-[11px] font-semibold uppercase tracking-[0.16em]">
+              <h2 className="mb-[18px] text-detail font-semibold uppercase tracking-[0.16em]">
                 Diferenciais
               </h2>
               <div className="grid grid-cols-1 gap-2.5 md:grid-cols-2 md:gap-x-7 md:gap-y-3.5">
                 {differentials.map((item) => (
                   <div
-                    className="flex items-center gap-2.5 border-b border-navy/10 pb-2.5 text-[13px] text-navy"
+                    className="flex items-center gap-2.5 border-b border-navy/10 pb-2.5 text-copy text-navy"
                     key={item}
                   >
                     <div className="h-1 w-1 shrink-0 bg-terra" />
@@ -396,7 +385,7 @@ export default async function ImovelPage({ params, searchParams }: PageProps) {
           ) : null}
 
           <section>
-            <h2 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.16em]">
+            <h2 className="mb-4 text-detail font-semibold uppercase tracking-[0.16em]">
               Localização
             </h2>
             <PropertyLocationMap latitude={imovel.latitude} longitude={imovel.longitude} address={getAddress(imovel)} />
@@ -405,7 +394,7 @@ export default async function ImovelPage({ params, searchParams }: PageProps) {
 
         <aside>
           <div className="bg-navy p-6 md:sticky md:top-[100px] md:p-8">
-            <p className="mb-6 text-[10px] font-semibold uppercase tracking-[0.16em] text-terra-light">
+            <p className="mb-6 text-caption font-semibold uppercase tracking-[0.16em] text-terra-light">
               Fale com uma especialista
             </p>
             <div className="mb-6 flex items-center gap-3.5 border-b border-white/15 pb-6">
@@ -422,27 +411,18 @@ export default async function ImovelPage({ params, searchParams }: PageProps) {
                 <p className="text-[14.5px] font-medium text-white">
                   {corretor.nome ?? "Inglaterra Premium"}
                 </p>
-                <p className="text-[11.5px] text-white/75">
-                  {corretor.telefone || corretor.celular || corretor.email || imovel.bairro}
+                <p className="text-detail text-white/75">
+                  <a href={contactSettings.phoneHref}>{contactSettings.phone}</a>
                 </p>
               </div>
             </div>
-            <form className="flex flex-col gap-3.5">
-              <Field label="Seu nome" placeholder="Seu nome" />
-              <Field label="WhatsApp" placeholder="WhatsApp" />
-              <label className="block">
-                <span className="sr-only">Mensagem</span>
-                <textarea
-                  className="w-full resize-none border border-white/20 bg-white/10 px-3.5 py-3 text-[13px] text-white outline-none"
-                  defaultValue={`Tenho interesse no imóvel "${imovel.titulo}". Gostaria de agendar uma visita.`}
-                  rows={3}
-                />
-              </label>
-              <PropertyContactButton
-                imovelId={imovel.id}
-                whatsappHref={contactWhatsappHref}
-              />
-            </form>
+            <PropertyContactForm
+              imovelId={imovel.id}
+              slug={imovel.slug}
+              foco={foco ? (foco === "rent" ? "locacao" : "venda") : null}
+              whatsappHref={contactWhatsappHref}
+              context={`Referência: ${imovel.codigo || imovel.slug}\n${absoluteUrl(`/imoveis/${imovel.slug}${foco ? `?foco=${foco === "rent" ? "locacao" : "venda"}` : ""}`)}`}
+            />
           </div>
         </aside>
       </div>
@@ -450,7 +430,7 @@ export default async function ImovelPage({ params, searchParams }: PageProps) {
       <section className="site-container bg-white py-12 md:py-[72px]">
         <div className="mb-7 flex flex-col items-start justify-between gap-2.5 md:mb-9 md:flex-row md:items-end">
           <div>
-            <p className="mb-2 text-[9px] font-semibold uppercase tracking-[0.25em] text-terra">
+            <p className="mb-2 text-caption font-semibold uppercase tracking-[0.25em] text-terra">
               Você também pode gostar
             </p>
             <h2 className="text-[22px] font-light tracking-[0.01em] md:text-[28px]">
@@ -460,7 +440,7 @@ export default async function ImovelPage({ params, searchParams }: PageProps) {
         </div>
         <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
           {similares.map((similar) => (
-            <SimilarCard imovel={similar} key={similar.codigo} />
+            <SimilarCard imovel={similar} foco={foco} key={similar.codigo} />
           ))}
         </div>
       </section>

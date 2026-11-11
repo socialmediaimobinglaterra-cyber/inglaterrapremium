@@ -21,7 +21,7 @@ export function LancamentoGallery({
 
   if (images.length === 0) {
     return (
-      <div className="flex aspect-[4/3] items-center justify-center border border-dashed border-navy/10 bg-white text-center text-xs leading-relaxed text-navy md:aspect-auto md:h-[520px]">
+      <div className="flex aspect-[4/3] items-center justify-center border border-dashed border-navy/10 bg-white text-center text-detail leading-relaxed text-navy md:aspect-auto md:h-[520px]">
         Imagens do lançamento aguardando cadastro.
       </div>
     );
@@ -97,7 +97,7 @@ export function LancamentoGallery({
                 style={{ objectPosition: image.position ?? "center center" }}
               />
               {index === 3 && images.length > 5 ? (
-                <div className="absolute inset-0 flex items-center justify-center bg-navy/60 text-[13px] font-medium text-white">
+                <div className="absolute inset-0 flex items-center justify-center bg-navy/60 text-copy font-medium text-white">
                   + {images.length - 5} fotos
                 </div>
               ) : null}

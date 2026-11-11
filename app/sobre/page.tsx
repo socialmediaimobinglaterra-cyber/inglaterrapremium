@@ -63,7 +63,7 @@ export default function SobrePage() {
   return (
     <main className="bg-offwhite text-navy">
       <section className="site-container py-[120px] md:py-[160px]">
-        <p className="mb-3 text-[9px] font-semibold uppercase tracking-[0.25em] text-terra">
+        <p className="mb-3 text-caption font-semibold uppercase tracking-[0.25em] text-terra">
           Sobre nós
         </p>
         <h1 className="mb-8 max-w-[840px] text-[clamp(36px,7vw,72px)] font-light leading-[1.05] tracking-[0.01em]">
@@ -119,7 +119,7 @@ export default function SobrePage() {
       <section className="site-container pb-[120px] md:pb-[160px]">
         <div className="grid grid-cols-1 gap-12 md:grid-cols-2 md:gap-16">
           <article>
-            <p className="mb-3 text-[9px] font-semibold uppercase tracking-[0.25em] text-terra">
+            <p className="mb-3 text-caption font-semibold uppercase tracking-[0.25em] text-terra">
               Nossa missão
             </p>
             <h2 className="sr-only">Nossa missão</h2>
@@ -133,7 +133,7 @@ export default function SobrePage() {
             </p>
           </article>
           <article>
-            <p className="mb-3 text-[9px] font-semibold uppercase tracking-[0.25em] text-terra">
+            <p className="mb-3 text-caption font-semibold uppercase tracking-[0.25em] text-terra">
               Nossa visão
             </p>
             <h2 className="sr-only">Nossa visão</h2>
@@ -147,7 +147,7 @@ export default function SobrePage() {
       </section>
 
       <section className="site-container pb-[120px] md:pb-[160px]">
-        <p className="mb-10 text-[9px] font-semibold uppercase tracking-[0.25em] text-terra">
+        <p className="mb-10 text-caption font-semibold uppercase tracking-[0.25em] text-terra">
           Valores
         </p>
         <h2 className="sr-only">Valores REALIZAR</h2>
@@ -166,7 +166,7 @@ export default function SobrePage() {
       </section>
 
       <section className="site-container pb-[120px] md:pb-[160px]">
-        <p className="mb-3 text-[9px] font-semibold uppercase tracking-[0.25em] text-terra">
+        <p className="mb-3 text-caption font-semibold uppercase tracking-[0.25em] text-terra">
           Diretoria
         </p>
         <div className="mb-12 max-w-[760px]">
@@ -194,10 +194,10 @@ export default function SobrePage() {
                 <h3 className="mb-1 text-[22px] font-light leading-tight">
                   {diretor.nome}
                 </h3>
-                <p className="mb-4 text-[9px] font-semibold uppercase tracking-[0.18em] text-terra">
+                <p className="mb-4 text-caption font-semibold uppercase tracking-[0.18em] text-terra">
                   {diretor.cargo}
                 </p>
-                <p className="text-[13px] leading-[1.85] text-navy">
+                <p className="text-copy leading-[1.85] text-navy">
                   {diretor.descricao}
                 </p>
               </div>
@@ -217,13 +217,13 @@ export default function SobrePage() {
           </p>
           <div className="flex flex-wrap gap-3">
             <Link
-              className="bg-terra px-6 py-3.5 text-[10px] uppercase tracking-[0.2em] text-white transition hover:bg-[#6b2a0f]"
+              className="bg-terra px-6 py-3.5 text-caption uppercase tracking-[0.2em] text-white transition hover:bg-[#6b2a0f]"
               href="/contato"
             >
               Falar com a equipe
             </Link>
             <Link
-              className="border border-white/40 px-6 py-3.5 text-[10px] uppercase tracking-[0.2em] text-white transition hover:border-white"
+              className="border border-white/40 px-6 py-3.5 text-caption uppercase tracking-[0.2em] text-white transition hover:border-white"
               href="/imoveis"
             >
               Ver imóveis

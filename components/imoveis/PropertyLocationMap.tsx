@@ -64,17 +64,17 @@ export function PropertyLocationMap({ latitude, longitude, address }: {
 
   return (
     <div ref={section}>
-      <p className="mb-4 text-xs leading-relaxed text-navy">{address}</p>
+      <p className="mb-4 text-detail leading-relaxed text-navy">{address}</p>
       {valid ? <>
         <div className="relative isolate h-[240px] overflow-hidden border border-navy/10 bg-offwhite md:h-[300px]" aria-busy={status === "loading"}>
           <div ref={container} className="property-map h-full w-full" role="region" aria-label="Mapa da localização do imóvel" />
-          {status !== "ready" && <div role="status" className="absolute inset-0 z-[1000] flex flex-col items-center justify-center gap-3 bg-offwhite p-4 text-center text-xs text-navy">
+          {status !== "ready" && <div role="status" className="absolute inset-0 z-[1000] flex flex-col items-center justify-center gap-3 bg-offwhite p-4 text-center text-detail text-navy">
             {status === "loading" ? "Carregando mapa..." : "Não foi possível carregar o mapa."}
             {status === "error" && <button type="button" className="p-3 underline" onClick={() => setAttempt(value => value + 1)}>Tentar novamente</button>}
           </div>}
-          {tileError && status === "ready" && <p role="status" className="absolute bottom-6 left-2 right-2 z-[1000] bg-offwhite p-2 text-xs text-navy">O mapa está indisponível no momento. Use o link abaixo.</p>}
+          {tileError && status === "ready" && <p role="status" className="absolute bottom-6 left-2 right-2 z-[1000] bg-offwhite p-2 text-detail text-navy">O mapa está indisponível no momento. Use o link abaixo.</p>}
         </div>
-        <a className="mt-3 inline-block py-2 text-xs text-terra underline" href={`https://www.openstreetmap.org/?mlat=${latitude}&mlon=${longitude}#map=16/${latitude}/${longitude}`} target="_blank" rel="noopener noreferrer">Abrir mapa ampliado</a>
+        <a className="mt-3 inline-block py-2 text-detail text-terra underline" href={`https://www.openstreetmap.org/?mlat=${latitude}&mlon=${longitude}#map=16/${latitude}/${longitude}`} target="_blank" rel="noopener noreferrer">Abrir mapa ampliado</a>
       </> : null}
     </div>
   );

@@ -12,12 +12,16 @@ import { imageUrlOrFallback } from "@/lib/images";
 import type { CrmConversationListing } from "@/lib/crm-conversation";
 import MobiliaTag from "@/components/MobiliaTag";
 import { IntelligentSearchPanel } from "@/components/search/IntelligentSearchPanel";
+import { NEGOCIO_OPTIONS, getValorOptions } from "@/lib/search-options";
+import { SaveSearchDialog } from "@/components/search/SaveSearchDialog";
+import { filtersToSearchParams } from "@/lib/search-url";
 
 type Props = {
   initialSearchPage: ImovelSearchPage;
   initialNegocio?: (typeof NEGOCIO_OPTIONS)[number];
   initialNaturalQuery?: string;
   initialMapSelection?: string;
+  initialFilters?: ImovelSearchFilters;
   bairros: string[];
   /** Condomínios premium que têm imóveis (filtro por condomínio). */
   condominios?: string[];
@@ -25,18 +29,11 @@ type Props = {
   crmPreview?: boolean;
 };
 
-type ValorOption = {
-  label: string;
-  valorMinimo: number | null;
-  valorMaximo: number | null;
-};
-
 type AiInterpretationNotice = {
   interpreted: string[];
   naoInterpretado: string[];
 };
 
-const NEGOCIO_OPTIONS = ["Comprar", "Alugar"] as const;
 const SEARCH_PER_PAGE = 24;
 const SUITES_OPTIONS = [
   { label: "Não definido", value: null },
@@ -45,13 +42,6 @@ const SUITES_OPTIONS = [
   { label: "4+ suítes", value: 4 },
   { label: "5+ suítes", value: 5 },
 ] as const;
-const VALOR_OPTIONS: ValorOption[] = [
-  { label: "Não definido", valorMinimo: null, valorMaximo: null },
-  { label: "Até R$ 2.000.000", valorMinimo: null, valorMaximo: 2_000_000 },
-  { label: "Até R$ 4.000.000", valorMinimo: null, valorMaximo: 4_000_000 },
-  { label: "Até R$ 6.000.000", valorMinimo: null, valorMaximo: 6_000_000 },
-  { label: "Acima de R$ 6.000.000", valorMinimo: 6_000_000, valorMaximo: null },
-];
 
 function currency(value: number | null) {
   if (value === null) return "Sob consulta";
@@ -103,7 +93,7 @@ function IconFiltros() {
 function IconSalvar() {
   return (
     <svg fill="none" height="15" viewBox="0 0 16 16" width="15" xmlns="http://www.w3.org/2000/svg">
-      <path d="M3 2h10v12l-5-3-5 3V2z" stroke="#ffffff" strokeLinejoin="round" strokeWidth="1.3" />
+      <path d="M3 2h10v12l-5-3-5 3V2z" stroke="currentColor" strokeLinejoin="round" strokeWidth="1.3" />
     </svg>
   );
 }
@@ -126,15 +116,12 @@ function PillSelect({
     .replace(/[^a-z0-9]+/g, "-")}`;
 
   return (
-    <div className="relative w-[148px] shrink-0 rounded-[24px] border border-navy/10 py-2 pl-4 pr-[30px] xl:w-0 xl:min-w-[100px] xl:flex-1">
-      <label className="sr-only" htmlFor={selectId}>
+    <div className="relative h-14 min-w-0 rounded-lg border border-navy/10 bg-white/50 py-1.5 pl-3.5 pr-8 transition-colors hover:border-navy/25 focus-within:border-terra/60 focus-within:ring-1 focus-within:ring-terra/20">
+      <label className="block text-xs leading-[18px] text-navy/65" htmlFor={selectId}>
         {label}
       </label>
-      <span className="mb-0.5 block text-[8px] uppercase tracking-[0.14em] text-navy">
-        {label}
-      </span>
       <select
-        className="w-full min-w-0 cursor-pointer appearance-none truncate border-0 bg-transparent text-[13px] font-medium text-navy outline-none disabled:cursor-wait disabled:opacity-60"
+        className="block h-6 w-full min-w-0 cursor-pointer appearance-none truncate border-0 bg-transparent text-sm font-medium text-navy outline-none disabled:cursor-wait disabled:opacity-60"
         title={value}
         id={selectId}
         onChange={(event) => onChange(event.target.value)}
@@ -146,7 +133,7 @@ function PillSelect({
           </option>
         ))}
       </select>
-      <span className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-[9px] text-navy">
+      <span aria-hidden="true" className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-navy/55">
         ▾
       </span>
     </div>
@@ -158,7 +145,7 @@ function ListingCard({ imovel, negocio }: { imovel: CrmConversationListing; nego
   const image = imageUrlOrFallback(imovel.image);
 
   return (
-    <Link className="group block text-inherit no-underline" aria-disabled={imovel.crmDisplay && !imovel.crmDisplay.href ? true : undefined} onClick={event => { if (imovel.crmDisplay && !imovel.crmDisplay.href) event.preventDefault(); }} href={imovel.crmDisplay ? imovel.crmDisplay.href ?? "#" : `/imoveis/${imovel.slug}`}>
+    <Link className="group block text-inherit no-underline" aria-disabled={imovel.crmDisplay && !imovel.crmDisplay.href ? true : undefined} onClick={event => { if (imovel.crmDisplay && !imovel.crmDisplay.href) event.preventDefault(); }} href={imovel.crmDisplay ? imovel.crmDisplay.href ?? "#" : `/imoveis/${imovel.slug}?foco=${negocio === "Alugar" ? "locacao" : "venda"}`}>
       <div className="relative aspect-[4/3] cursor-pointer overflow-hidden bg-[#1e1e1e] md:aspect-[5/4]">
         {imovel.crmDisplay ? (imovel.image ? <img alt={imovel.titulo} className="h-full w-full object-cover transition duration-700 group-hover:scale-105" src={imovel.image} /> : <span className="flex h-full items-center justify-center text-sm text-white">Foto indisponível</span>) : <Image
           alt={`${imovel.titulo} — ${imovel.bairro}, Londrina`}
@@ -167,24 +154,24 @@ function ListingCard({ imovel, negocio }: { imovel: CrmConversationListing; nego
           sizes="(min-width: 768px) 33vw, 100vw"
           src={image}
         />}
-        {imovel.tag ? <span className="absolute left-3.5 top-3.5 border border-white/40 px-2.5 py-[5px] text-[8px] uppercase tracking-[0.3em] text-white">
+        {imovel.tag ? <span className="absolute left-3.5 top-3.5 border border-white/40 px-2.5 py-[5px] text-caption uppercase tracking-[0.3em] text-white">
           {imovel.tag}
         </span> : null}
         {imovel.mobilia ? <span className="absolute bottom-3.5 left-3.5"><MobiliaTag mobilia={imovel.mobilia} /></span> : null}
       </div>
       <div className="pt-4">
-        {imovel.codigo ? <p className="mb-1.5 text-xs text-navy">Ref. {imovel.codigo}</p> : null}
-        <p className="mb-1.5 text-[11px] tracking-[0.06em] text-navy">
+        {imovel.codigo ? <p className="mb-1.5 text-detail text-navy">Ref. {imovel.codigo}</p> : null}
+        <p className="mb-1.5 text-detail tracking-[0.06em] text-navy">
           {imovel.bairro}, {imovel.crmDisplay ? imovel.cidade : "Londrina"}
         </p>
         <h3 className="mb-2.5 text-base font-normal leading-[1.3] tracking-[0.01em] text-navy">
           {imovel.titulo}
         </h3>
-        <div className={`flex items-baseline justify-between gap-4 border-t border-navy/10 pt-2.5 ${imovel.crmDisplay ? "flex-wrap" : ""}`}>
-          <span className="text-[11px] text-navy">
+        <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2 border-t border-navy/10 pt-2.5">
+          <span className="text-detail text-navy">
             {imovel.crmDisplay?.area ?? area(imovel.area)}
-            {imovel.suites && imovel.suites > 0 ? ` · ${imovel.suites} suítes` : ""}
-            {imovel.vagas && imovel.vagas > 0 ? ` · ${imovel.vagas} vagas` : ""}
+            {imovel.suites && imovel.suites > 0 ? ` · ${imovel.suites} ${imovel.suites === 1 ? "suíte" : "suítes"}` : ""}
+            {imovel.vagas && imovel.vagas > 0 ? ` · ${imovel.vagas} ${imovel.vagas === 1 ? "vaga" : "vagas"}` : ""}
           </span>
           <span className="shrink-0 text-[17px] text-navy">{imovel.crmDisplay?.price ?? currency(price)}</span>
         </div>
@@ -198,6 +185,7 @@ export function BuscaImoveisClient({
   initialNegocio = "Comprar",
   initialNaturalQuery,
   initialMapSelection,
+  initialFilters,
   bairros,
   condominios = [],
   tipos,
@@ -207,8 +195,11 @@ export function BuscaImoveisClient({
   const [total, setTotal] = useState(initialSearchPage.total);
   const [page, setPage] = useState(initialSearchPage.page);
   const [hasMore, setHasMore] = useState(initialSearchPage.hasMore);
-  const [currentFilters, setCurrentFilters] = useState<ImovelSearchFilters>({ negocio: initialNegocio, order: "relevancia", mapSelection: initialMapSelection });
+  const [currentFilters, setCurrentFilters] = useState<ImovelSearchFilters>({ ...initialFilters, negocio: initialNegocio, order: initialFilters?.order ?? "relevancia", mapSelection: initialMapSelection ?? initialFilters?.mapSelection });
   const filtersRef = useRef(currentFilters);
+  const [savedSearchFilters, setSavedSearchFilters] = useState<ImovelSearchFilters | null>(null);
+  const [moreFiltersOpen, setMoreFiltersOpen] = useState(false);
+  const secondaryFilterCount = Number(Boolean(currentFilters.condominio)) + Number(Boolean(currentFilters.suitesMinimas)) + Number(currentFilters.mobiliado === true);
   const requestSequence = useRef(0);
   const aiBusyRef = useRef(false);
   const manualBusyRef = useRef(false);
@@ -230,7 +221,7 @@ export function BuscaImoveisClient({
   const condominio = currentFilters.condominio ?? "Todos os condomínios";
   const condominioOptions = [...new Set(["Todos os condomínios", ...condominios, ...(currentFilters.condominio ? [currentFilters.condominio] : [])])];
   const tipoOptions = [...new Set(["Todos os tipos", ...tipos, ...(currentFilters.tipo ? [currentFilters.tipo] : [])])];
-  const valorOptions = [...VALOR_OPTIONS];
+  const valorOptions = [...getValorOptions(negocio)];
   let valorOption = valorOptions.find(v => v.valorMinimo === (currentFilters.valorMinimo ?? null) && v.valorMaximo === (currentFilters.valorMaximo ?? null));
   if (!valorOption) {
     valorOption = {
@@ -251,6 +242,12 @@ export function BuscaImoveisClient({
   function saveFilters(filters: ImovelSearchFilters) {
     filtersRef.current = filters;
     setCurrentFilters(filters);
+    if (!crmPreview) {
+      const url = new URL(window.location.href);
+      url.search = filtersToSearchParams(filters, url.searchParams).toString();
+      if (url.pathname === "/imoveis/alugar" && filters.negocio === "Comprar") url.pathname = "/imoveis";
+      window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
+    }
   }
   async function runSearch(filters: ImovelSearchFilters, options: {page?: number; append?: boolean} = {}) {
     const sequence = ++requestSequence.current;
@@ -295,7 +292,7 @@ export function BuscaImoveisClient({
   function onSuitesChange(value: string) { updateFilters({ ...filtersRef.current, suitesMinimas: suitesOptions.find(v => v.label === value)!.value }); }
   function onOrderChange(value: string) { updateFilters({ ...filtersRef.current, order: value as ImovelSearchFilters["order"] }); }
   function onMobiliadoChange(checked: boolean) { updateFilters({ ...filtersRef.current, mobiliado: checked ? true : null }); }
-  function limparBusca() { updateFilters({ negocio: "Comprar", order: "relevancia" }); }
+  function limparBusca() { updateFilters({ negocio: filtersRef.current.negocio ?? initialNegocio, order: "relevancia" }); }
 
   async function carregarMais() {
     if (!hasMore || loadingMoreRef.current || aiBusyRef.current || manualBusyRef.current) return;
@@ -349,7 +346,7 @@ export function BuscaImoveisClient({
     <main className="bg-offwhite text-navy">
       <section className="pt-20 md:pt-24">
         <div className="site-container mb-5 md:mb-6">
-          <p className="mb-2 text-[11px] text-navy">Início / Imóveis / {currentFilters.negocio === "Alugar" ? "Alugar" : "Comprar"}</p>
+          <p className="mb-2 text-detail text-navy">Início / Imóveis / {currentFilters.negocio === "Alugar" ? "Alugar" : "Comprar"}</p>
           <h1 className="mb-2 max-w-[900px] text-[28px] font-light leading-[1.1] text-navy md:text-[40px]">
             Imóveis de Alto Padrão {currentFilters.negocio === "Alugar" ? "para Alugar" : "à Venda"} em Londrina
           </h1>
@@ -374,53 +371,46 @@ export function BuscaImoveisClient({
       </p>
 
       <div className="border-y border-navy/10">
-        <fieldset disabled={busy} aria-label="Filtros rápidos" aria-busy={busy} className="site-container flex min-w-0 flex-nowrap items-center gap-3 overflow-x-auto py-4 md:py-3.5">
-          <div className="flex shrink-0 items-center gap-2 pr-1.5">
-            <IconFiltros />
-            <div>
-              <p className="text-[9px] font-semibold uppercase leading-[1.3] tracking-[0.1em] text-terra">
-                Filtros rápidos
-              </p>
-              <p className="text-xs font-medium leading-[1.3] text-navy">
-                Refine a sua busca
-              </p>
-            </div>
-          </div>
-
+        <fieldset disabled={busy} aria-label="Filtros rápidos" aria-busy={busy} className="site-container min-w-0 py-5">
+          <p className="mb-3 text-xs font-medium text-navy/65">Filtros rápidos</p>
+          <div className="grid min-w-0 grid-cols-2 items-center gap-3 md:grid-cols-4 md:gap-4 xl:grid-cols-[minmax(120px,1fr)_minmax(110px,0.8fr)_minmax(170px,1.4fr)_minmax(160px,1.2fr)_auto]">
           <PillSelect label="Tipo" onChange={onTipoChange} options={tipoOptions} value={tipo} />
           <PillSelect label="Negócio" onChange={onNegocioChange} options={[...NEGOCIO_OPTIONS]} value={negocio} />
           <PillSelect label="Localização" onChange={onBairroChange} options={bairroOptions} value={bairro} />
-          {condominios.length > 0 || currentFilters.condominio ? (
-            <PillSelect label="Condomínio" onChange={onCondominioChange} options={condominioOptions} value={condominio} />
-          ) : null}
           <PillSelect label="Valor" onChange={onValorChange} options={valorOptions.map((item) => item.label)} value={valor} />
-          <PillSelect label="Suítes" onChange={onSuitesChange} options={suitesOptions.map((item) => item.label)} value={suites} />
-
-          <label className="flex shrink-0 cursor-pointer items-center gap-2 text-xs font-medium text-navy">
-            <input
-              checked={currentFilters.mobiliado === true}
-              className="h-4 w-4 cursor-pointer accent-navy"
-              onChange={(event) => onMobiliadoChange(event.target.checked)}
-              type="checkbox"
-            />
-            Mobiliado
-          </label>
-
+          <div className="col-span-2 grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 min-[360px]:flex md:col-span-4 md:justify-end xl:col-span-1">
+          <button type="button" aria-expanded={moreFiltersOpen} aria-controls="secondary-property-filters"
+            onClick={() => setMoreFiltersOpen(open => !open)}
+            className="nav-focus col-span-2 flex min-h-11 shrink-0 items-center gap-2 rounded-lg px-1 text-sm text-navy transition-colors hover:text-terra disabled:opacity-50">
+            <IconFiltros />
+            <span>Mais filtros{secondaryFilterCount > 0 ? ` (${secondaryFilterCount})` : ""}</span>
+            <span aria-hidden="true" className={`text-xs transition-transform motion-reduce:transition-none ${moreFiltersOpen ? "rotate-180" : ""}`}>▾</span>
+          </button>
           <button
-            className="shrink-0 rounded-[24px] border-0 bg-navy px-[26px] py-[13px] text-xs font-medium text-white"
+            className="nav-focus h-11 min-w-[88px] rounded-lg bg-navy px-5 text-sm font-medium text-white transition-colors hover:bg-terra disabled:opacity-60 min-[360px]:ml-auto md:ml-0"
             onClick={() => updateFilters(filtersRef.current)}
             type="button"
           >
             {busy ? "Buscando..." : "Buscar"}
           </button>
 
-          <div className="flex shrink-0 gap-2">
-            <button aria-label="Filtros avançados" className="flex h-[38px] w-[38px] items-center justify-center rounded-full border border-navy/10 bg-transparent" type="button">
-              <IconFiltros />
-            </button>
-            <button aria-label="Salvar busca" className="flex h-[38px] w-[38px] items-center justify-center rounded-full bg-navy" type="button">
+            <button aria-label="Salva busca" title="Salva busca" disabled={busy || crmPreview} onClick={() => setSavedSearchFilters({ ...filtersRef.current })} className="nav-focus flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-navy/15 text-navy transition-colors hover:border-terra hover:text-terra disabled:opacity-50" type="button">
               <IconSalvar />
             </button>
+          </div>
+          </div>
+          <div id="secondary-property-filters" hidden={!moreFiltersOpen}>
+            <div className="mt-5 grid min-w-0 grid-cols-1 items-center gap-4 border-t border-navy/10 pt-5 sm:grid-cols-2 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)]">
+              {condominios.length > 0 || currentFilters.condominio ? (
+                <PillSelect label="Condomínio" onChange={onCondominioChange} options={condominioOptions} value={condominio} />
+              ) : null}
+              <PillSelect label="Suítes" onChange={onSuitesChange} options={suitesOptions.map((item) => item.label)} value={suites} />
+              <label className="flex min-h-11 cursor-pointer items-center gap-3 text-sm text-navy">
+                <input checked={currentFilters.mobiliado === true} className="h-4 w-4 cursor-pointer accent-terra"
+                  onChange={(event) => onMobiliadoChange(event.target.checked)} type="checkbox" />
+                Mobiliado
+              </label>
+            </div>
           </div>
         </fieldset>
       </div>
@@ -428,9 +418,9 @@ export function BuscaImoveisClient({
       <section aria-busy={busy} className="site-container py-5 md:py-6">
         {currentFilters.mapSelection && total === 0 && <p role="status" className="mb-4 text-sm text-navy">Nenhum imóvel disponível nesta seleção. O catálogo pode ter sido atualizado. <Link className="underline" href="/#property-map-title">Selecionar novamente no mapa</Link></p>}
         <p className="mb-3 text-sm leading-relaxed text-navy"><span className="font-medium">Sua seleção: </span>{describeAiFilters(currentFilters).join(" · ")}</p>
-        <button type="button" onClick={limparBusca} disabled={busy} className="mb-4 text-xs text-terra underline disabled:opacity-60">Limpar filtros</button>
+        <button type="button" onClick={limparBusca} disabled={busy} className="mb-4 text-detail text-terra underline disabled:opacity-60">Limpar filtros</button>
         {aiInterpretationNotice ? (
-          <div className="mb-5 border border-navy/10 bg-white px-4 py-3 text-[13px] leading-relaxed text-navy">
+          <div className="mb-5 border border-navy/10 bg-white px-4 py-3 text-copy leading-relaxed text-navy">
             Filtramos por:{" "}
             <span className="font-medium">
               {aiInterpretationNotice.interpreted.length > 0
@@ -452,11 +442,11 @@ export function BuscaImoveisClient({
             </span>
           </h2>
           <div className="flex items-center gap-2">
-            <label className="text-xs text-navy" htmlFor="ordenar-imoveis">
+            <label className="text-detail text-navy" htmlFor="ordenar-imoveis">
               Ordenar por
             </label>
             <select
-              className="cursor-pointer border-0 bg-transparent text-xs font-medium text-navy outline-none"
+              className="cursor-pointer border-0 bg-transparent text-detail font-medium text-navy outline-none"
               id="ordenar-imoveis"
               disabled={busy}
               onChange={(event) => onOrderChange(event.target.value)}
@@ -493,7 +483,7 @@ export function BuscaImoveisClient({
               Refinar minha busca
             </button>
             <button
-              className="border border-navy bg-transparent px-7 py-3 text-[10px] uppercase tracking-[0.2em] text-navy transition hover:bg-navy hover:text-white"
+              className="border border-navy bg-transparent px-7 py-3 text-caption uppercase tracking-[0.2em] text-navy transition hover:bg-navy hover:text-white"
               onClick={limparBusca}
               disabled={busy}
               type="button"
@@ -506,7 +496,7 @@ export function BuscaImoveisClient({
         {hasMore ? (
           <div className="mt-10 flex justify-center md:mt-16">
             <button
-              className="border border-navy bg-transparent px-9 py-3.5 text-[10px] uppercase tracking-[0.2em] text-navy transition hover:bg-navy hover:text-white disabled:cursor-wait disabled:opacity-60"
+              className="border border-navy bg-transparent px-9 py-3.5 text-caption uppercase tracking-[0.2em] text-navy transition hover:bg-navy hover:text-white disabled:cursor-wait disabled:opacity-60"
               disabled={isLoadingMore || isAiSearching || isPending}
               onClick={carregarMais}
               type="button"
@@ -516,6 +506,7 @@ export function BuscaImoveisClient({
           </div>
         ) : null}
       </section>
+      {savedSearchFilters && <SaveSearchDialog filters={savedSearchFilters} onClose={() => setSavedSearchFilters(null)} />}
     </main>
   );
 }

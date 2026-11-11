@@ -7,7 +7,7 @@ import { createPropertyIndex, MAP_MAX_ZOOM, type MapDataset } from "@/lib/proper
 import "leaflet/dist/leaflet.css";
 import "./property-map.css";
 
-export function PropertyMap() {
+export function PropertyMap({ compactTop = false }: { compactTop?: boolean }) {
   const section = useRef<HTMLElement>(null);
   const container = useRef<HTMLDivElement>(null);
   const mapRef = useRef<LeafletMap | null>(null);
@@ -47,7 +47,7 @@ export function PropertyMap() {
         if (!data.points.length) { setStatus("empty"); return; }
         const index = createPropertyIndex(data.points);
         const map = L.map(container.current, {
-          minZoom: 3, maxZoom: MAP_MAX_ZOOM, scrollWheelZoom: false,
+          minZoom: 3, maxZoom: MAP_MAX_ZOOM, scrollWheelZoom: true,
           zoomControl: false, worldCopyJump: true,
         });
         mapRef.current = map;
@@ -101,7 +101,7 @@ export function PropertyMap() {
   }, [visible, negocio, attempt, router]);
 
   return (
-    <section ref={section} className="site-container my-[160px]" aria-labelledby="property-map-title">
+    <section ref={section} className={`site-container mb-[160px] ${compactTop ? "mt-16" : "mt-[160px]"}`} aria-labelledby="property-map-title">
       <div className="mb-8 flex flex-wrap items-end justify-between gap-6">
         <div>
           <h2 id="property-map-title" className="text-[28px] font-light leading-tight text-navy md:text-[40px]">Imóveis por localização</h2>
