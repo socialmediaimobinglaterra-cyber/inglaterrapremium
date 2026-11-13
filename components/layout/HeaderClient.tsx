@@ -3,7 +3,18 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { contactSettings } from "@/lib/contact-settings";
+import { BLOG_URL } from "@/lib/blog-posts";
+import { PRIVACY_POLICY_PATH } from "@/lib/privacy-policy";
+
+const extraLinks = [
+  { label: "Trabalhe conosco", href: contactSettings.careers },
+  { label: "Anuncie seu imóvel", href: contactSettings.appraisal },
+  { label: "Notícias", href: BLOG_URL },
+  { label: "Newsletter", href: "/#newsletter" },
+  { label: "Política de privacidade", href: PRIVACY_POLICY_PATH },
+];
 
 export type NavDropdownItem = {
   label: string;
@@ -155,10 +166,32 @@ export function HeaderClient({
   const pathname = usePathname();
   const [navOpen, setNavOpen] = useState(false);
   const navItems = getNavItems(lancamentos, condominios);
+  const navigationRef = useRef<HTMLElement>(null);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => { setNavOpen(false); }, [pathname]);
+  useEffect(() => {
+    if (!navOpen) return;
+    const onPointerDown = (event: PointerEvent) => {
+      if (!navigationRef.current?.contains(event.target as Node)) setNavOpen(false);
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setNavOpen(false);
+        menuButtonRef.current?.focus();
+      }
+    };
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [navOpen]);
 
   return (
     <>
-      <nav className="fixed left-0 right-0 top-0 z-50 border-b border-navy/10 bg-offwhite/95 py-3.5 backdrop-blur-2xl">
+      <nav ref={navigationRef} aria-label="Navegação principal" onBlurCapture={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setNavOpen(false); }} className="fixed left-0 right-0 top-0 z-50 border-b border-navy/10 bg-offwhite/95 py-3.5 backdrop-blur-2xl">
         <div className="site-container flex items-center justify-between">
           <Link
             aria-label="Inglaterra Premium"
@@ -201,39 +234,43 @@ export function HeaderClient({
           })}
         </div>
 
+        <div className="flex items-center gap-3">
         <ContactButton className="hidden lg:inline-flex" />
 
           <button
+            ref={menuButtonRef}
+            aria-controls="site-extra-menu"
             aria-expanded={navOpen}
             aria-label={navOpen ? "Fechar menu" : "Abrir menu"}
-            className="nav-focus flex h-[26px] w-[26px] flex-col justify-center gap-[5px] lg:hidden"
+            className="nav-focus flex h-11 w-11 flex-col items-center justify-center gap-[5px] text-navy"
             onClick={() => setNavOpen((value) => !value)}
             type="button"
           >
             <span
-              className={`block h-px w-full bg-navy transition duration-200 ${
+              className={`block h-px w-[26px] bg-navy transition duration-200 ${
                 navOpen ? "translate-y-[6px] rotate-45" : ""
               }`}
             />
             <span
-              className={`block h-px w-full bg-navy transition duration-200 ${
+              className={`block h-px w-[26px] bg-navy transition duration-200 ${
                 navOpen ? "opacity-0" : "opacity-100"
               }`}
             />
             <span
-              className={`block h-px w-full bg-navy transition duration-200 ${
+              className={`block h-px w-[26px] bg-navy transition duration-200 ${
                 navOpen ? "-translate-y-[6px] -rotate-45" : ""
               }`}
             />
           </button>
+          </div>
         </div>
-      </nav>
 
-      <div
-        className={`fixed left-0 right-0 top-[54px] z-[49] overflow-y-auto overscroll-contain border-b border-navy/10 bg-offwhite transition-[max-height] duration-300 lg:hidden ${
-          navOpen ? "max-h-[calc(100dvh-54px)]" : "max-h-0 overflow-hidden"
-        }`}
+      {navOpen ? <div
+        id="site-extra-menu"
+        aria-label="Mais opções de navegação"
+        className="absolute left-0 right-0 top-full max-h-[calc(100dvh-74px)] overflow-y-auto overscroll-contain border-b border-navy/10 bg-offwhite shadow-nav-blur lg:left-auto lg:right-6 lg:w-80 lg:border lg:rounded-sm"
       >
+        <div className="lg:hidden">
         {navItems.map((item) => {
           const active = isActive(pathname, item);
 
@@ -261,10 +298,23 @@ export function HeaderClient({
             </Link>
           );
         })}
-        <div className="p-5">
+        </div>
+        <p className="px-5 pb-2 pt-5 text-caption uppercase tracking-[0.22em] text-sand">Mais opções</p>
+        {extraLinks.map((item) => (
+          <Link
+            key={item.href}
+            href={item.href}
+            className="nav-focus block border-b border-navy/10 px-5 py-4 text-[14px] tracking-[0.06em] text-navy transition hover:bg-navy/5 hover:text-terra"
+            onClick={() => setNavOpen(false)}
+          >
+            {item.label}
+          </Link>
+        ))}
+        <div className="p-5 lg:hidden" onClick={() => setNavOpen(false)}>
           <ContactButton />
         </div>
-      </div>
+      </div> : null}
+      </nav>
     </>
   );
 }
