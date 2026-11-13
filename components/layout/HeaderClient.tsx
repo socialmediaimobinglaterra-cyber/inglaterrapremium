@@ -304,6 +304,8 @@ export function HeaderClient({
           <Link
             key={item.href}
             href={item.href}
+            target={item.href.startsWith("https://") ? "_blank" : undefined}
+            rel={item.href.startsWith("https://") ? "noopener noreferrer" : undefined}
             className="nav-focus block border-b border-navy/10 px-5 py-4 text-[14px] tracking-[0.06em] text-navy transition hover:bg-navy/5 hover:text-terra"
             onClick={() => setNavOpen(false)}
           >
