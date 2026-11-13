@@ -6,6 +6,7 @@ import { resolveMapSelection, validMapSelection } from "@/lib/property-map";
 import { getPropertyMapData } from "@/lib/queries/property-map";
 import { bairroClause, bairroExibicao, bairroDaLinha, bairrosPremiumDe, type BairrosPremium } from "@/lib/cep-bairros";
 import { getPremiumConfig, premiumFilter } from "@/lib/premium-rule";
+import { codigosDoTipo, tipoRotulo } from "@/lib/tipos-imovel";
 
 export type ImovelSearchFilters = {
   mapSelection?: string | null;
@@ -169,7 +170,7 @@ export async function getImoveisFilterOptions() {
   for (const row of rows) {
     const bairro = bairroDaLinha(row, premiumBairros);
     if (bairro) bairros.add(bairro);
-    if (row.type) tipos.add(row.type);
+    if (row.type) tipos.add(tipoRotulo(row.type));
     if (row.cond && row.condId && premium.has(row.condId)) condominios.add(row.cond);
   }
 
@@ -202,8 +203,8 @@ async function buildSearchQuery(rawFilters: ImovelSearchFilters) {
   }
 
   if (filters.tipo) {
-    params.tipo = filters.tipo;
-    where.push(`type == $tipo`);
+    params.tipos = codigosDoTipo(filters.tipo);
+    where.push(`type in $tipos`);
   }
 
   if (filters.condominio) {
@@ -272,7 +273,7 @@ function mapSearchRow(row: Record<string, any>, index: number, premiumBairros: B
     titulo: row.title,
     bairro: bairroExibicao(row.cep, row.neighborhood, premiumBairros) ?? "Londrina",
     cidade: row.cidade ?? "Londrina",
-    tipo: row.type ?? "Imovel",
+    tipo: tipoRotulo(row.type),
     area: numberOrNull(row.area ?? row.areaTotal),
     suites: row.suites,
     dormitorios: row.bedrooms,
@@ -327,7 +328,7 @@ function mapDetailRow(row: Record<string, any>, premiumBairros: BairrosPremium):
     codigo: row.codigoImovel,
     slug: row.slug,
     titulo: row.title,
-    tipo: row.type,
+    tipo: tipoRotulo(row.type),
     finalidade: row.finalidade,
     bairro: bairroExibicao(row.cep, row.neighborhood, premiumBairros) ?? "Londrina",
     cidade: row.cidade ?? "Londrina",
@@ -388,15 +389,15 @@ export const getImovelBySlug = cache(async (slug: string) => {
 });
 
 export async function getSimilarImoveis(imovel: ImovelDetail, limit = 3) {
-  const params: Record<string, unknown> = { slug: imovel.slug, tipo: imovel.tipo, limit };
+  const params: Record<string, unknown> = { slug: imovel.slug, tipos: codigosDoTipo(imovel.tipo), limit };
   const premiumBairros = bairrosPremiumDe(await getPremiumConfig());
   const mesmoBairro = bairroClause(imovel.bairro, params, premiumBairros);
   const rows = await sanity.fetch<Record<string, any>[]>(
     `*[_type == "property" && ${await premiumFilter()} && slug.current != $slug
-        && (${mesmoBairro} || type == $tipo)
+        && (${mesmoBairro} || type in $tipos)
       ] {
         ${SEARCH_ROW_PROJECTION},
-        "_rank": select(${mesmoBairro} && type == $tipo => 0, ${mesmoBairro} => 1, true => 2)
+        "_rank": select(${mesmoBairro} && type in $tipos => 0, ${mesmoBairro} => 1, true => 2)
       } | order(_rank asc, coalesce(price, rentPrice) desc) [0...$limit]`,
     params
   );
@@ -408,7 +409,7 @@ export async function getSimilarImoveis(imovel: ImovelDetail, limit = 3) {
     titulo: row.title,
     bairro: bairroExibicao(row.cep, row.neighborhood, premiumBairros) ?? "Londrina",
     cidade: row.cidade ?? "Londrina",
-    tipo: row.type ?? "Imovel",
+    tipo: tipoRotulo(row.type),
     area: numberOrNull(row.area ?? row.areaTotal),
     suites: row.suites,
     dormitorios: row.bedrooms,
