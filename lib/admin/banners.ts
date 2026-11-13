@@ -1,3 +1,4 @@
+import { productionEffectsAllowed } from "@/lib/runtime-policy";
 import "server-only";
 import { getPool } from "@/lib/db";
 import type { HomeBanner } from "@/lib/home-banners";
@@ -5,6 +6,7 @@ import type { HomeBanner } from "@/lib/home-banners";
 export type AdminBanner = HomeBanner & { ativo: boolean; ordem: number };
 let ready: Promise<unknown> | undefined;
 export function ensureBannerSchema() {
+  if (!productionEffectsAllowed()) return Promise.resolve();
   if (!ready) ready = getPool().query(`create table if not exists home_banners (
     id uuid primary key, imagem text not null, alt text not null,
     link text, width int not null check(width > 0), height int not null check(height > 0),

@@ -1,3 +1,4 @@
+import { adminSessionSecret, requireProductionEffect } from "@/lib/runtime-policy";
 import "server-only";
 import { createHash, randomInt, timingSafeEqual } from "node:crypto";
 import { getPool } from "@/lib/db";
@@ -61,6 +62,8 @@ async function sendLoginCodeEmail(email: string, code: string) {
 }
 
 export async function requestLoginCode(email: string) {
+  requireProductionEffect();
+  if (!adminSessionSecret()) throw new Error("ADMIN_SESSION_SECRET não configurado.");
   const normalizedEmail = normalizeAdminEmail(email);
   const user = await getAdminUserByEmail(normalizedEmail);
 
@@ -93,6 +96,8 @@ export async function requestLoginCode(email: string) {
 }
 
 export async function verifyLoginCode(email: string, code: string) {
+  requireProductionEffect();
+  if (!adminSessionSecret()) return null;
   const normalizedEmail = normalizeAdminEmail(email);
   const cleanCode = code.trim();
   const user = await getAdminUserByEmail(normalizedEmail);
@@ -118,14 +123,14 @@ export async function verifyLoginCode(email: string, code: string) {
     return null;
   }
 
-  await pool.query(
+  const consumed = await pool.query(
     `
       update admin_login_codes
       set used_at = now()
-      where ctid = $1::tid
+      where ctid = $1::tid and used_at is null and expires_at > now()
     `,
     [row.ctid]
   );
 
-  return user;
+  return consumed.rowCount === 1 ? user : null;
 }

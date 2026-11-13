@@ -22,6 +22,8 @@ test('public navigation reuses reads, expires after 60 seconds and does not cach
   };
   t.after(() => { globalThis.__incrementalCache = previous; });
   t.mock.method(sanity, 'fetch', async (query) => {
+    if (query.includes('_id == "premiumConfig"')) return { condominioIds: ["sun"] };
+    if (query.startsWith("array::unique")) return [];
     reads++;
     if (fail) throw new Error('temporarily unavailable');
     assert(!query.includes('imagens'), 'navigation must not query galleries');
@@ -49,6 +51,8 @@ test('public navigation reuses reads, expires after 60 seconds and does not cach
 test('search returns only cover URLs while detail keeps full gallery; availability remains uncached', async (t) => {
   let detailQuery = '', searches = 0;
   t.mock.method(sanity, 'fetch', async (query) => {
+    if (query.includes('_id == "premiumConfig"')) return { condominioIds: ["sun"] };
+    if (query.startsWith("array::unique")) return [];
     if (query.includes('slug.current == $slug')) { detailQuery = query; return null; }
     if (query.startsWith('count(')) return 1;
     searches++;

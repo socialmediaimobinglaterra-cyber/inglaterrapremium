@@ -1,3 +1,4 @@
+import * as policy from "../lib/runtime-policy";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -5,7 +6,7 @@ import vm from "node:vm";
 import ts from "typescript";
 import * as state from "../lib/search-state";
 
-function harness(options: { retry?: number; status?: number; timeout?: boolean; location?: string } = {}) {
+function harness(options: { retry?: number; status?: number; timeout?: boolean; location?: string; environment?: string; crm?: boolean; access?: boolean; local?: boolean } = {}) {
   const pending: (() => Promise<unknown>)[] = [];
   const usage: unknown[][] = [];
   const calls: any[] = [];
@@ -13,15 +14,16 @@ function harness(options: { retry?: number; status?: number; timeout?: boolean; 
   const vocabulary = { bairro: ["Gleba Palhano"], tipo: ["Apartamento"], condominio: ["Alphaville II", "Alphaville Imbuias"] };
   const code = ts.transpileModule(readFileSync("app/api/imoveis/ai/route.ts", "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
   vm.runInNewContext(code, {
-    module, exports: module.exports, Buffer, URL, Response, AbortController, setTimeout, clearTimeout, console,
-    process: { env: { OPENAI_API_KEY: "test-only" } },
+    module, exports: module.exports, Buffer, URL, Response, Error, AbortController, setTimeout, clearTimeout, console,
+    process: { env: { OPENAI_API_KEY: "test-only", VERCEL_ENV: options.environment ?? "production" } },
     require: (name: string) => {
+      if (name.endsWith("/runtime-policy")) return { productionEffectsAllowed: () => policy.productionEffectsAllowed({ VERCEL_ENV: options.environment ?? "production" }), requireProductionEffect: () => {} };
       if (name === "next/server") return { after: (fn: () => Promise<unknown>) => pending.push(fn), NextResponse: { json: (value: unknown, init?: ResponseInit) => Response.json(value, init) } };
       if (name === "@/lib/search-state") return state;
       if (name === "@/lib/analytics") return { recordAnalyticsEvent: async () => {} };
       if (name === "@/lib/crm-conversation") return { conversationVocabulary: async () => vocabulary, consumePreviewAiQuota: () => 0 };
-      if (name === "@/lib/crm-preview") return { isLocalCrmPreview: () => false };
-      if (name === "@/lib/crm-preview-access") return { canAccessCrmPreview: async () => false };
+      if (name === "@/lib/crm-preview") return { isLocalCrmPreview: () => options.local ?? false };
+      if (name === "@/lib/crm-preview-access") return { canAccessCrmPreview: async () => options.access ?? false };
       if (name === "@/lib/ai-search-support") return {
         consumeAiQuota: async () => options.retry ?? 0,
         getSearchVocabulary: async () => vocabulary,
@@ -37,9 +39,9 @@ function harness(options: { retry?: number; status?: number; timeout?: boolean; 
     },
   });
   return { calls, usage, async run(body: unknown) {
-    const response = await module.exports.POST(new Request("https://example.com/api/imoveis/ai", { method: "POST", body: JSON.stringify(body) }));
+    const response = await module.exports.POST(new Request(options.crm ? "https://example.com/preview/crm/api/ai" : "https://example.com/api/imoveis/ai", { method: "POST", body: JSON.stringify(body) }));
     for (const fn of pending) await fn();
-    return { status: response.status, headers: response.headers, data: await response.json() };
+    return { status: response.status, headers: response.headers, data: response.status === 404 ? null : await response.json() };
   } };
 }
 
@@ -92,4 +94,19 @@ test("HTTP errors and timeouts record failure without query", async () => {
     assert.equal(h.usage[0][2], false);
     assert.equal(JSON.stringify(h.usage).includes("private input"), false);
   }
+});
+
+test("unauthorized CRM preview never reaches OpenAI or usage logging", async () => {
+  const h=harness({crm:true}); const result=await h.run({query:"Casa"});
+  assert.equal(result.status,404);assert.equal(h.calls.length,0);assert.equal(h.usage.length,0);
+});
+test("public AI outside Production cannot spend credits even with a key", async () => {
+  for(const environment of ["preview","development","unknown"]) {
+    const h=harness({environment});
+    assert.equal((await h.run({query:"Casa"})).status,503);assert.equal(h.calls.length,0);assert.equal(h.usage.length,0);
+  }
+});
+test("authorized production CRM diagnostic retains quota and usage recording", async () => {
+  const h=harness({crm:true,access:true});assert.equal((await h.run({query:"Casa"})).data.ok,true);assert.equal(h.usage.length,1);
+  const limited=harness({crm:true,access:true,retry:30});assert.equal((await limited.run({query:"Casa"})).status,429);assert.equal(limited.calls.length,0);
 });

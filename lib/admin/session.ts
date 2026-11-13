@@ -1,3 +1,4 @@
+import { adminSessionSecret } from "@/lib/runtime-policy";
 import "server-only";
 import { cookies } from "next/headers";
 
@@ -12,11 +13,9 @@ export type AdminSession = {
 };
 
 function getSessionSecret() {
-  return (
-    process.env.ADMIN_SESSION_SECRET?.trim() ||
-    process.env.KENLO_SYNC_SECRET?.trim() ||
-    "dev-admin-session-secret-change-me"
-  );
+  const secret = adminSessionSecret();
+  if (!secret) throw new Error("ADMIN_SESSION_SECRET não configurado.");
+  return secret;
 }
 
 function base64UrlEncode(value: Uint8Array | string) {
@@ -65,8 +64,9 @@ export async function createAdminSessionToken(session: Omit<AdminSession, "exp">
 }
 
 export async function verifyAdminSessionToken(token: string | undefined) {
-  if (!token) return null;
+  if (!adminSessionSecret() || !token) return null;
 
+  if (token.split(".").length !== 2) return null;
   const [payload, signature] = token.split(".");
   if (!payload || !signature) return null;
 

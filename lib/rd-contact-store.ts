@@ -1,3 +1,4 @@
+import { requireProductionEffect } from "./runtime-policy";
 import { createHmac } from "node:crypto";
 import { getPool } from "./db";
 import { sendLead } from "./saved-search-delivery";
@@ -5,6 +6,7 @@ type Submission = { fingerprint: string; consentVersion: string; consent: string
 
 let ready: Promise<unknown> | undefined;
 function ensureSchema() {
+  requireProductionEffect();
   if (!ready) ready = getPool().query(`
     create table if not exists rd_contact_delivery (
       fingerprint text primary key, state text not null default 'pending',

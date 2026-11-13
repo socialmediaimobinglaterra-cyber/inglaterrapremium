@@ -1,4 +1,5 @@
 "use server";
+import { productionEffectsAllowed } from "@/lib/runtime-policy";
 
 import { randomUUID } from "node:crypto";
 import sharp from "sharp";
@@ -10,6 +11,7 @@ import { getPool } from "@/lib/db";
 import { bannerLink } from "@/lib/home-banners";
 
 export async function saveBannerAction(_previous: { error?: string; ok?: boolean }, form: FormData): Promise<{ error?: string; ok?: boolean }> {
+  if (!productionEffectsAllowed()) return { error: "Alteração bloqueada neste ambiente." };
   const user = await getCurrentAdminUser();
   if (!user || !["admin", "editor"].includes(user.role)) return { error: "Sua sessão expirou. Entre novamente no painel." };
   const id = String(form.get("id") || "");

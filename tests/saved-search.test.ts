@@ -1,3 +1,5 @@
+// Production regressions use injected transports only.
+process.env.VERCEL_ENV = "production";
 import assert from "node:assert/strict";
 import test from "node:test";
 import { readFileSync } from "node:fs";
@@ -70,6 +72,7 @@ function storeHarness(options: { limited?: boolean; locked?: boolean; central?: 
   const mod = { exports: {} as any };
   const code = ts.transpileModule(readFileSync("lib/saved-search-store.ts", "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
   vm.runInNewContext(code, { module: mod, exports: mod.exports, Date, console: { info() {} }, process: { env: {} }, require(name: string) {
+      if (name.endsWith("/runtime-policy")) return { productionEffectsAllowed: () => true, requireProductionEffect: () => {} };
     if (name === "node:crypto") return require("node:crypto");
     if (name === "./db") return { getPool: () => ({ query: async () => ({}), connect: async () => client }) };
     if (name === "./saved-search") return profile;
@@ -112,6 +115,7 @@ test("endpoint rejects foreign origins, oversized bodies and invalid inputs befo
   const mod = { exports: {} as any };
   const code = ts.transpileModule(readFileSync("app/api/imoveis/salvar-busca/route.ts", "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
   vm.runInNewContext(code, { module: mod, exports: mod.exports, Buffer, URL, Error, SyntaxError, console, process: { env: { CENTRAL_INTEGRATION_TOKEN: "test", RD_STATION_API_KEY: "test" } }, require(name: string) {
+      if (name.endsWith("/runtime-policy")) return { productionEffectsAllowed: () => true, requireProductionEffect: () => {} };
     if (name === "next/server") return { NextResponse: { json: Response.json } };
     if (name === "@/lib/saved-search") return profile;
     if (name === "@/lib/saved-search-store") return { deliverSavedSearch: async (...args: unknown[]) => { calls.push(args); return { status: 200, message: "ok" }; } };

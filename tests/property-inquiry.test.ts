@@ -28,6 +28,7 @@ function harness(configured = true, exists = true, status = 200) {
     module:mod,exports:mod.exports,Buffer,URL,SyntaxError,Error,console:{error(){}},
     process:{env:configured ? {RD_STATION_API_KEY:"test",DATABASE_URL:"test"} : {}},
     require(name:string) {
+      if(name.endsWith("/runtime-policy")) return {productionEffectsAllowed:()=>true};
       if(name==="next/server") return {NextResponse:{json:Response.json}};
       if(name==="@/lib/property-inquiry") return inquiry;
       if(name==="@/lib/queries/imoveis") return {getImovelBySlug:async(slug:string)=>exists ? {id:"real-id",codigo:"AP123",slug,titulo:"Titulo real"}:null};

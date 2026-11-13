@@ -1,3 +1,4 @@
+import { requireProductionEffect } from "@/lib/runtime-policy";
 import "server-only";
 import { getPool } from "@/lib/db";
 import { getAdminSession } from "@/lib/admin/session";
@@ -96,6 +97,7 @@ export async function inviteAdminUser({
   role: AdminRole;
   invitedBy: string;
 }) {
+  requireProductionEffect();
   const normalizedEmail = normalizeEmail(email);
   const result = await getPool().query(
     `

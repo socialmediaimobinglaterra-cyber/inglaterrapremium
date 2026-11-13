@@ -1,3 +1,4 @@
+import { productionEffectsAllowed } from "@/lib/runtime-policy";
 import { NextResponse } from "next/server";
 import { organization } from "@/lib/site";
 
@@ -17,6 +18,7 @@ function escapeHtml(value: string) {
 }
 
 export async function POST(request: Request) {
+  if (!productionEffectsAllowed()) return NextResponse.json({ ok: false, message: "Recurso indisponível neste ambiente de testes." }, { status: 503 });
   const formData = await request.formData();
   const perfil = textValue(formData, "perfil");
   const nome = textValue(formData, "nome");

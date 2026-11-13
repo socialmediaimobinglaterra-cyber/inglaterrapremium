@@ -1,3 +1,4 @@
+import { productionEffectsAllowed } from "./runtime-policy";
 import { getPool } from "@/lib/db";
 
 export type AnalyticsEventType =
@@ -46,6 +47,7 @@ export async function recordAnalyticsEvent({
   imovelId?: string | null;
   payload?: AnalyticsPayload;
 }) {
+  if (!productionEffectsAllowed()) return;
   try {
     await getPool().query(
       `

@@ -11,3 +11,12 @@ pnpm-debug.log*
 
 .vercel
 *.tsbuildinfo
+
+# Local audit backups and non-deployable build fixtures
+.audit-backups/
+.audit-build/
+
+# Local audit evidence; not deployment source
+/dependency-audit*.json
+/*test-results.txt
+/*build-results.txt

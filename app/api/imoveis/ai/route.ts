@@ -1,3 +1,4 @@
+import { productionEffectsAllowed } from "@/lib/runtime-policy";
 import { after, NextResponse } from "next/server";
 import { recordAnalyticsEvent } from "@/lib/analytics";
 import { applyChanges, filterFields, locationClarification, QUERY_MAX_LENGTH, sanitizeState } from "@/lib/search-state";
@@ -31,6 +32,7 @@ function failure(message: string, status = 200, retryAfter?: number) {
 }
 
 export async function POST(request: Request) {
+  if (new URL(request.url).pathname !== "/preview/crm/api/ai" && !productionEffectsAllowed()) return NextResponse.json({ ok: false, message: "Recurso indisponível neste ambiente de testes." }, { status: 503 });
   const preview = new URL(request.url).pathname === "/preview/crm/api/ai";
   if (preview && !await canAccessCrmPreview(request)) return new Response(null, { status: 404 });
   let attempted = false;

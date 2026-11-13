@@ -1,3 +1,4 @@
+import { requireProductionEffect } from "./runtime-policy";
 import { createHmac } from "node:crypto";
 import { unstable_cache } from "next/cache";
 import { getPool } from "./db";
@@ -9,6 +10,7 @@ import { normalizeName, type Vocabulary } from "./search-state";
 let schemaReady: Promise<unknown> | undefined;
 // Additive setup follows the existing editorial-schema pattern; never rerun catalog seeds.
 function ensureAiSchema() {
+  requireProductionEffect();
   if (!schemaReady) schemaReady = getPool().query(`
     create table if not exists openai_usage_log (
       id uuid primary key default gen_random_uuid(), created_at timestamptz not null default now(),

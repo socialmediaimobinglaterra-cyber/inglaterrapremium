@@ -1,3 +1,4 @@
+import * as tipos from "../lib/tipos-imovel";
 import assert from "node:assert/strict";
 import { AsyncLocalStorage } from "node:async_hooks";
 import { readFileSync } from "node:fs";
@@ -44,6 +45,7 @@ test("filter options reuse public rows, expire, respect rule changes and recover
       };
       if (name === "@/lib/premium-rule") return { premiumFilter: async () => rule, getPremiumConfig: async () => ({ condominioIds: ["alpha"] }) };
       if (name === "@/lib/cep-bairros") return { bairrosPremiumDe: () => [], bairroDaLinha: (row: any) => row.neighborhood };
+      if (name === "@/lib/tipos-imovel") return tipos;
       return {};
     },
   });

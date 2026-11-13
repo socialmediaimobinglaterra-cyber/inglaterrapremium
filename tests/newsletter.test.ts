@@ -39,6 +39,7 @@ function storeHarness(initialState?: string, limited = false, initiallyLocked = 
   const mod = { exports: {} as any };
   vm.runInNewContext(ts.transpileModule(readFileSync("lib/rd-contact-store.ts", "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText, {
     module: mod, exports: mod.exports, process: { env: {} }, console: { info() {} }, require(name: string) {
+      if (name.endsWith("/runtime-policy")) return { productionEffectsAllowed: () => true, requireProductionEffect: () => {} };
       if (name === "node:crypto") return require("node:crypto");
       if (name === "./newsletter") return newsletter;
       if (name === "./db") return { getPool: () => ({ query: async () => ({}), connect: async () => client }) };
@@ -94,6 +95,7 @@ function routeHarness(configured = true, status = 200) {
     module: mod, exports: mod.exports, Buffer, URL, SyntaxError, Error, console: { error() {} },
     process: { env: configured ? { RD_STATION_API_KEY: "test-only", DATABASE_URL: "test-only" } : {} },
     require(name: string) {
+      if (name.endsWith("/runtime-policy")) return { productionEffectsAllowed: () => true, requireProductionEffect: () => {} };
       if (name === "next/server") return { NextResponse: { json: Response.json } };
       if (name === "@/lib/newsletter") return newsletter;
       if (name === "@/lib/newsletter-store") return { subscribeNewsletter: async (_request: Request, email: string, _key: string, attribution: unknown) => { calls.push({ email, attribution }); return { status, message: "test" }; } };

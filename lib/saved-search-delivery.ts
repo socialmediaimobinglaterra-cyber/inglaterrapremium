@@ -1,3 +1,4 @@
+import { requireProductionEffect } from "./runtime-policy";
 import { SEARCH_CONSENT, SEARCH_CONSENT_VERSION, searchProfile, type SavedSearchLead } from "./saved-search";
 
 export type DeliveryState = "pending" | "sent" | "failed" | "rejected" | "uncertain";
@@ -24,6 +25,7 @@ export function leadPayloads(lead: SavedSearchLead, consentAt: string, reference
 }
 
 export async function sendLead(destination: Destination, payload: unknown, secrets: { central: string; rd: string }, fetcher: typeof fetch = fetch): Promise<DeliveryState> {
+  requireProductionEffect();
   const url = destination === "central"
     ? "https://atendimento.imobiliariainglaterra.com.br/api/public/integrations/inbound"
     : `https://api.rd.services/platform/conversions?api_key=${encodeURIComponent(secrets.rd)}`;

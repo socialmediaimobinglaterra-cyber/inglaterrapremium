@@ -13,6 +13,7 @@ test("vocabulary projects condominium names before deduplication and keeps premi
   vm.runInNewContext(code, {
     module, exports: module.exports,
     require: (name: string) => {
+      if (name === "./runtime-policy") return { requireProductionEffect: () => {} };
       if (name === "node:crypto" || name === "./db" || name === "./search-state") return {};
       if (name === "next/cache") return { unstable_cache: (fn: unknown) => fn };
       if (name === "./premium-rule") return { premiumFilter: async () => "premium == true", getPremiumConfig: async () => ({}) };

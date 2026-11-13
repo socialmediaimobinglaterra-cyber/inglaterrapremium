@@ -1,3 +1,4 @@
+import { productionEffectsAllowed } from "@/lib/runtime-policy";
 import { NextResponse } from "next/server";
 import { INQUIRY_CONSENT, INQUIRY_CONSENT_VERSION, parsePropertyInquiry, propertyInquiryPayload } from "@/lib/property-inquiry";
 import { deliverRdContact } from "@/lib/rd-contact-store";
@@ -7,6 +8,7 @@ export const runtime = "nodejs";
 export const maxDuration = 30;
 
 export async function POST(request: Request) {
+  if (!productionEffectsAllowed()) return NextResponse.json({ ok: false, message: "Recurso indisponível neste ambiente de testes." }, { status: 503 });
   const reply = (message: string, status: number) => NextResponse.json({ ok: false, message }, { status, headers: { "Cache-Control": "no-store" } });
   if (request.headers.get("origin") !== new URL(request.url).origin) return reply("Origem não permitida.", 403);
   if (!request.headers.get("content-type")?.startsWith("application/json")) return reply("Formato inválido.", 415);

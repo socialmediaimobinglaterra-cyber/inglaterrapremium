@@ -14,6 +14,7 @@ function harness(role: string | null = "editor", fail = false) {
   const transform = { rotate() { return this; }, resize() { return this; }, webp() { return this; }, async toBuffer() { return { data: Buffer.from("webp"), info: { width: 1600, height: 600 } }; } };
   vm.runInNewContext(ts.transpileModule(readFileSync("app/admin/banners/actions.ts", "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, esModuleInterop: true } }).outputText, {
     module: mod, exports: mod.exports, File, Buffer, process: { env: { BLOB_READ_WRITE_TOKEN: "fixture" } }, require(name: string) {
+      if (name.endsWith("/runtime-policy")) return { productionEffectsAllowed: () => true, requireProductionEffect: () => {} };
       if (name === "node:crypto") return { randomUUID: () => "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa" };
       if (name === "sharp") return () => transform;
       if (name === "@vercel/blob") return { put: async (...args: unknown[]) => { uploads.push(args); return { url: "https://fixture.private.blob.vercel-storage.com/home-banners/test.webp" }; }, del: async (url: string) => deleted.push(url) };

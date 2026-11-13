@@ -1,3 +1,4 @@
+import { requireProductionEffect } from "./runtime-policy";
 import { createHmac, randomUUID } from "node:crypto";
 import { getPool } from "./db";
 import { SEARCH_CONSENT_VERSION, type SavedSearchLead } from "./saved-search";
@@ -5,6 +6,7 @@ import { leadPayloads, sendLead, type DeliveryState, type Destination } from "./
 
 let ready: Promise<unknown> | undefined;
 function ensureSchema() {
+  requireProductionEffect();
   if (!ready) ready = getPool().query(`
     create table if not exists saved_search_delivery (
       fingerprint text primary key, reference uuid not null, consent_version text not null,
