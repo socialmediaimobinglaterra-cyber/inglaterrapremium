@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/sobre" },
   title: "Sobre o Grupo Inglaterra | Imobiliária em Londrina",
   description:
     "Conheça o Grupo Inglaterra e a Inglaterra Premium: 25 anos na Avenida Inglaterra, em Londrina, com atuação em imóveis, locação, vendas, administração e alto padrão.",

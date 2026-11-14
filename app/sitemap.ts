@@ -47,12 +47,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "daily",
       priority: 0.9,
     },
-    {
-      url: absoluteUrl("/bairros"),
-      lastModified: now,
-      changeFrequency: "weekly",
+    ...["/sobre", "/contato", "/bts", "/imoveis/alugar"].map((path) => ({
+      url: absoluteUrl(path),
+      changeFrequency: "weekly" as const,
       priority: 0.7,
-    },
+    })),
   ];
 
   const bairroRoutes: MetadataRoute.Sitemap = bairros

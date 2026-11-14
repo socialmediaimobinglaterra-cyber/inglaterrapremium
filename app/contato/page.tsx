@@ -4,6 +4,7 @@ import { organization } from "@/lib/site";
 import { contactSettings } from "@/lib/contact-settings";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/contato" },
   title: "Contato | Inglaterra Premium",
   description:
     "Fale com a Inglaterra Premium para atendimento sobre imóveis de alto padrão em Londrina.",

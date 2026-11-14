@@ -6,6 +6,7 @@ import { filtersFromSearchParams } from "@/lib/search-url";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/imoveis/alugar" },
   title: "Imóveis para alugar em Londrina | Inglaterra Premium",
   description:
     "Encontre imóveis premium para locação em Londrina com filtros por bairro, tipo, valor e suítes.",

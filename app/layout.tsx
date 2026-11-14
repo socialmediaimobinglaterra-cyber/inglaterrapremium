@@ -15,6 +15,7 @@ const dmSans = DM_Sans({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(absoluteUrl("/")),
   title: "Inglaterra Premium",
   description: "Imóveis de alto padrão em Londrina.",
   icons: {

@@ -1,6 +1,18 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  async redirects() {
+    return [
+      "www.inglaterrapremium.com",
+      "inglaterrapremium.com.br",
+      "www.inglaterrapremium.com.br",
+    ].map((host) => ({
+      source: "/:path*",
+      has: [{ type: "host" as const, value: host }],
+      destination: "https://inglaterrapremium.com/:path*",
+      permanent: true,
+    }));
+  },
   experimental: {
     serverActions: {
       bodySizeLimit: "20mb",

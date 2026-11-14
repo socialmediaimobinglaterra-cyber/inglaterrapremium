@@ -81,6 +81,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const description = `${data.bairro.imoveisDisponiveis} imóveis premium disponíveis em ${data.bairro.nome}, Londrina, com valor médio de venda de ${currency(data.bairro.valorMedioVenda)}.`;
 
   return {
+    alternates: { canonical: `/bairros/${slug}` },
     title,
     description,
     openGraph: {

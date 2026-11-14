@@ -5,6 +5,7 @@ import { BtsContactForm } from "@/components/bts/BtsContactForm";
 import { absoluteUrl } from "@/lib/site";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/bts" },
   title: "Inglaterra BTS | Built to Suit Corporativo em Londrina",
   description:
     "Inglaterra BTS: imóveis corporativos sob medida em Londrina, do terreno ao contrato de locação de longo prazo.",

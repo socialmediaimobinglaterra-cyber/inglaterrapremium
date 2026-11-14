@@ -24,6 +24,7 @@ import type { NavDropdownItem } from "@/components/layout/HeaderClient";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/" },
   title: "Imóveis de alto padrão em Londrina | Inglaterra Premium",
   description:
     "Curadoria de imóveis premium em Londrina, com casas, apartamentos, condomínios e lançamentos nos bairros mais valorizados da cidade.",
