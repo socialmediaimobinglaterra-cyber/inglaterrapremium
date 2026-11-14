@@ -294,7 +294,7 @@ function Anchor({ label }: { label: string }) {
 function PropCard({ p, h }: { p: FeaturedProperty; h: string }) {
   return (
     <Link
-      href={`/imoveis/${p.slug}`}
+      href={`/imoveis/${p.slug}`} target="_blank" rel="noopener noreferrer"
       className={`group relative block h-[340px] cursor-pointer overflow-hidden bg-[#1e1e1e] focus-visible:outline focus-visible:outline-2 focus-visible:outline-terra ${h}`}
     >
       <Image
@@ -456,6 +456,8 @@ function TerraButton({ label, href }: { label: string; href: string }) {
     <a
       className="inline-block bg-terra px-[30px] py-[13px] text-center text-caption uppercase tracking-[0.25em] text-white transition hover:bg-[#6b2a0f]"
       href={href}
+      target={/^(https?:)?\/\//i.test(href) ? "_blank" : undefined}
+      rel="noopener noreferrer"
     >
       {label}
     </a>

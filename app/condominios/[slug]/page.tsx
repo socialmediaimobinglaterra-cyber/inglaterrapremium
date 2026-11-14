@@ -85,7 +85,7 @@ function ImovelCard({ imovel, condominio }: { imovel: ImovelSearchResult; condom
   return (
     <Link
       className="group grid items-center gap-6 text-inherit no-underline md:grid-cols-[1.2fr_1fr] md:gap-12 lg:gap-16"
-      href={`/imoveis/${imovel.slug}`}
+      href={`/imoveis/${imovel.slug}`} target="_blank" rel="noopener noreferrer"
     >
       <div className="relative aspect-[4/3] overflow-hidden bg-[#1e1e1e]">
         <Image

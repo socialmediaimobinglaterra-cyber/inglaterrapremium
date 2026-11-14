@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 function PolicyText({ text }: { text: string }) {
   return text.split(/(https:\/\/www\.imobiliariainglaterra\.com\.br\/|inteligencia@imobiliariainglaterra\.com\.br)/g).map((part, index) => {
     if (part.startsWith("https://") || part === "inteligencia@imobiliariainglaterra.com.br") {
-      return <a key={index} className="break-words underline decoration-terra/50 underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-terra" href={part.startsWith("https://") ? part : `mailto:${part}`}>{part}</a>;
+      return <a key={index} className="break-words underline decoration-terra/50 underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-terra" target={part.startsWith("https://") ? "_blank" : undefined} rel="noopener noreferrer" href={part.startsWith("https://") ? part : `mailto:${part}`}>{part}</a>;
     }
     return part;
   });

@@ -145,7 +145,7 @@ function ListingCard({ imovel, negocio }: { imovel: CrmConversationListing; nego
   const image = imageUrlOrFallback(imovel.image);
 
   return (
-    <Link className="group block text-inherit no-underline" aria-disabled={imovel.crmDisplay && !imovel.crmDisplay.href ? true : undefined} onClick={event => { if (imovel.crmDisplay && !imovel.crmDisplay.href) event.preventDefault(); }} href={imovel.crmDisplay ? imovel.crmDisplay.href ?? "#" : `/imoveis/${imovel.slug}?foco=${negocio === "Alugar" ? "locacao" : "venda"}`}>
+    <Link target={imovel.crmDisplay ? undefined : "_blank"} rel={imovel.crmDisplay ? undefined : "noopener noreferrer"} className="group block text-inherit no-underline" aria-disabled={imovel.crmDisplay && !imovel.crmDisplay.href ? true : undefined} onClick={event => { if (imovel.crmDisplay && !imovel.crmDisplay.href) event.preventDefault(); }} href={imovel.crmDisplay ? imovel.crmDisplay.href ?? "#" : `/imoveis/${imovel.slug}?foco=${negocio === "Alugar" ? "locacao" : "venda"}`}>
       <div className="relative aspect-[4/3] cursor-pointer overflow-hidden bg-[#1e1e1e] md:aspect-[5/4]">
         {imovel.crmDisplay ? (imovel.image ? <img alt={imovel.titulo} className="h-full w-full object-cover transition duration-700 group-hover:scale-105" src={imovel.image} /> : <span className="flex h-full items-center justify-center text-sm text-white">Foto indisponível</span>) : <Image
           alt={`${imovel.titulo} — ${imovel.bairro}, Londrina`}

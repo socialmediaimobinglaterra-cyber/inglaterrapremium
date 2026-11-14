@@ -99,7 +99,7 @@ function ImovelCard({ imovel }: { imovel: ImovelSearchResult }) {
   const image = imageUrlOrFallback(imovel.image);
 
   return (
-    <Link className="group block text-inherit no-underline" href={`/imoveis/${imovel.slug}`}>
+    <Link className="group block text-inherit no-underline" href={`/imoveis/${imovel.slug}`} target="_blank" rel="noopener noreferrer">
       <div className="relative aspect-[5/4] overflow-hidden bg-[#1e1e1e]">
         <Image
           alt={`${imovel.titulo} — ${imovel.bairro}, Londrina`}

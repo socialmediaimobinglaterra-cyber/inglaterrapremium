@@ -44,7 +44,7 @@ export function PropertyLocationMap({ latitude, longitude, address }: {
         L.control.zoom({ position: "topright", zoomInTitle: "Aproximar", zoomOutTitle: "Afastar" }).addTo(map);
         L.tileLayer(process.env.NEXT_PUBLIC_MAP_TILE_URL ?? "https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
           maxZoom: 19,
-          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a>',
           updateWhenIdle: true, keepBuffer: 1,
         }).on("tileerror", () => { if (!disposed) setTileError(true); }).addTo(map);
         L.marker([lat, lng], {

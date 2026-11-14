@@ -49,7 +49,7 @@ export function BannerCarousel({ banners, compactBottom = false }: { banners: Ho
       onBlurCapture={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setFocused(false); }}>
       <div className="relative" style={{ aspectRatio: `${banners[0].width} / ${banners[0].height}` }}>
         <div className="absolute inset-0" role="group" aria-roledescription="slide" aria-label={`${activeIndex + 1} de ${count}`}>
-          {banner.href ? <a className="nav-focus absolute inset-0 block" href={banner.href}>{photo}</a> : photo}
+          {banner.href ? <a className="nav-focus absolute inset-0 block" href={banner.href} target={/^(https?:)?\/\//i.test(banner.href) || /^\/imoveis\/[^/?#]+/.test(banner.href) ? "_blank" : undefined} rel="noopener noreferrer">{photo}</a> : photo}
         </div>
       </div>
       {count > 1 ? <div className="mt-3 flex items-center justify-end gap-2 text-navy">

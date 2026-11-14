@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { BLOG_URL } from "@/lib/blog-posts";
 import { organization } from "@/lib/site";
 import { contactSettings } from "@/lib/contact-settings";
 import { PRIVACY_POLICY_PATH, PRIVACY_POLICY_TITLE } from "@/lib/privacy-policy";
@@ -48,7 +49,9 @@ export function Footer() {
               {column.links.map((link) => (
                 <Link
                   className="nav-focus text-detail text-white/75 transition duration-200 hover:text-white"
-                  href={link === "Seja Corretor" ? contactSettings.careers : link === "Newsletter" ? "/#newsletter" : "#"}
+                  href={link === "Seja Corretor" ? contactSettings.careers : link === "Notícias" ? BLOG_URL : link === "Instagram" ? "https://www.instagram.com/inglaterrapremium/" : link === "Newsletter" ? "/#newsletter" : "#"}
+                  target={["Seja Corretor", "Notícias", "Instagram"].includes(link) ? "_blank" : undefined}
+                  rel="noopener noreferrer"
                   key={link}
                 >
                   {link}

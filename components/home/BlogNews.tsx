@@ -8,11 +8,11 @@ export function BlogNews({ posts }: { posts: BlogPost[] }) {
       <h2 id="blog-news-title" className="text-[clamp(22px,5.5vw,38px)] font-light leading-tight tracking-[0.04em]">
         O mercado de alto padrão<br />de Londrina, em perspectiva
       </h2>
-      <a href={BLOG_URL} className="nav-focus border-b border-terra pb-0.5 text-caption uppercase tracking-[0.28em] text-terra">Ver todas as notícias</a>
+      <a href={BLOG_URL} target="_blank" rel="noopener noreferrer" className="nav-focus border-b border-terra pb-0.5 text-caption uppercase tracking-[0.28em] text-terra">Ver todas as notícias</a>
     </div>
     <div className="grid grid-cols-1 gap-6 md:grid-cols-3 md:gap-[5px]">
       {posts.map(post => <article key={post.href} className="min-w-0 bg-white">
-        <a href={post.href} className="nav-focus group block h-full">
+        <a href={post.href} target="_blank" rel="noopener noreferrer" className="nav-focus group block h-full">
           {post.image ? <BlogCover src={post.image} title={post.title} /> : null}
           <div className="px-[22px] pb-[26px] pt-[22px]">
             <div className="mb-2.5 flex flex-wrap items-center gap-x-3.5 gap-y-1">
