@@ -4,7 +4,6 @@ import Link from "next/link";
 import { after } from "next/server";
 import { notFound } from "next/navigation";
 import { PropertyContactForm } from "@/components/imoveis/PropertyContactForm";
-import { brazilianPhone } from "@/lib/property-contact";
 import { contactSettings } from "@/lib/contact-settings";
 import { recordAnalyticsEvent } from "@/lib/analytics";
 import { imageUrlOrFallback } from "@/lib/images";
@@ -92,15 +91,13 @@ function plainDescription(imovel: ImovelDetail) {
 }
 
 function whatsappHref(imovel: ImovelDetail, foco: Foco = null) {
-  const number = brazilianPhone(imovel.corretor.celular) ?? brazilianPhone(imovel.corretor.telefone);
-  if (!number) return null;
   // Imóvel de venda e locação aberto numa carteira: a mensagem diz qual (quem atende precisa saber).
   const carteira = imovel.precoVenda && imovel.precoLocacao && foco ? (foco === "rent" ? " (locação)" : " (venda)") : "";
   const message = encodeURIComponent(
     `Tenho interesse no imóvel "${imovel.titulo}"${carteira}. Gostaria de agendar uma visita.`
   );
 
-  return `https://wa.me/${number}?text=${message}`;
+  return `${contactSettings.propertyWhatsapp}?text=${message}`;
 }
 
 function slugify(value: string) {
