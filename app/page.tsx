@@ -551,11 +551,6 @@ export default async function Home() {
       label: "imóveis de alto padrão selecionados em carteira",
     },
     {
-      value: String(totals.total_bairros),
-      suffix: "",
-      label: "bairros de alto padrão em Londrina",
-    },
-    {
       value: "R$ 2,4bi",
       suffix: "",
       label: "em transações nos últimos 5 anos",
@@ -587,7 +582,7 @@ export default async function Home() {
             em Londrina
           </h1>
           <p className="mb-5 text-[clamp(15px,4.4vw,18px)] font-light italic tracking-[0.02em] text-white/75 md:mb-9 md:text-[clamp(16px,1.8vw,22px)]">
-            Onde visão se torna patrimônio.
+            Exclusividade em cada oportunidade.
           </p>
           <HomeHeroSearch filterOptions={filterOptions} />
         </div>
@@ -664,9 +659,9 @@ export default async function Home() {
               </span>
             </div>
             <h2 className="text-[clamp(26px,7vw,46px)] font-light leading-tight tracking-[0.04em] text-white">
-              Compre pronto, alugue sob medida
+              Seu próximo endereço. Seu próximo investimento.
               <br />
-              <span className="text-white/75">ou entre antes de todo mundo</span>
+              <span className="text-white/75">Sua próxima conquista.</span>
             </h2>
           </div>
           <p className="max-w-[280px] text-detail leading-[1.9] text-white/75">
@@ -683,17 +678,17 @@ export default async function Home() {
 
       <section className="relative border-y border-navy/10 bg-offwhite">
         <h2 className="sr-only">A Inglaterra Premium em Números, em Londrina</h2>
-        <div className="site-container grid grid-cols-2 md:grid-cols-4">
-          {stats.map((stat, index) => (
+        <div className="site-container grid grid-cols-1 md:grid-cols-3">
+          {stats.map((stat) => (
             <div
-              className="border-b border-r border-navy/10 px-[18px] py-7 text-center even:border-r-0 md:border-b-0 md:px-10 md:py-[52px] md:last:border-r-0"
+              className="flex flex-col items-center justify-center gap-5 border-b border-navy/10 px-5 py-10 text-center last:border-b-0 md:border-b-0 md:border-r md:px-6 md:py-14 md:last:border-r-0 lg:px-10"
               key={stat.label}
             >
-              <p className="mb-2 text-[clamp(28px,7vw,54px)] font-light leading-none tracking-[0.02em]">
+              <p className="whitespace-nowrap text-[clamp(40px,4.5vw,68px)] font-extrabold leading-none tracking-tight text-navy">
                 {stat.value}
-                <span className="text-[0.4em] text-terra">{stat.suffix}</span>
+                <span className="text-[0.45em] text-terra">{stat.suffix}</span>
               </p>
-              <p className="text-detail leading-[1.6] text-navy">{stat.label}</p>
+              <p className="max-w-[290px] text-base font-extrabold leading-relaxed text-navy lg:text-lg">{stat.label}</p>
             </div>
           ))}
         </div>
