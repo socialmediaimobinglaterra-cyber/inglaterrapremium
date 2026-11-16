@@ -1,6 +1,7 @@
 "use client";
 
 import { contactSettings } from "@/lib/contact-settings";
+import { propertyWhatsappTarget } from "@/lib/property-contact";
 
 type Props = {
   imovelId: string;
@@ -37,7 +38,7 @@ export function PropertyContactButton({ imovelId, whatsappHref }: Props) {
     return (
       <a
         className={`${className} text-center`}
-        href={whatsappHref}
+        href={propertyWhatsappTarget(whatsappHref)?.toString() ?? whatsappHref}
         onClick={() => recordPropertyContactClick(imovelId, true)}
         rel="noreferrer"
         target="_blank"

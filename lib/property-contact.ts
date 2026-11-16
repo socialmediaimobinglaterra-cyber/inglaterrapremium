@@ -1,3 +1,5 @@
+import { contactSettings } from "./contact-settings";
+
 export function brazilianPhone(value: string | null | undefined) {
   const digits = (value ?? "").replace(/\D/g, "");
   const local = digits.length === 12 || digits.length === 13 ? (digits.startsWith("55") ? digits.slice(2) : "") : digits;
@@ -8,6 +10,7 @@ export function propertyWhatsappTarget(href: string | null | undefined) {
   try {
     const url = new URL(href ?? "");
     if (url.protocol !== "https:" || url.hostname !== "wa.me" || url.port || url.username || url.password || !/^\/55\d{10,11}$/.test(url.pathname)) return null;
+    url.pathname = new URL(contactSettings.propertyWhatsapp).pathname;
     return url;
   } catch { return null; }
 }
@@ -17,9 +20,10 @@ export function propertyContactUrl(href: string, contact: { name: string; phone:
   if (!target || !contact.name.trim() || !brazilianPhone(contact.phone) || !contact.message.trim()) return null;
   const url = new URL(target.origin + target.pathname);
   url.searchParams.set("text", [
+    context, "",
     `Nome: ${contact.name.trim().slice(0, 120)}`,
     `WhatsApp: ${contact.phone.trim().slice(0, 30)}`,
-    "", contact.message.trim().slice(0, 2000), "", context,
+    "", contact.message.trim().slice(0, 2000),
   ].join("\n"));
   return url.toString();
 }
