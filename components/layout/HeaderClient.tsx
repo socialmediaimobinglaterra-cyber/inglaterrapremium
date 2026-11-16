@@ -195,7 +195,7 @@ export function HeaderClient({
         <div className="site-container flex items-center justify-between">
           <Link
             aria-label="Inglaterra Premium"
-            className="nav-focus block origin-left scale-[0.85] md:scale-100"
+            className="nav-focus block shrink-0"
             href="/"
           >
             <Image
@@ -204,11 +204,11 @@ export function HeaderClient({
               priority
               src="/images/logo-navy.png"
               width={169}
-              className="h-[34px] w-auto"
+              className="h-[26px] w-auto sm:h-[34px]"
             />
           </Link>
 
-        <div className="hidden items-center gap-7 lg:flex">
+        <div className="hidden items-center gap-4 xl:gap-7 lg:flex">
           {navItems.map((item) => {
             const active = isActive(pathname, item);
 
@@ -234,7 +234,16 @@ export function HeaderClient({
           })}
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-1 sm:gap-3">
+          <a
+            href="https://inglaterra.pco.casasoft.net.br/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="nav-focus inline-flex whitespace-nowrap border border-navy/30 px-2 py-[9px] text-[10px] tracking-[0.04em] text-navy transition duration-200 hover:border-terra hover:bg-terra hover:text-white xl:px-4"
+          >
+            Área do Cliente
+            <span className="sr-only"> (abre em nova guia)</span>
+          </a>
         <ContactButton className="hidden lg:inline-flex" />
 
           <button
