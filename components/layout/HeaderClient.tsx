@@ -54,11 +54,13 @@ function isActive(pathname: string, item: NavItem) {
   return item.dropdown?.some((entry) => pathname.startsWith(entry.href)) ?? false;
 }
 
+const headerButtonClassName = "nav-focus inline-flex border border-navy/30 px-5 py-[9px] text-caption uppercase tracking-[0.22em] text-navy transition duration-200 hover:border-terra hover:bg-terra hover:text-white";
+
 function ContactButton({ className = "" }: { className?: string }) {
   return (
     <Link
       href="/contato"
-      className={`nav-focus inline-flex border border-navy/30 px-5 py-[9px] text-caption uppercase tracking-[0.22em] text-navy transition duration-200 hover:border-terra hover:bg-terra hover:text-white ${className}`}
+      className={`${headerButtonClassName} ${className}`}
     >
       Contato
     </Link>
@@ -239,7 +241,7 @@ export function HeaderClient({
             href="https://inglaterra.pco.casasoft.net.br/"
             target="_blank"
             rel="noopener noreferrer"
-            className="nav-focus inline-flex whitespace-nowrap border border-navy/30 px-2 py-[9px] text-[10px] tracking-[0.04em] text-navy transition duration-200 hover:border-terra hover:bg-terra hover:text-white xl:px-4"
+            className={headerButtonClassName}
           >
             Área do Cliente
             <span className="sr-only"> (abre em nova guia)</span>
