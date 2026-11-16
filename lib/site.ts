@@ -28,10 +28,10 @@ export const organization = {
   telephone: contactSettings.phoneInternational,
   creci: "CRECI-PR 12.345",
   address: {
-    streetAddress: "Av. Duque de Caxias, 1726",
+    streetAddress: "Rod. Mabio Gonçalves Palhano, 1003 - Loja 02 - Palhano 2",
     addressLocality: "Londrina",
     addressRegion: "PR",
-    postalCode: "",
+    postalCode: "86055-585",
     addressCountry: "BR",
   },
 };

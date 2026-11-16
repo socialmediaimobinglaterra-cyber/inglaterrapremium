@@ -27,7 +27,7 @@ export default function ContatoPage() {
           </div>
           <div>
             <p>{organization.address.streetAddress}</p>
-            <p>Londrina, PR</p>
+            <p>{organization.address.addressLocality} - {organization.address.addressRegion}, {organization.address.postalCode}</p>
           </div>
         </div>
         <a

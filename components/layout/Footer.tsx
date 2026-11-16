@@ -35,7 +35,7 @@ export function Footer() {
             <p className="text-caption text-white/75"><a href={contactSettings.phoneHref}>{contactSettings.phone}</a></p>
             <p className="break-words text-caption text-white/75">{organization.email}</p>
             <p className="text-caption text-white/75">
-              Av. Duque de Caxias, 1726 · Londrina, PR
+              {organization.address.streetAddress} - {organization.address.addressLocality} - {organization.address.addressRegion}, {organization.address.postalCode}
             </p>
           </div>
         </div>
