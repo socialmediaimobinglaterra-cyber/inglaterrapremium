@@ -333,9 +333,24 @@ export default async function ImovelPage({ params, searchParams }: PageProps) {
             </h1>
             {imovel.codigo ? <p className="mb-3 text-sm text-navy">Referência: {imovel.codigo}</p> : null}
             <p className="mb-5 text-copy text-navy">{getAddress(imovel)}</p>
-            <p className="text-2xl font-medium text-navy md:text-3xl">
-              {currency(getPrice(imovel, foco))}
-            </p>
+            {imovel.precoVenda != null && imovel.precoLocacao != null ? (
+              <dl className="flex flex-wrap gap-x-10 gap-y-5">
+                <div>
+                  <dt className="mb-1 text-xs font-semibold uppercase tracking-[0.16em] text-terra">Venda</dt>
+                  <dd className="text-2xl font-medium text-navy md:text-3xl">{currency(imovel.precoVenda)}</dd>
+                </div>
+                <div>
+                  <dt className="mb-1 text-xs font-semibold uppercase tracking-[0.16em] text-terra">Locação</dt>
+                  <dd className="text-2xl font-medium text-navy md:text-3xl">
+                    {currency(imovel.precoLocacao)}<span className="text-sm font-normal"> / mês</span>
+                  </dd>
+                </div>
+              </dl>
+            ) : (
+              <p className="text-2xl font-medium text-navy md:text-3xl">
+                {currency(getPrice(imovel, foco))}
+              </p>
+            )}
           </div>
 
           <div className="mb-8 grid grid-cols-4 gap-2 md:mb-11 md:gap-4">
