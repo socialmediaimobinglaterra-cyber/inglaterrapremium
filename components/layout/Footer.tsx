@@ -31,7 +31,7 @@ export function Footer() {
             Londrina e região.
           </p>
           <div className="mt-5 flex flex-col gap-1.5">
-            <p className="text-caption text-white/75">CRECI-PR 12.345</p>
+            <p className="text-caption text-white/75">{organization.creci}</p>
             <p className="text-caption text-white/75"><a href={contactSettings.phoneHref}>{contactSettings.phone}</a></p>
             <p className="break-words text-caption text-white/75">{organization.email}</p>
             <p className="text-caption text-white/75">

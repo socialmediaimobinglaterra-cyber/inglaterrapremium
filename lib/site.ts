@@ -26,7 +26,7 @@ export const organization = {
   legalName: "Grupo Inglaterra",
   email: "central@imobiliariainglaterra.com.br",
   telephone: contactSettings.phoneInternational,
-  creci: "CRECI-PR 12.345",
+  creci: "CRECI-PR J3748",
   address: {
     streetAddress: "Rod. Mabio Gonçalves Palhano, 1003 - Loja 02 - Palhano 2",
     addressLocality: "Londrina",
