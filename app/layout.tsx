@@ -71,6 +71,21 @@ export default async function RootLayout({
 
   return (
     <html lang="pt-BR" className={dmSans.variable}>
+      <head>
+        {isAdmin || isCrmPreview ? null : (
+          <script
+            id="microsoft-clarity"
+            type="text/javascript"
+            dangerouslySetInnerHTML={{
+              __html: `(function(c,l,a,r,i,t,y){
+    c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+    t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+    y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+})(window, document, "clarity", "script", "zfmbqfxb0z");`,
+            }}
+          />
+        )}
+      </head>
       <body className="bg-offwhite font-sans text-navy antialiased">
         <script
           dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd()) }}
