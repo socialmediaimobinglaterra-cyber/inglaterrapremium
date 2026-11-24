@@ -1,5 +1,6 @@
 "use client";
 
+import { CondominiumFee } from "@/components/ui/CondominiumFee";
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState, useTransition } from "react";
@@ -175,6 +176,7 @@ function ListingCard({ imovel, negocio }: { imovel: CrmConversationListing; nego
           </span>
           <span className="shrink-0 text-[17px] text-navy">{imovel.crmDisplay?.price ?? currency(price)}</span>
         </div>
+        <CondominiumFee value={imovel.precoCondominio} />
       </div>
     </Link>
   );

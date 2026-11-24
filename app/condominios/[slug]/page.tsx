@@ -1,3 +1,4 @@
+import { CondominiumFee } from "@/components/ui/CondominiumFee";
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
@@ -118,6 +119,7 @@ function ImovelCard({ imovel, condominio }: { imovel: ImovelSearchResult; condom
           {imovel.precoVenda !== null && <p className="text-[22px] font-light"><span className="mb-1 block text-detail font-normal">Venda</span>{formatCurrency(imovel.precoVenda)}</p>}
           {imovel.precoLocacao !== null && <p className="text-[22px] font-light"><span className="mb-1 block text-detail font-normal">Locação / mês</span>{formatCurrency(imovel.precoLocacao)}</p>}
           {imovel.precoVenda === null && imovel.precoLocacao === null && <p className="text-[22px] font-light">Consulte</p>}
+          <CondominiumFee value={imovel.precoCondominio} className="w-full text-navy/70" />
         </div>
         <span className="inline-block border-b border-terra pb-1 text-caption uppercase tracking-[0.2em] text-terra">Conhecer imóvel</span>
       </div>

@@ -80,6 +80,7 @@ function mapImovel(row: Record<string, any>, index: number): ImovelSearchResult 
     vagas: row.garage,
     precoVenda: numberOrNull(row.price),
     precoLocacao: numberOrNull(row.rentPrice),
+    precoCondominio: numberOrNull(row.condominio),
     image: imageUrlOrFallback(row.mainImageUrl),
     tag: row.featured ? "EXCLUSIVO" : index === 0 ? "DESTAQUE" : "PREMIUM",
   };
@@ -87,7 +88,7 @@ function mapImovel(row: Record<string, any>, index: number): ImovelSearchResult 
 
 const IMOVEL_ROW_PROJECTION = `
   codigoImovel, "slug": slug.current, title, neighborhood, cidade, type,
-  area, areaTotal, suites, bedrooms, garage, price, rentPrice, featured,
+  area, areaTotal, suites, bedrooms, garage, price, rentPrice, condominio, featured,
   "mainImageUrl": mainImage.asset->url
 `;
 

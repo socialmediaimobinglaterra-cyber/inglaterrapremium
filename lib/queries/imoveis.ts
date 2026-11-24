@@ -39,6 +39,7 @@ export type ImovelSearchResult = {
   vagas: number | null;
   precoVenda: number | null;
   precoLocacao: number | null;
+  precoCondominio?: number | null;
   image: string;
   tag: string;
   mobilia?: "Mobiliado" | "Semimobiliado" | null;
@@ -280,6 +281,7 @@ function mapSearchRow(row: Record<string, any>, index: number, premiumBairros: B
     vagas: row.garage,
     precoVenda: numberOrNull(row.price),
     precoLocacao: numberOrNull(row.rentPrice),
+    precoCondominio: numberOrNull(row.condominio),
     image: getMainImage(row),
     tag: row.featured ? "EXCLUSIVO" : index < 3 ? "DESTAQUE" : "PREMIUM",
     mobilia: row.mobilia ?? null,
@@ -288,7 +290,7 @@ function mapSearchRow(row: Record<string, any>, index: number, premiumBairros: B
 
 const SEARCH_ROW_PROJECTION = `
   _id, codigoImovel, "slug": slug.current, title, neighborhood, cep, cidade, type,
-  area, areaTotal, suites, bedrooms, garage, price, rentPrice, featured,
+  area, areaTotal, suites, bedrooms, garage, price, rentPrice, condominio, featured,
   "mobilia": select("mobiliado" in amenities => "Mobiliado", "semimobiliado" in amenities => "Semimobiliado"),
   "mainImageUrl": coalesce(mainImage.asset->url, images[0].asset->url)
 `;
@@ -416,6 +418,7 @@ export async function getSimilarImoveis(imovel: ImovelDetail, limit = 3) {
     vagas: row.garage,
     precoVenda: numberOrNull(row.price),
     precoLocacao: numberOrNull(row.rentPrice),
+    precoCondominio: numberOrNull(row.condominio),
     image: getMainImage(row),
     tag: row.featured ? "EXCLUSIVO" : index === 0 ? "DESTAQUE" : "PREMIUM",
   }));

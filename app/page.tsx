@@ -1,3 +1,4 @@
+import { CondominiumFee } from "@/components/ui/CondominiumFee";
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { getBlogPosts } from "@/lib/queries/blog-posts";
@@ -44,6 +45,7 @@ type FeaturedProperty = {
   area: string;
   bedrooms: number;
   price: string;
+  precoCondominio: number | null;
   tag: string;
   image: string;
 };
@@ -189,7 +191,7 @@ const getHomeData = unstable_cache(async () => {
     sanity.fetch<Record<string, any>[]>(
       `*[_type == "property" && ${HOME_ACTIVE_FILTER}] {
         _id, "slug": slug.current, codigoImovel, title, neighborhood, cep, cidade,
-        area, areaTotal, bedrooms, price, rentPrice,
+        area, areaTotal, bedrooms, price, rentPrice, condominio,
         "mainImageUrl": mainImage.asset->url,
         "_rand": _id + $period
       } | order(_rand asc) [0...4]`,
@@ -229,6 +231,7 @@ const getHomeData = unstable_cache(async () => {
     area: area(row.area ?? row.areaTotal),
     bedrooms: row.bedrooms ?? 0,
     price: currency(row.price ?? row.rentPrice),
+    precoCondominio: row.condominio == null ? null : Number(row.condominio),
     tag: index === 0 ? "EXCLUSIVO" : index === 1 ? "DESTAQUE" : "PREMIUM",
     image: getMainImageFromSanity(row),
   }));
@@ -322,7 +325,7 @@ function PropCard({ p, h }: { p: FeaturedProperty; h: string }) {
           {p.title}
         </h3>
         {p.codigo ? <p className="mt-2 text-detail text-white">Ref. {p.codigo}</p> : null}
-        <div className="max-h-14 overflow-hidden opacity-100 transition duration-500 md:max-h-0 md:opacity-0 md:group-hover:max-h-14 md:group-hover:opacity-100">
+        <div className="max-h-24 overflow-hidden opacity-100 transition duration-500 md:max-h-0 md:opacity-0 md:group-hover:max-h-24 md:group-hover:opacity-100">
           <div className="flex flex-wrap gap-x-3.5 gap-y-1 pt-2.5 text-caption text-white/75">
             <span>{p.area}</span>
             {p.bedrooms > 0 ? (
@@ -332,8 +335,9 @@ function PropCard({ p, h }: { p: FeaturedProperty; h: string }) {
               </>
             ) : null}
             <span className="opacity-40">·</span>
-            <span>{p.price}</span>
+            <span className="text-[17px]">{p.price}</span>
           </div>
+          <CondominiumFee value={p.precoCondominio} className="text-white/75" />
         </div>
       </div>
     </Link>

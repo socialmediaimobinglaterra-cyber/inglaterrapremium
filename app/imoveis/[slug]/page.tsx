@@ -1,3 +1,4 @@
+import { CondominiumFee } from "@/components/ui/CondominiumFee";
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
@@ -194,6 +195,7 @@ function SimilarCard({ imovel, foco }: { imovel: ImovelSearchResult; foco: Foco 
         </h3>
         {imovel.codigo ? <p className="mb-2 text-detail text-navy">Ref. {imovel.codigo}</p> : null}
         <p className="text-base font-medium text-navy">{currency(price)}</p>
+        <CondominiumFee value={imovel.precoCondominio} />
       </div>
     </Link>
   );

@@ -1,3 +1,4 @@
+import { CondominiumFee } from "@/components/ui/CondominiumFee";
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
@@ -128,6 +129,7 @@ function ImovelCard({ imovel }: { imovel: ImovelSearchResult }) {
           </span>
           <span className="shrink-0 text-[17px] font-medium text-navy">{currency(price)}</span>
         </div>
+        <CondominiumFee value={imovel.precoCondominio} />
       </div>
     </Link>
   );

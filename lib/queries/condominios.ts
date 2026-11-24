@@ -158,7 +158,7 @@ export async function getCondominioImoveis(condominio: CondominioDetail, limit =
     `*[_type == "property" && ${await premiumFilter()} && condominioRef._ref == $id
       ] | order(coalesce(price, rentPrice) desc) [0...$limit] {
         _id, codigoImovel, "slug": slug.current, title, neighborhood, cidade, type,
-        area, areaTotal, suites, bedrooms, garage, price, rentPrice, featured,
+        area, areaTotal, suites, bedrooms, garage, price, rentPrice, condominio, featured,
         "mainImageUrl": mainImage.asset->url
       }`,
     { id: condominio.id, limit }
@@ -178,6 +178,7 @@ export async function getCondominioImoveis(condominio: CondominioDetail, limit =
     vagas: row.garage,
     precoVenda: numberOrNull(row.price),
     precoLocacao: numberOrNull(row.rentPrice),
+    precoCondominio: numberOrNull(row.condominio),
     image: imageUrlOrFallback(row.mainImageUrl),
     tag: row.featured ? "EXCLUSIVO" : index === 0 ? "DESTAQUE" : "PREMIUM",
   }));
