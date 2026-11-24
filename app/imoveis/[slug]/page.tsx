@@ -353,6 +353,7 @@ export default async function ImovelPage({ params, searchParams }: PageProps) {
                 {currency(getPrice(imovel, foco))}
               </p>
             )}
+            <CondominiumFee value={imovel.precoCondominio} />
           </div>
 
           <div className="mb-8 grid grid-cols-4 gap-2 md:mb-11 md:gap-4">
@@ -431,7 +432,6 @@ export default async function ImovelPage({ params, searchParams }: PageProps) {
                 </p>
               </div>
             </div>
-            <CondominiumFee value={imovel.precoCondominio} />
             <PropertyContactForm
               imovelId={imovel.id}
               slug={imovel.slug}
