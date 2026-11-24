@@ -431,6 +431,7 @@ export default async function ImovelPage({ params, searchParams }: PageProps) {
                 </p>
               </div>
             </div>
+            <CondominiumFee value={imovel.precoCondominio} />
             <PropertyContactForm
               imovelId={imovel.id}
               slug={imovel.slug}
